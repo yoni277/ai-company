@@ -1,0 +1,35 @@
+{
+  "name": "@ai-company/executive-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "next lint",
+    "test": "echo 'no-op'"
+  },
+  "dependencies": {
+    "@ai-company/shared-types": "workspace:*",
+    "@ai-company/database": "workspace:*",
+    "@ai-company/connector-framework": "workspace:*",
+    "@ai-company/ai-chief-of-staff": "workspace:*",
+    "@ai-company/connector-foodtruck-il": "workspace:*",
+    "@ai-company/connector-lab-os": "workspace:*",
+    "@ai-company/connector-inventory-engine": "workspace:*",
+    "@ai-company/connector-whatsapp-engine": "workspace:*",
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.6.3"
+  }
+}
