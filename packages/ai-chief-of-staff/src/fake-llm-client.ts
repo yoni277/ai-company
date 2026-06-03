@@ -1,6 +1,6 @@
 import type { ChiefOfStaffOutput, CompanyContext, ReportType } from '@ai-company/shared-types';
-import type { LlmClient } from './llm-client.js';
-import { rollupCompanyHealth } from './analyzers/health.js';
+import type { LlmClient } from './llm-client';
+import { rollupCompanyHealth } from './analyzers/health';
 
 /**
  * Deterministic LLM stand-in for demo + tests. Builds a plausible briefing

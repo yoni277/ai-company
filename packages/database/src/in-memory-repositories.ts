@@ -18,7 +18,7 @@ import type {
   ProjectRepository,
   Repositories,
   RiskRepository,
-} from './repositories.js';
+} from './repositories';
 
 /**
  * Singleton in-memory store. Survives within a single Node process

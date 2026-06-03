@@ -13,7 +13,8 @@
     "test": "echo 'no-op'"
   },
   "dependencies": {
-    "@ai-company/shared-types": "workspace:*"
+    "@ai-company/shared-types": "workspace:*",
+    "@supabase/supabase-js": "^2.45.4"
   },
   "devDependencies": { "typescript": "^5.6.3" }
 }

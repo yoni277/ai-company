@@ -6,7 +6,7 @@
  *   pnpm chief:briefing
  */
 import { createRepositories } from '@ai-company/database';
-import { buildDefaultChiefOfStaff, runBriefing } from '../executive.js';
+import { buildDefaultChiefOfStaff, runBriefing } from '../executive';
 
 async function main() {
   const repos = createRepositories({ dataMode: 'mock' });

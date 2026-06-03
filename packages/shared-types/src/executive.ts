@@ -1,8 +1,8 @@
-import type { Project, ProjectHealth } from './projects.js';
-import type { ProjectMetric } from './metrics.js';
-import type { Risk } from './risks.js';
-import type { Opportunity } from './opportunities.js';
-import type { ReportType } from './reports.js';
+import type { Project, ProjectHealth } from './projects';
+import type { ProjectMetric } from './metrics';
+import type { Risk } from './risks';
+import type { Opportunity } from './opportunities';
+import type { ReportType } from './reports';
 
 /**
  * Cross-project, normalized view that every executive consumes as input.

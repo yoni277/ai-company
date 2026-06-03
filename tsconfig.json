@@ -6,6 +6,11 @@
     { "path": "./packages/database" },
     { "path": "./packages/connector-framework" },
     { "path": "./packages/ai-chief-of-staff" },
+    { "path": "./packages/ai-cto" },
+    { "path": "./packages/ai-vp-marketing" },
+    { "path": "./packages/ai-cfo" },
+    { "path": "./packages/ai-coo" },
+    { "path": "./packages/ai-vp-sales" },
     { "path": "./apps/executive-dashboard" }
   ]
 }

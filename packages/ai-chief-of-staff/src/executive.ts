@@ -6,9 +6,10 @@ import type {
   ReportType,
 } from '@ai-company/shared-types';
 import type { Repositories } from '@ai-company/database';
-import { buildCompanyContext } from './context.js';
-import { FakeLlmClient } from './fake-llm-client.js';
-import { OpenAiLlmClient, type LlmClient } from './llm-client.js';
+import { buildCompanyContext } from './context';
+import { FakeLlmClient } from './fake-llm-client';
+import { OpenAiLlmClient, type LlmClient } from './llm-client';
+import { AnthropicLlmClient } from './anthropic-llm-client';
 
 export const CHIEF_OF_STAFF_ID = 'chief-of-staff';
 
@@ -107,13 +108,23 @@ export async function runBriefing(
 /**
  * Build the default Chief of Staff for the current env.
  *
- * If `OPENAI_API_KEY` is present, uses OpenAI; otherwise falls back to FakeLlmClient
- * so demos and tests run without keys.
+ * Provider precedence:
+ *   1. ANTHROPIC_API_KEY     → Claude via tool-use (preferred, default model: claude-sonnet-4-6)
+ *   2. OPENAI_API_KEY        → OpenAI via JSON response_format
+ *   3. neither               → deterministic FakeLlmClient (demos + tests)
+ *
+ * Override the model per provider via ANTHROPIC_MODEL / OPENAI_MODEL.
  */
 export function buildDefaultChiefOfStaff(): ChiefOfStaff {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (apiKey) {
-    const config: { apiKey: string; model?: string } = { apiKey };
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (anthropicKey) {
+    const config: { apiKey: string; model?: string } = { apiKey: anthropicKey };
+    if (process.env.ANTHROPIC_MODEL) config.model = process.env.ANTHROPIC_MODEL;
+    return new ChiefOfStaff({ llm: new AnthropicLlmClient(config) });
+  }
+  const openAiKey = process.env.OPENAI_API_KEY;
+  if (openAiKey) {
+    const config: { apiKey: string; model?: string } = { apiKey: openAiKey };
     if (process.env.OPENAI_MODEL) config.model = process.env.OPENAI_MODEL;
     return new ChiefOfStaff({ llm: new OpenAiLlmClient(config) });
   }

@@ -19,6 +19,16 @@ Treat this codebase as the operating system for all businesses owned by the CEO.
 | Schema | `supabase/migrations` | SQL migrations for the platform schema |
 | Design | `docs/` | Architecture, design doc, schema, contracts, roadmap |
 
+## Finishing the milestone commits
+
+The foundation commit (`Phase 1 milestone 1/5`) is already in the repo. The remaining four commits could not be completed during scaffolding due to a sandbox filesystem permission quirk that left `.git/index.lock` undeletable. Run this once locally to land the rest:
+
+```bash
+bash scripts/commit-milestones.sh
+```
+
+Result: five clean milestone commits on `main`.
+
 ## Quick start (mock mode)
 
 ```bash

@@ -1,6 +1,6 @@
 import type { CompanyContext } from '@ai-company/shared-types';
 import type { Repositories } from '@ai-company/database';
-import { rollupCompanyHealth, hoursSince } from './analyzers/health.js';
+import { rollupCompanyHealth, hoursSince } from './analyzers/health';
 
 /**
  * Build the cross-project context every executive consumes as input.

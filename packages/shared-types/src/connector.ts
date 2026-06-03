@@ -1,7 +1,7 @@
-import type { ProjectStatusSnapshot } from './projects.js';
-import type { MetricInput } from './metrics.js';
-import type { RiskCandidate } from './risks.js';
-import type { OpportunityCandidate } from './opportunities.js';
+import type { ProjectStatusSnapshot } from './projects';
+import type { MetricInput } from './metrics';
+import type { RiskCandidate } from './risks';
+import type { OpportunityCandidate } from './opportunities';
 
 export interface ConnectorHealth {
   status: 'ok' | 'degraded' | 'error';

@@ -1,7 +1,7 @@
 import type { DataConnector } from '@ai-company/shared-types';
 import type { Repositories } from '@ai-company/database';
-import { ConnectorError, ConnectorTimeoutError } from './errors.js';
-import type { ConnectorRegistry } from './registry.js';
+import { ConnectorError, ConnectorTimeoutError } from './errors';
+import type { ConnectorRegistry } from './registry';
 
 export interface SyncOptions {
   connectorNames?: string[];

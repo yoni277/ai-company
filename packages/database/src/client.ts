@@ -1,6 +1,6 @@
-import type { Repositories } from './repositories.js';
-import { InMemoryRepositories } from './in-memory-repositories.js';
-import { createSupabaseRepositories } from './supabase-repositories.js';
+import type { Repositories } from './repositories';
+import { InMemoryRepositories } from './in-memory-repositories';
+import { createSupabaseRepositories } from './supabase-repositories';
 
 export type DataMode = 'mock' | 'supabase';
 
@@ -8,6 +8,8 @@ export interface PlatformEnv {
   dataMode: DataMode;
   supabaseUrl?: string;
   supabaseServiceRoleKey?: string;
+  /** PostgREST schema. Defaults to `ai_company`. Override with SUPABASE_SCHEMA. */
+  supabaseSchema?: string;
 }
 
 /**
@@ -26,6 +28,7 @@ export function createRepositories(env: PlatformEnv): Repositories {
     return createSupabaseRepositories({
       url: env.supabaseUrl,
       serviceRoleKey: env.supabaseServiceRoleKey,
+      ...(env.supabaseSchema ? { schema: env.supabaseSchema } : {}),
     });
   }
   return new InMemoryRepositories();
@@ -41,5 +44,6 @@ export function envFromProcessEnv(): PlatformEnv {
     ...(process.env.SUPABASE_SERVICE_ROLE_KEY
       ? { supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY }
       : {}),
+    ...(process.env.SUPABASE_SCHEMA ? { supabaseSchema: process.env.SUPABASE_SCHEMA } : {}),
   };
 }

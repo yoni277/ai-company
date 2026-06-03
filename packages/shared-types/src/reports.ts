@@ -1,6 +1,6 @@
-import type { ProjectHealth } from './projects.js';
-import type { RiskSeverity } from './risks.js';
-import type { OpportunityPriority } from './opportunities.js';
+import type { ProjectHealth } from './projects';
+import type { RiskSeverity } from './risks';
+import type { OpportunityPriority } from './opportunities';
 
 export type ReportType = 'daily_briefing' | 'weekly_report' | 'ad_hoc';
 

@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import type { ChiefOfStaffOutput, CompanyContext, ReportType } from '@ai-company/shared-types';
-import { dailyBriefingPrompt } from './prompts/daily-briefing.js';
-import { weeklyReportPrompt } from './prompts/weekly-report.js';
+import { dailyBriefingPrompt } from './prompts/daily-briefing';
+import { weeklyReportPrompt } from './prompts/weekly-report';
 
 export interface LlmClient {
   generate(ctx: CompanyContext, reportType: ReportType): Promise<ChiefOfStaffOutput>;

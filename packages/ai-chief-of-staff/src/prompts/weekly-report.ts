@@ -1,5 +1,5 @@
 import type { CompanyContext } from '@ai-company/shared-types';
-import { chiefOfStaffOutputSchemaText } from './schema.js';
+import { chiefOfStaffOutputSchemaText } from './schema';
 
 export function weeklyReportPrompt(ctx: CompanyContext): string {
   return [

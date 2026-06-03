@@ -26,7 +26,17 @@
       "@ai-company/connector-framework": ["packages/connector-framework/src"],
       "@ai-company/connector-framework/*": ["packages/connector-framework/src/*"],
       "@ai-company/ai-chief-of-staff": ["packages/ai-chief-of-staff/src"],
-      "@ai-company/ai-chief-of-staff/*": ["packages/ai-chief-of-staff/src/*"]
+      "@ai-company/ai-chief-of-staff/*": ["packages/ai-chief-of-staff/src/*"],
+      "@ai-company/ai-cto": ["packages/ai-cto/src"],
+      "@ai-company/ai-cto/*": ["packages/ai-cto/src/*"],
+      "@ai-company/ai-vp-marketing": ["packages/ai-vp-marketing/src"],
+      "@ai-company/ai-vp-marketing/*": ["packages/ai-vp-marketing/src/*"],
+      "@ai-company/ai-cfo": ["packages/ai-cfo/src"],
+      "@ai-company/ai-cfo/*": ["packages/ai-cfo/src/*"],
+      "@ai-company/ai-coo": ["packages/ai-coo/src"],
+      "@ai-company/ai-coo/*": ["packages/ai-coo/src/*"],
+      "@ai-company/ai-vp-sales": ["packages/ai-vp-sales/src"],
+      "@ai-company/ai-vp-sales/*": ["packages/ai-vp-sales/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", ".next"]
