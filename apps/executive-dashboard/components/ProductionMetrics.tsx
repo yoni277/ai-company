@@ -108,6 +108,16 @@ export function ProductionMetricsPanel({
             <div className="text-xs text-slate-500 mb-1">Owner acquisition summary</div>
             <p className="text-sm text-slate-200">{dailyBrief.ownerAcquisitionSummary}</p>
           </div>
+          {dailyBrief.funnelSummaries.length > 0 ? (
+            <div className="mb-4">
+              <div className="text-xs text-slate-500 mb-1">Funnel summary</div>
+              <ul className="text-sm text-slate-200 space-y-1">
+                {dailyBrief.funnelSummaries.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <div className="grid md:grid-cols-3 gap-4 text-sm">
             <div>
               <div className="text-xs text-slate-500 mb-2">Top risks</div>

@@ -29,6 +29,7 @@ const nextConfig = {
     '@ai-company/connector-github',
     '@ai-company/connector-supabase',
     '@ai-company/connector-foodtruck-business',
+    '@ai-company/business-funnel-engine',
     '@ai-company/health-score',
   ],
 };
