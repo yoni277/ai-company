@@ -9,9 +9,13 @@
     "noEmit": true,
     "incremental": true,
     "plugins": [{ "name": "next" }],
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@active-instance/*": ["../../instances/yoni-company/*"],
+      "@active-instance/instance-seed": ["../../instances/yoni-company/instance-seed.ts"],
+      "@active-instance/instance-connectors": [
+        "../../instances/yoni-company/instance-connectors.ts"
+      ],
       "@ai-company/shared-types": ["../../packages/shared-types/src"],
       "@ai-company/database": ["../../packages/database/src"],
       "@ai-company/connector-framework": ["../../packages/connector-framework/src"],
@@ -21,7 +25,11 @@
       "@ai-company/ai-cfo": ["../../packages/ai-cfo/src"],
       "@ai-company/ai-coo": ["../../packages/ai-coo/src"],
       "@ai-company/ai-vp-sales": ["../../packages/ai-vp-sales/src"],
-      "@ai-company/ai-executive-team": ["../../packages/ai-executive-team/src"]
+      "@ai-company/ai-executive-team": ["../../packages/ai-executive-team/src"],
+      "@ai-company/connector-foodtruck-il": ["../../connectors/foodtruck-il/src"],
+      "@ai-company/connector-lab-os": ["../../connectors/lab-os/src"],
+      "@ai-company/connector-inventory-engine": ["../../connectors/inventory-engine/src"],
+      "@ai-company/connector-whatsapp-engine": ["../../connectors/whatsapp-engine/src"]
     }
   },
   "include": [

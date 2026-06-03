@@ -13,6 +13,7 @@ import { INSTANCE_PROJECTS_SEED } from '@active-instance/instance-seed';
 import {
   ConnectorRegistry,
   SyncOrchestrator,
+  type DataConnector,
 } from '@ai-company/connector-framework';
 import {
   ChiefOfStaff,
@@ -89,7 +90,7 @@ export function getPlatform(): Platform {
   // which is slug-agnostic.
   const all = buildInstanceConnectors(process.env);
   registry.registerMany(
-    active.length === 0 ? all : all.filter((c) => active.includes(c.name)),
+    active.length === 0 ? all : all.filter((c: DataConnector) => active.includes(c.name)),
   );
 
   const orchestrator = new SyncOrchestrator(registry, repos);

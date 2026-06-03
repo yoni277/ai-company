@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, '../..');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -10,7 +11,14 @@ const nextConfig = {
   typedRoutes: true,
   // Pin the workspace root so Next stops guessing at ~/package-lock.json.
   turbopack: {
-    root: path.resolve(__dirname, '../..'),
+    root: repoRoot,
+    // Instance files live outside apps/executive-dashboard. Turbopack requires
+    // repo-relative paths here (absolute paths break with "server relative imports").
+    resolveAlias: {
+      '@active-instance/instance-seed': '../../instances/yoni-company/instance-seed.ts',
+      '@active-instance/instance-connectors':
+        '../../instances/yoni-company/instance-connectors.ts',
+    },
   },
   transpilePackages: [
     '@ai-company/shared-types',
@@ -22,6 +30,7 @@ const nextConfig = {
     '@ai-company/ai-cfo',
     '@ai-company/ai-coo',
     '@ai-company/ai-vp-sales',
+    '@ai-company/ai-executive-team',
     '@ai-company/connector-foodtruck-il',
     '@ai-company/connector-lab-os',
     '@ai-company/connector-inventory-engine',

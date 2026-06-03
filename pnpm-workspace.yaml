@@ -1,5 +1,6 @@
 packages:
   - "apps/*"
+  - "instances/*"
   - "packages/*"
   - "packages/connectors/*"
   - "packages/services/*"
