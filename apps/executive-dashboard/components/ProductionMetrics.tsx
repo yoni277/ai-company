@@ -118,6 +118,16 @@ export function ProductionMetricsPanel({
               </ul>
             </div>
           ) : null}
+          {dailyBrief.recommendedActions.length > 0 ? (
+            <div className="mb-4">
+              <div className="text-xs text-slate-500 mb-1">Recommended actions</div>
+              <ul className="text-sm text-slate-200 space-y-1">
+                {dailyBrief.recommendedActions.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <div className="grid md:grid-cols-3 gap-4 text-sm">
             <div>
               <div className="text-xs text-slate-500 mb-2">Top risks</div>
