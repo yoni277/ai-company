@@ -8,7 +8,12 @@ import { loadRegistryFromSupabase } from './supabase-store';
 import { validateProjectRegistry } from './validate';
 
 export { validateProjectRegistry } from './validate';
-export { buildInMemoryRegistrySeed } from './seed-data';
+export {
+  buildInMemoryRegistrySeed,
+  registerInstanceRegistrySeed,
+  __resetInstanceRegistrySeed,
+  type InstanceRegistrySeedBuilder,
+} from './seed-data';
 
 /**
  * Project registry service — load and validate portfolio project configuration.

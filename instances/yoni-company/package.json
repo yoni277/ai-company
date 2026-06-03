@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@ai-company/database": "workspace:*",
+    "@ai-company/shared-types": "workspace:*",
     "@ai-company/connector-framework": "workspace:*",
     "@ai-company/connector-foodtruck-il": "workspace:*",
     "@ai-company/connector-lab-os": "workspace:*",

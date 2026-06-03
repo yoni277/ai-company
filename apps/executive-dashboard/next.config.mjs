@@ -18,6 +18,8 @@ const nextConfig = {
       '@active-instance/instance-seed': '../../instances/yoni-company/instance-seed.ts',
       '@active-instance/instance-connectors':
         '../../instances/yoni-company/instance-connectors.ts',
+      '@active-instance/project-registry-seed':
+        '../../instances/yoni-company/project-registry-seed.ts',
     },
   },
   transpilePackages: [

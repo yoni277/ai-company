@@ -10,6 +10,8 @@ import {
 // instance directory the operator has chosen. To clone the platform for a
 // different company, change one alias in apps/executive-dashboard/tsconfig.json.
 import { INSTANCE_PROJECTS_SEED } from '@active-instance/instance-seed';
+import { buildInstanceRegistrySeed } from '@active-instance/project-registry-seed';
+import { registerInstanceRegistrySeed } from '@ai-company/project-registry';
 import {
   ConnectorRegistry,
   SyncOrchestrator,
@@ -39,6 +41,12 @@ import {
 // connector-whatsapp-engine imports here — they belong in the instance layer.
 // See docs/architecture/GENERIC_PLATFORM_BOUNDARY.md leak L4.
 import { buildInstanceConnectors } from '@active-instance/instance-connectors';
+
+// Register the instance-layer project-registry seed at module load time, before
+// any caller invokes `ProjectRegistryService.loadProjects()`. The platform's
+// project-registry package no longer hardcodes a project list — it asks the
+// instance layer. See GENERIC_PLATFORM_BOUNDARY.md leak L8.
+registerInstanceRegistrySeed(buildInstanceRegistrySeed);
 
 export interface ExecutiveDescriptor {
   id: string;

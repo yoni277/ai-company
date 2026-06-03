@@ -16,6 +16,9 @@
       "@active-instance/instance-connectors": [
         "../../instances/yoni-company/instance-connectors.ts"
       ],
+      "@active-instance/project-registry-seed": [
+        "../../instances/yoni-company/project-registry-seed.ts"
+      ],
       "@ai-company/shared-types": ["../../packages/shared-types/src"],
       "@ai-company/database": ["../../packages/database/src"],
       "@ai-company/connector-framework": ["../../packages/connector-framework/src"],
