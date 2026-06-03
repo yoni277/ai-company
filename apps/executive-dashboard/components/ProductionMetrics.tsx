@@ -124,6 +124,16 @@ export function ProductionMetricsPanel({
               <p className="text-sm text-slate-200">{dailyBrief.portfolioSummary}</p>
             </div>
           ) : null}
+          {dailyBrief.revenueSummaries.length > 0 ? (
+            <div className="mb-4">
+              <div className="text-xs text-slate-500 mb-1">Revenue summary</div>
+              <ul className="text-sm text-slate-200 space-y-1">
+                {dailyBrief.revenueSummaries.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {dailyBrief.recommendedActions.length > 0 ? (
             <div className="mb-4">
               <div className="text-xs text-slate-500 mb-1">Recommended actions</div>
