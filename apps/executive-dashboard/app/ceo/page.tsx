@@ -4,13 +4,20 @@ import { loadCommandCenterData } from '../../lib/command-center';
 import { CommandCenterView } from '../../components/command-center/CommandCenterView';
 import { CommandCenterGoalsRow } from '../../components/command-center/CommandCenterLayout';
 import { WeeklyGoalsWidget } from '../../components/command-center/WeeklyGoalsWidget';
+import { CeoOperatingSystemPanels } from '../../components/command-center/CeoOperatingSystemPanels';
+import { listActiveDirectives, listDecisions } from '../../lib/ceo-operating-system';
 
 export const dynamic = 'force-dynamic';
 
 export default async function CeoCommandCenterPage() {
   await ensureSeededMockData();
   const { repos } = getPlatform();
-  const data = await loadCommandCenterData(repos);
+  const [data, directives, decisions] = await Promise.all([
+    loadCommandCenterData(repos),
+    listActiveDirectives(),
+    listDecisions(),
+  ]);
+  const recommendedActions = data.portfolio.actionQueue?.actions ?? [];
 
   return (
     <div dir="rtl" lang="he" className="space-y-6 max-w-[90rem]">
@@ -41,6 +48,12 @@ export default async function CeoCommandCenterPage() {
       <CommandCenterGoalsRow>
         <WeeklyGoalsWidget />
       </CommandCenterGoalsRow>
+
+      <CeoOperatingSystemPanels
+        initialDirectives={directives}
+        initialDecisions={decisions}
+        recommendedActions={recommendedActions}
+      />
     </div>
   );
 }
