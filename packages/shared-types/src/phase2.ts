@@ -4,6 +4,7 @@ import type { FunnelSnapshot } from './funnel';
 import type { DecisionSupportResult } from './decision-support';
 import type { PortfolioIntelligenceSnapshot } from './project-intelligence';
 import type { PortfolioFinancialSnapshot } from './financial';
+import type { CEODecision, CEODirective } from './ceo-operating-system';
 import type { RevenueSnapshot } from './revenue';
 
 /** GitHub connector v1 — raw collection only. */
@@ -52,6 +53,10 @@ export interface DailyBrief {
   revenueSummaries: string[];
   /** Phase 5B — deterministic financial overview (no recommendations). */
   financialOverviews: string[];
+  /** Phase 5C.1 — active CEO directives (no LLM). */
+  ceoDirectives: string[];
+  /** Phase 5C.1 — approved / in-progress CEO decisions. */
+  openCeoDecisions: string[];
 }
 
 export interface DailyBriefMetricsInput {
@@ -72,6 +77,9 @@ export interface DailyBriefMetricsInput {
   revenueSnapshots?: RevenueSnapshot[];
   /** Phase 5B — portfolio financial intelligence (from revenue snapshots). */
   portfolioFinancial?: PortfolioFinancialSnapshot;
+  /** Phase 5C.1 — CEO operating system records. */
+  ceoDirectives?: CEODirective[];
+  ceoDecisions?: CEODecision[];
 }
 
 export interface PendingApproval {
