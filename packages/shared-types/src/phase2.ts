@@ -3,6 +3,7 @@ import type { FoodTruckBusinessMetrics } from './business';
 import type { FunnelSnapshot } from './funnel';
 import type { DecisionSupportResult } from './decision-support';
 import type { PortfolioIntelligenceSnapshot } from './project-intelligence';
+import type { RevenueSnapshot } from './revenue';
 
 /** GitHub connector v1 — raw collection only. */
 export interface GithubMetrics {
@@ -46,6 +47,8 @@ export interface DailyBrief {
   recommendedActions: string[];
   /** Phase 4A — deterministic portfolio priority summary. */
   portfolioSummary: string;
+  /** Phase 5A — deterministic revenue visibility (no recommendations). */
+  revenueSummaries: string[];
 }
 
 export interface DailyBriefMetricsInput {
@@ -62,6 +65,8 @@ export interface DailyBriefMetricsInput {
   portfolio?: PortfolioIntelligenceSnapshot;
   /** Phase 4A — top-project brief detail from adapter. */
   portfolioTopProjectBriefDetail?: string;
+  /** Phase 5A — pre-computed revenue snapshots. */
+  revenueSnapshots?: RevenueSnapshot[];
 }
 
 export interface PendingApproval {

@@ -17,3 +17,4 @@ export * from './funnel';
 export * from './decision-support';
 export * from './project-intelligence';
 export * from './project-registry';
+export * from './revenue';

@@ -1,5 +1,6 @@
 import type { RecommendedAction } from './decision-support';
 import type { FunnelHealth } from './funnel';
+import type { PortfolioRevenueSnapshot } from './revenue';
 
 /** Per-project rollup for portfolio views. */
 export interface ProjectHealthSnapshot {
@@ -48,6 +49,8 @@ export interface PortfolioIntelligenceSnapshot {
   projects: ProjectHealthSnapshot[];
   priorities: PortfolioPriority[];
   actionQueue: PortfolioActionQueue;
+  /** Phase 5A — revenue visibility (does not affect priority ranking). */
+  revenue: PortfolioRevenueSnapshot | null;
 }
 
 /** Input bundle per project before aggregation. */
