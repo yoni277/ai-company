@@ -15,3 +15,4 @@ export * from './phase2';
 export * from './business';
 export * from './funnel';
 export * from './decision-support';
+export * from './project-intelligence';

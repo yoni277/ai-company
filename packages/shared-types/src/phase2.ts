@@ -2,6 +2,7 @@ import type { Risk } from './risks';
 import type { FoodTruckBusinessMetrics } from './business';
 import type { FunnelSnapshot } from './funnel';
 import type { DecisionSupportResult } from './decision-support';
+import type { PortfolioIntelligenceSnapshot } from './project-intelligence';
 
 /** GitHub connector v1 — raw collection only. */
 export interface GithubMetrics {
@@ -43,6 +44,8 @@ export interface DailyBrief {
   funnelSummaries: string[];
   /** Phase 3C — deterministic recommended actions (CEO approval required). */
   recommendedActions: string[];
+  /** Phase 4A — deterministic portfolio priority summary. */
+  portfolioSummary: string;
 }
 
 export interface DailyBriefMetricsInput {
@@ -55,6 +58,10 @@ export interface DailyBriefMetricsInput {
   funnels?: FunnelSnapshot[];
   /** Phase 3C — pre-computed decision support (engine + adapters). */
   decisionSupport?: DecisionSupportResult[];
+  /** Phase 4A — aggregated multi-project intelligence. */
+  portfolio?: PortfolioIntelligenceSnapshot;
+  /** Phase 4A — top-project brief detail from adapter. */
+  portfolioTopProjectBriefDetail?: string;
 }
 
 export interface PendingApproval {
