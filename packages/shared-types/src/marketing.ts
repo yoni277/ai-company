@@ -1,7 +1,7 @@
 import type { ProjectHealth } from './projects';
 import type { RiskSeverity } from './risks';
 
-export type FunnelStage =
+export type MarketingFunnelStage =
   | 'awareness'
   | 'acquisition'
   | 'activation'
@@ -35,7 +35,7 @@ export interface VpMarketingOutput {
     health: ProjectHealth;
     summary: string;
     funnelMetrics: Array<{
-      stage: FunnelStage;
+      stage: MarketingFunnelStage;
       name: string;
       value: number;
       unit?: string;

@@ -1,5 +1,6 @@
 import type { Risk } from './risks';
 import type { FoodTruckBusinessMetrics } from './business';
+import type { FunnelSnapshot } from './funnel';
 
 /** GitHub connector v1 — raw collection only. */
 export interface GithubMetrics {
@@ -37,6 +38,8 @@ export interface DailyBrief {
   approvalsWaiting: string[];
   /** Phase 3A — deterministic owner funnel summary. */
   ownerAcquisitionSummary: string;
+  /** Phase 3B — deterministic generic funnel summaries per project. */
+  funnelSummaries: string[];
 }
 
 export interface DailyBriefMetricsInput {
@@ -45,6 +48,8 @@ export interface DailyBriefMetricsInput {
   health: HealthScore;
   pendingApprovalCount: number;
   foodTruck?: FoodTruckBusinessMetrics;
+  /** Phase 3B — pre-computed funnel snapshots (engine output). */
+  funnels?: FunnelSnapshot[];
 }
 
 export interface PendingApproval {

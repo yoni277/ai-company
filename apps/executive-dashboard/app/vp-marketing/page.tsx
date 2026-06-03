@@ -11,7 +11,7 @@ import {
 } from '../../lib/format';
 import { VP_MARKETING_ID } from '@ai-company/ai-vp-marketing';
 import type {
-  FunnelStage,
+  MarketingFunnelStage,
   MarketingChannel,
   CampaignPriority,
   VpMarketingOutput,
@@ -19,7 +19,7 @@ import type {
 
 export const dynamic = 'force-dynamic';
 
-const STAGE_COLOR: Record<FunnelStage, string> = {
+const STAGE_COLOR: Record<MarketingFunnelStage, string> = {
   awareness: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
   acquisition: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
   activation: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',

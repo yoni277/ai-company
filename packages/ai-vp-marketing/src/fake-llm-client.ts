@@ -1,6 +1,6 @@
 import type {
   CompanyContext,
-  FunnelStage,
+  MarketingFunnelStage,
   MarketingChannel,
   ReportType,
   VpMarketingOutput,
@@ -8,7 +8,7 @@ import type {
 import type { VpMarketingLlmClient } from './llm-client';
 
 /** Heuristic — map a metric name to a funnel stage based on keywords. */
-function stageFor(name: string): FunnelStage {
+function stageFor(name: string): MarketingFunnelStage {
   const n = name.toLowerCase();
   if (/(impression|reach|view|awareness)/.test(n)) return 'awareness';
   if (/(signup|install|new[_-]?user|acquisition|truck|lab|consumer)/.test(n)) return 'acquisition';
