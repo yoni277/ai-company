@@ -38,6 +38,7 @@
     "@ai-company/revenue-intelligence-engine": "workspace:*",
     "@ai-company/financial-intelligence-engine": "workspace:*",
     "@ai-company/connector-revenue": "workspace:*",
+    "@supabase/supabase-js": "^2.45.4",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

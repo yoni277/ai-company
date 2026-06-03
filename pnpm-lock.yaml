@@ -98,6 +98,9 @@ importers:
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
+      '@supabase/supabase-js':
+        specifier: ^2.45.4
+        version: 2.107.0
       next:
         specifier: ^16.0.0
         version: 16.2.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
