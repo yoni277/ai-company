@@ -80,6 +80,9 @@ importers:
       '@ai-company/decision-support-engine':
         specifier: workspace:*
         version: link:../../packages/decision-support-engine
+      '@ai-company/financial-intelligence-engine':
+        specifier: workspace:*
+        version: link:../../packages/financial-intelligence-engine
       '@ai-company/health-score':
         specifier: workspace:*
         version: link:../../packages/services/health-score
@@ -203,6 +206,9 @@ importers:
       '@ai-company/decision-support-engine':
         specifier: workspace:*
         version: link:../decision-support-engine
+      '@ai-company/financial-intelligence-engine':
+        specifier: workspace:*
+        version: link:../financial-intelligence-engine
       '@ai-company/portfolio-intelligence-engine':
         specifier: workspace:*
         version: link:../portfolio-intelligence-engine
@@ -402,6 +408,9 @@ importers:
       '@ai-company/decision-support-engine':
         specifier: workspace:*
         version: link:../../decision-support-engine
+      '@ai-company/financial-intelligence-engine':
+        specifier: workspace:*
+        version: link:../../financial-intelligence-engine
       '@ai-company/portfolio-intelligence-engine':
         specifier: workspace:*
         version: link:../../portfolio-intelligence-engine
@@ -466,6 +475,19 @@ importers:
 
   packages/decision-support-engine:
     dependencies:
+      '@ai-company/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
+  packages/financial-intelligence-engine:
+    dependencies:
+      '@ai-company/revenue-intelligence-engine':
+        specifier: workspace:*
+        version: link:../revenue-intelligence-engine
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../shared-types
