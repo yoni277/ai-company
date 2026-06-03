@@ -1,4 +1,5 @@
 import type { Risk } from './risks';
+import type { FoodTruckBusinessMetrics } from './business';
 
 /** GitHub connector v1 — raw collection only. */
 export interface GithubMetrics {
@@ -34,6 +35,8 @@ export interface DailyBrief {
   topRisks: string[];
   opportunities: string[];
   approvalsWaiting: string[];
+  /** Phase 3A — deterministic owner funnel summary. */
+  ownerAcquisitionSummary: string;
 }
 
 export interface DailyBriefMetricsInput {
@@ -41,6 +44,7 @@ export interface DailyBriefMetricsInput {
   supabase: SupabaseMetrics;
   health: HealthScore;
   pendingApprovalCount: number;
+  foodTruck?: FoodTruckBusinessMetrics;
 }
 
 export interface PendingApproval {

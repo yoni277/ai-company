@@ -12,3 +12,4 @@ export * from './operations';
 export * from './sales';
 export * from './executive-team';
 export * from './phase2';
+export * from './business';
