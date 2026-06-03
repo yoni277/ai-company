@@ -2,9 +2,9 @@ import Link from 'next/link';
 import { ensureSeededMockData, getPlatform } from '../lib/platform';
 import { loadPhase2Snapshot } from '../lib/phase2-metrics';
 import { loadFoodTruckBusinessMetrics } from '../lib/owner-acquisition';
-import { loadFunnelSnapshots } from '../lib/funnel-intelligence';
-import { loadDecisionSupportResults } from '../lib/decision-support';
+import { loadPortfolioIntelligenceForDashboard } from '../lib/portfolio-intelligence';
 import { OwnerAcquisitionPanel } from '../components/OwnerAcquisitionPanel';
+import { PortfolioOverviewPanel } from '../components/PortfolioOverviewPanel';
 import { FunnelIntelligencePanel } from '../components/FunnelIntelligencePanel';
 import { CeoActionQueuePanel } from '../components/CeoActionQueuePanel';
 import { deterministicDailyBrief } from '@ai-company/ai-chief-of-staff';
@@ -27,7 +27,7 @@ export default async function OverviewPage() {
   await ensureSeededMockData();
   const { repos } = getPlatform();
 
-  const [projects, openRisks, opportunities, latestBriefing, phase2, foodTruck, funnels, decisionSupport] =
+  const [projects, openRisks, opportunities, latestBriefing, phase2, foodTruck, portfolioLoad] =
     await Promise.all([
       repos.projects.list(),
       repos.risks.listOpen(),
@@ -35,9 +35,11 @@ export default async function OverviewPage() {
       repos.reports.latest(CHIEF_OF_STAFF_ID, 'daily_briefing'),
       loadPhase2Snapshot(repos),
       loadFoodTruckBusinessMetrics(),
-      loadFunnelSnapshots(),
-      loadDecisionSupportResults(),
+      loadPortfolioIntelligenceForDashboard(),
     ]);
+
+  const { portfolio, funnels, decisionSupport, bundles } = portfolioLoad;
+  const topBundle = bundles.find((b) => b.projectId === portfolio.priorities[0]?.projectId);
 
   const dailyBrief = deterministicDailyBrief({
     github: phase2.github,
@@ -47,6 +49,10 @@ export default async function OverviewPage() {
     foodTruck: foodTruck.metrics,
     funnels,
     decisionSupport,
+    portfolio,
+    ...(topBundle?.briefDetail !== undefined
+      ? { portfolioTopProjectBriefDetail: topBundle.briefDetail }
+      : {}),
   });
 
   const live = projects.filter((p) => p.status !== 'archived' && p.status !== 'paused');
@@ -72,6 +78,8 @@ export default async function OverviewPage() {
       </header>
 
       <ProductionMetricsClient snapshot={phase2} initialBrief={dailyBrief} />
+
+      <PortfolioOverviewPanel portfolio={portfolio} />
 
       <OwnerAcquisitionPanel metrics={foodTruck.metrics} />
 

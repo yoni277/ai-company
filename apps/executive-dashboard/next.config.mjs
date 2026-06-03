@@ -31,6 +31,8 @@ const nextConfig = {
     '@ai-company/connector-foodtruck-business',
     '@ai-company/business-funnel-engine',
     '@ai-company/decision-support-engine',
+    '@ai-company/portfolio-intelligence-engine',
+    '@ai-company/connector-portfolio-intelligence',
     '@ai-company/health-score',
   ],
 };

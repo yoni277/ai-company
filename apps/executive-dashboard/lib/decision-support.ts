@@ -1,9 +1,8 @@
 import 'server-only';
-import { foodtruckBusinessConnectorFromEnv } from '@ai-company/connector-foodtruck-business';
+import { loadPortfolioIntelligenceForDashboard } from './portfolio-intelligence';
 import type { DecisionSupportResult } from '@ai-company/shared-types';
 
 export async function loadDecisionSupportResults(): Promise<DecisionSupportResult[]> {
-  const conn = foodtruckBusinessConnectorFromEnv();
-  const result = await conn.fetchDecisionSupport();
-  return [result];
+  const { decisionSupport } = await loadPortfolioIntelligenceForDashboard();
+  return decisionSupport;
 }
