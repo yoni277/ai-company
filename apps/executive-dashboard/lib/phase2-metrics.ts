@@ -70,6 +70,10 @@ export async function loadDailyCeoBrief(repos: Repositories): Promise<DailyBrief
     supabase: snapshot.supabase,
     health: snapshot.health,
     pendingApprovalCount: snapshot.pendingApprovals.length,
+    // Generic — the Chief of Staff reads only this. `foodTruck` is kept
+    // alongside for instance-layer consumers (panels, registry) while the
+    // deprecated field is migrated out per the L1 refactor.
+    acquisitionSummary: foodTruck.acquisitionSummary,
     foodTruck: foodTruck.metrics,
     funnels: portfolioLoad.funnels,
     decisionSupport: portfolioLoad.decisionSupport,

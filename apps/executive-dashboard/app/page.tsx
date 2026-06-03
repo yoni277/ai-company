@@ -51,6 +51,10 @@ export default async function OverviewPage() {
     supabase: phase2.supabase,
     health: phase2.health,
     pendingApprovalCount: phase2.pendingApprovals.length,
+    // Chief of Staff reads only `acquisitionSummary`; `foodTruck` is kept
+    // for the rest of the instance dashboard panels until the deprecated
+    // field is fully migrated out (see GENERIC_PLATFORM_REFACTOR_PLAN.md L1).
+    acquisitionSummary: foodTruck.acquisitionSummary,
     foodTruck: foodTruck.metrics,
     funnels,
     decisionSupport,

@@ -29,6 +29,23 @@ export interface HealthScore {
   level: 'green' | 'yellow' | 'red';
 }
 
+/**
+ * Generic acquisition-funnel summary produced by an instance-layer adapter
+ * (e.g. the FoodTruck-IL connector, or any other "register new producers"
+ * pipeline). Passed into the Chief of Staff so it can render and explain
+ * the numbers without knowing what the underlying business actually is.
+ *
+ * Both fields are required when the field is present — `promptLine` is the
+ * compact fact-packed line fed into the LLM, `fallbackSummary` is the
+ * deterministic string used when the LLM is unavailable or returns garbage.
+ */
+export interface AcquisitionSummary {
+  /** Compact, fact-packed line used inside the LLM prompt. */
+  promptLine: string;
+  /** Human-readable summary used as the deterministic fallback. */
+  fallbackSummary: string;
+}
+
 export interface HealthScoreInputs {
   criticalIssues: number;
   failedDeployments: number;
@@ -64,6 +81,18 @@ export interface DailyBriefMetricsInput {
   supabase: SupabaseMetrics;
   health: HealthScore;
   pendingApprovalCount: number;
+  /**
+   * Generic acquisition summary supplied by the instance layer. The Chief of
+   * Staff reads only this field; it never knows what kind of acquisition
+   * funnel produced the strings.
+   */
+  acquisitionSummary?: AcquisitionSummary;
+  /**
+   * @deprecated Instance-specific FoodTruck shape — kept for backward compat
+   * during the generic-platform refactor (see docs/architecture/GENERIC_PLATFORM_BOUNDARY.md
+   * leak L1). New code should populate `acquisitionSummary` instead. The
+   * Chief of Staff no longer reads this field.
+   */
   foodTruck?: FoodTruckBusinessMetrics;
   /** Phase 3B — pre-computed funnel snapshots (engine output). */
   funnels?: FunnelSnapshot[];

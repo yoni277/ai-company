@@ -5,7 +5,12 @@ import { formatRecommendedActionsBrief } from '@ai-company/decision-support-engi
 import { formatPortfolioSummary } from '@ai-company/portfolio-intelligence-engine';
 import { formatFinancialOverviews } from '@ai-company/financial-intelligence-engine';
 import { formatRevenueSummaries } from '@ai-company/revenue-intelligence-engine';
-import { buildOwnerAcquisitionSummary } from '@ai-company/connector-foodtruck-business';
+// NOTE: This package must remain instance-agnostic per
+// docs/architecture/GENERIC_PLATFORM_BOUNDARY.md. The owner-acquisition prompt
+// line and fallback summary are pre-computed at the instance layer (e.g. the
+// dashboard's lib/owner-acquisition.ts) and passed in via
+// DailyBriefMetricsInput.acquisitionSummary. Do not re-introduce an import
+// from any connector-foodtruck-* / connector-lab-os-* / etc. here.
 
 const EXPLAIN_ONLY_SYSTEM = `You are the AI Chief of Staff for a CEO daily brief.
 You receive pre-computed metrics. Your job is to EXPLAIN them in plain language.
@@ -125,15 +130,16 @@ function normalizeDailyBrief(
 }
 
 function ownerAcquisitionPromptLine(m: DailyBriefMetricsInput): string {
-  if (!m.foodTruck) return 'Owner acquisition: not available.';
-  const r = m.foodTruck.registry;
-  const a = m.foodTruck.acquisition;
-  return `FoodTruck: ${r.totalRegisteredTrucks} registered, ${r.approvedTrucks} approved, ${r.pendingTrucks} pending, activation ${a.activationRate}%.`;
+  // Pre-computed at the instance layer — see DailyBriefMetricsInput.acquisitionSummary.
+  // The Chief of Staff intentionally has no knowledge of what business this
+  // summary describes; it only renders the supplied strings.
+  if (m.acquisitionSummary?.promptLine) return m.acquisitionSummary.promptLine;
+  return 'Owner acquisition: not available.';
 }
 
 function ownerSummaryFromInput(m: DailyBriefMetricsInput): string {
-  if (!m.foodTruck) return 'Owner acquisition metrics not available.';
-  return buildOwnerAcquisitionSummary(m.foodTruck);
+  if (m.acquisitionSummary?.fallbackSummary) return m.acquisitionSummary.fallbackSummary;
+  return 'Owner acquisition metrics not available.';
 }
 
 function funnelPromptLines(m: DailyBriefMetricsInput): string {
