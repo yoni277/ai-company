@@ -1,0 +1,121 @@
+import type {
+  ChiefOfStaffOutput,
+  CompanyContext,
+  Executive,
+  ExecutiveReport,
+  ReportType,
+} from '@ai-company/shared-types';
+import type { Repositories } from '@ai-company/database';
+import { buildCompanyContext } from './context.js';
+import { FakeLlmClient } from './fake-llm-client.js';
+import { OpenAiLlmClient, type LlmClient } from './llm-client.js';
+
+export const CHIEF_OF_STAFF_ID = 'chief-of-staff';
+
+export interface ChiefOfStaffConfig {
+  llm: LlmClient;
+}
+
+export class ChiefOfStaff implements Executive<ChiefOfStaffOutput> {
+  readonly id = CHIEF_OF_STAFF_ID;
+  readonly displayName = 'AI Chief of Staff';
+  readonly reportTypes: ReportType[] = ['daily_briefing', 'weekly_report', 'ad_hoc'];
+
+  constructor(private readonly config: ChiefOfStaffConfig) {}
+
+  async generateReport(ctx: CompanyContext, reportType: ReportType): Promise<ChiefOfStaffOutput> {
+    return this.config.llm.generate(ctx, reportType);
+  }
+}
+
+export interface BriefingRunResult {
+  context: CompanyContext;
+  output: ChiefOfStaffOutput;
+  report: ExecutiveReport<ChiefOfStaffOutput>;
+}
+
+/**
+ * Full briefing run: collect context → call LLM → persist report + linked risks/opportunities.
+ *
+ * The Chief of Staff records new risks/opportunities it surfaces with `source: 'executive:chief-of-staff'`
+ * so the dashboard can show provenance.
+ */
+export async function runBriefing(
+  repos: Repositories,
+  chief: ChiefOfStaff,
+  reportType: ReportType,
+): Promise<BriefingRunResult> {
+  const context = await buildCompanyContext(repos);
+  const output = await chief.generateReport(context, reportType);
+
+  const projectsBySlug = new Map(context.projects.map((p) => [p.project.slug, p.project]));
+
+  // Persist newly-named risks (avoid duplicating identical descriptions for same project).
+  const existingRiskKeys = new Set(
+    context.projects.flatMap((p) =>
+      p.openRisks.map((r) => `${p.project.id}|${r.description.toLowerCase()}`),
+    ),
+  );
+  const newRisks = output.topRisks
+    .map((r) => {
+      const project = projectsBySlug.get(r.projectSlug);
+      if (!project) return null;
+      const key = `${project.id}|${r.description.toLowerCase()}`;
+      if (existingRiskKeys.has(key)) return null;
+      return {
+        projectId: project.id,
+        severity: r.severity,
+        description: r.description,
+        source: `executive:${CHIEF_OF_STAFF_ID}`,
+        status: 'open' as const,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+  if (newRisks.length > 0) await repos.risks.createMany(newRisks);
+
+  const existingOppKeys = new Set(
+    context.projects.flatMap((p) =>
+      p.openOpportunities.map((o) => `${p.project.id}|${o.description.toLowerCase()}`),
+    ),
+  );
+  const newOpps = output.topOpportunities
+    .map((o) => {
+      const project = projectsBySlug.get(o.projectSlug);
+      if (!project) return null;
+      const key = `${project.id}|${o.description.toLowerCase()}`;
+      if (existingOppKeys.has(key)) return null;
+      return {
+        projectId: project.id,
+        priority: o.priority,
+        description: o.description,
+        source: `executive:${CHIEF_OF_STAFF_ID}`,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+  if (newOpps.length > 0) await repos.opportunities.createMany(newOpps);
+
+  const report = (await repos.reports.create({
+    executiveId: CHIEF_OF_STAFF_ID,
+    reportType,
+    summary: output.headline,
+    body: output,
+  })) as ExecutiveReport<ChiefOfStaffOutput>;
+
+  return { context, output, report };
+}
+
+/**
+ * Build the default Chief of Staff for the current env.
+ *
+ * If `OPENAI_API_KEY` is present, uses OpenAI; otherwise falls back to FakeLlmClient
+ * so demos and tests run without keys.
+ */
+export function buildDefaultChiefOfStaff(): ChiefOfStaff {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (apiKey) {
+    const config: { apiKey: string; model?: string } = { apiKey };
+    if (process.env.OPENAI_MODEL) config.model = process.env.OPENAI_MODEL;
+    return new ChiefOfStaff({ llm: new OpenAiLlmClient(config) });
+  }
+  return new ChiefOfStaff({ llm: new FakeLlmClient() });
+}
