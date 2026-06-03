@@ -41,6 +41,9 @@ importers:
       '@ai-company/ai-vp-sales':
         specifier: workspace:*
         version: link:../../packages/ai-vp-sales
+      '@ai-company/connector-foodtruck-business':
+        specifier: workspace:*
+        version: link:../../packages/connectors/foodtruck-business
       '@ai-company/connector-foodtruck-il':
         specifier: workspace:*
         version: link:../../connectors/foodtruck-il
@@ -167,6 +170,9 @@ importers:
 
   packages/ai-chief-of-staff:
     dependencies:
+      '@ai-company/connector-foodtruck-business':
+        specifier: workspace:*
+        version: link:../connectors/foodtruck-business
       '@ai-company/database':
         specifier: workspace:*
         version: link:../database
@@ -305,6 +311,19 @@ importers:
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
+  packages/connectors/foodtruck-business:
+    dependencies:
+      '@ai-company/shared-types':
+        specifier: workspace:*
+        version: link:../../shared-types
+      '@supabase/supabase-js':
+        specifier: ^2.47.10
+        version: 2.107.0
     devDependencies:
       typescript:
         specifier: ^5.6.3
