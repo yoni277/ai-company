@@ -47,21 +47,12 @@ importers:
       '@ai-company/connector-foodtruck-business':
         specifier: workspace:*
         version: link:../../packages/connectors/foodtruck-business
-      '@ai-company/connector-foodtruck-il':
-        specifier: workspace:*
-        version: link:../../connectors/foodtruck-il
       '@ai-company/connector-framework':
         specifier: workspace:*
         version: link:../../packages/connector-framework
       '@ai-company/connector-github':
         specifier: workspace:*
         version: link:../../packages/connectors/github
-      '@ai-company/connector-inventory-engine':
-        specifier: workspace:*
-        version: link:../../connectors/inventory-engine
-      '@ai-company/connector-lab-os':
-        specifier: workspace:*
-        version: link:../../connectors/lab-os
       '@ai-company/connector-portfolio-intelligence':
         specifier: workspace:*
         version: link:../../packages/connectors/portfolio-intelligence
@@ -71,9 +62,6 @@ importers:
       '@ai-company/connector-supabase':
         specifier: workspace:*
         version: link:../../packages/connectors/supabase
-      '@ai-company/connector-whatsapp-engine':
-        specifier: workspace:*
-        version: link:../../connectors/whatsapp-engine
       '@ai-company/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -193,6 +181,9 @@ importers:
       '@ai-company/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@ai-company/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
 
   packages/ai-cfo:
     dependencies:

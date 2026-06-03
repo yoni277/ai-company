@@ -8,7 +8,7 @@
     "dev": "pnpm -C apps/executive-dashboard dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "corepack pnpm -r typecheck",
     "test": "pnpm -r test",
     "clean": "pnpm -r exec rm -rf node_modules .next dist",
     "chief:briefing": "pnpm -C packages/ai-chief-of-staff run cli:briefing"
