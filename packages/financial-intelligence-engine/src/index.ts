@@ -3,6 +3,10 @@ import type {
   PortfolioFinancialSnapshot,
 } from '@ai-company/shared-types';
 
+export {
+  buildFinancialIntelligenceFromRevenueSnapshots,
+  revenueSnapshotToFinancialSnapshot,
+} from './from-revenue';
 export { computeFinancialTrend } from './trend';
 export { aggregatePortfolioFinancial } from './aggregate';
 
