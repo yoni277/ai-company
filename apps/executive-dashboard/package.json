@@ -36,6 +36,7 @@
     "@ai-company/connector-portfolio-intelligence": "workspace:*",
     "@ai-company/project-registry": "workspace:*",
     "@ai-company/revenue-intelligence-engine": "workspace:*",
+    "@ai-company/financial-intelligence-engine": "workspace:*",
     "@ai-company/connector-revenue": "workspace:*",
     "next": "^16.0.0",
     "react": "^19.0.0",
