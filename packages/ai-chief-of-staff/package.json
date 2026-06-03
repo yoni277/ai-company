@@ -18,6 +18,7 @@
   "dependencies": {
     "@ai-company/shared-types": "workspace:*",
     "@ai-company/database": "workspace:*",
+    "@ai-company/business-funnel-engine": "workspace:*",
     "@ai-company/connector-foodtruck-business": "workspace:*",
     "@anthropic-ai/sdk": "^0.39.0",
     "openai": "^4.67.3"

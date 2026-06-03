@@ -1,11 +1,12 @@
 import OpenAI from 'openai';
 import type { DailyBrief, DailyBriefMetricsInput } from '@ai-company/shared-types';
+import { formatFunnelSummary } from '@ai-company/business-funnel-engine';
 import { buildOwnerAcquisitionSummary } from '@ai-company/connector-foodtruck-business';
 
 const EXPLAIN_ONLY_SYSTEM = `You are the AI Chief of Staff for a CEO daily brief.
 You receive pre-computed metrics. Your job is to EXPLAIN them in plain language.
 You must NOT invent, recalculate, or contradict the numbers provided.
-Return JSON with keys: companyHealth (string), ownerAcquisitionSummary (string), topRisks (string[]), opportunities (string[]), approvalsWaiting (string[]).`;
+Return JSON with keys: companyHealth (string), ownerAcquisitionSummary (string), funnelSummaries (string[]), topRisks (string[]), opportunities (string[]), approvalsWaiting (string[]).`;
 
 /**
  * Generate a CEO daily brief from pre-computed metrics.
@@ -59,8 +60,9 @@ function buildExplainPrompt(m: DailyBriefMetricsInput): string {
     `Supabase metric writes (7d): ${m.supabase.transactionCount}`,
     `Pending approvals count: ${m.pendingApprovalCount}`,
     ownerAcquisitionPromptLine(m),
+    funnelPromptLines(m),
     '',
-    'Write a CEO brief: companyHealth (1-2 sentences), ownerAcquisitionSummary (one sentence with exact truck counts), topRisks (3 bullets max), opportunities (3 max), approvalsWaiting (list items or say none).',
+    'Write a CEO brief: companyHealth (1-2 sentences), ownerAcquisitionSummary (one sentence with exact truck counts), funnelSummaries (one string per funnel, exact counts), topRisks (3 bullets max), opportunities (3 max), approvalsWaiting (list items or say none).',
   ].join('\n');
 }
 
@@ -84,7 +86,15 @@ function normalizeDailyBrief(
       typeof o.ownerAcquisitionSummary === 'string'
         ? o.ownerAcquisitionSummary
         : ownerSummaryFromInput(metrics);
-    return { companyHealth, topRisks, opportunities, approvalsWaiting, ownerAcquisitionSummary };
+    const funnelSummaries = funnelSummariesFromRaw(o.funnelSummaries, metrics);
+    return {
+      companyHealth,
+      topRisks,
+      opportunities,
+      approvalsWaiting,
+      ownerAcquisitionSummary,
+      funnelSummaries,
+    };
   }
   return deterministicDailyBrief(metrics);
 }
@@ -99,6 +109,21 @@ function ownerAcquisitionPromptLine(m: DailyBriefMetricsInput): string {
 function ownerSummaryFromInput(m: DailyBriefMetricsInput): string {
   if (!m.foodTruck) return 'Owner acquisition metrics not available.';
   return buildOwnerAcquisitionSummary(m.foodTruck);
+}
+
+function funnelPromptLines(m: DailyBriefMetricsInput): string {
+  if (!m.funnels?.length) return 'Funnel summaries: not available.';
+  return m.funnels.map((f) => formatFunnelSummary(f)).join('\n');
+}
+
+function funnelSummariesFromInput(m: DailyBriefMetricsInput): string[] {
+  if (!m.funnels?.length) return ['Funnel metrics not available.'];
+  return m.funnels.map((f) => formatFunnelSummary(f));
+}
+
+function funnelSummariesFromRaw(v: unknown, metrics: DailyBriefMetricsInput): string[] {
+  if (Array.isArray(v) && v.every((x) => typeof x === 'string')) return v as string[];
+  return funnelSummariesFromInput(metrics);
 }
 
 function stringArray(v: unknown, fallback: string[]): string[] {
@@ -139,6 +164,7 @@ export function deterministicDailyBrief(metrics: DailyBriefMetricsInput): DailyB
         ? [`${metrics.pendingApprovalCount} approval(s) need CEO attention today.`]
         : ['No pending approvals.'],
     ownerAcquisitionSummary: ownerSummaryFromInput(metrics),
+    funnelSummaries: funnelSummariesFromInput(metrics),
   };
 }
 
