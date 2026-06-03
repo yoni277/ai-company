@@ -71,6 +71,9 @@ importers:
       '@ai-company/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@ai-company/decision-support-engine':
+        specifier: workspace:*
+        version: link:../../packages/decision-support-engine
       '@ai-company/health-score':
         specifier: workspace:*
         version: link:../../packages/services/health-score
@@ -182,6 +185,9 @@ importers:
       '@ai-company/database':
         specifier: workspace:*
         version: link:../database
+      '@ai-company/decision-support-engine':
+        specifier: workspace:*
+        version: link:../decision-support-engine
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../shared-types
@@ -337,6 +343,9 @@ importers:
       '@ai-company/business-funnel-engine':
         specifier: workspace:*
         version: link:../../business-funnel-engine
+      '@ai-company/decision-support-engine':
+        specifier: workspace:*
+        version: link:../../decision-support-engine
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../../shared-types
@@ -379,6 +388,16 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.45.4
         version: 2.107.0
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
+  packages/decision-support-engine:
+    dependencies:
+      '@ai-company/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
     devDependencies:
       typescript:
         specifier: ^5.6.3

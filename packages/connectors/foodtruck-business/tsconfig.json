@@ -8,6 +8,7 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../../shared-types" },
-    { "path": "../../business-funnel-engine" }
+    { "path": "../../business-funnel-engine" },
+    { "path": "../../decision-support-engine" }
   ]
 }

@@ -1,11 +1,16 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { analyzeFunnel } from '@ai-company/business-funnel-engine';
 import type {
+  DecisionSupportResult,
   FoodTruckBusinessMetrics,
   FunnelSnapshot,
   OwnerAcquisitionMetrics,
   TruckRegistryMetrics,
 } from '@ai-company/shared-types';
+import {
+  buildFoodTruckDecisionSupport,
+  foodTruckDecisionContextFromMetrics,
+} from './decision-support-adapter';
 import {
   FOODTRUCK_FUNNEL_DEFINITION,
   foodTruckRegistryToStageCounts,
@@ -52,6 +57,14 @@ export class FoodTruckBusinessConnector {
   async fetchFunnelSnapshot(): Promise<FunnelSnapshot> {
     const metrics = await this.fetchMetrics();
     return buildFoodTruckFunnelSnapshot(metrics.registry);
+  }
+
+  /** Funnel snapshot + FoodTruck adapter → CEO recommendations (read-only). */
+  async fetchDecisionSupport(): Promise<DecisionSupportResult> {
+    const metrics = await this.fetchMetrics();
+    const snapshot = buildFoodTruckFunnelSnapshot(metrics.registry);
+    const context = foodTruckDecisionContextFromMetrics(metrics);
+    return buildFoodTruckDecisionSupport(snapshot, context);
   }
 
   private async fetchRegistry(): Promise<TruckRegistryMetrics> {
