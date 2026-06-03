@@ -1,0 +1,16 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "composite": true
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../shared-types" },
+    { "path": "../../business-funnel-engine" },
+    { "path": "../../decision-support-engine" },
+    { "path": "../../portfolio-intelligence-engine" },
+    { "path": "../foodtruck-business" }
+  ]
+}

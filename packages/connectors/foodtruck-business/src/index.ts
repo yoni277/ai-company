@@ -212,6 +212,8 @@ export function buildFoodTruckFunnelSnapshot(registry: TruckRegistryMetrics): Fu
   );
 }
 
+export { buildFoodTruckDecisionSupport, foodTruckDecisionContextFromMetrics } from './decision-support-adapter';
+
 export function buildOwnerAcquisitionSummary(metrics: FoodTruckBusinessMetrics): string {
   const r = metrics.registry;
   const a = metrics.acquisition;

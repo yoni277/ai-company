@@ -62,6 +62,9 @@ importers:
       '@ai-company/connector-lab-os':
         specifier: workspace:*
         version: link:../../connectors/lab-os
+      '@ai-company/connector-portfolio-intelligence':
+        specifier: workspace:*
+        version: link:../../packages/connectors/portfolio-intelligence
       '@ai-company/connector-supabase':
         specifier: workspace:*
         version: link:../../packages/connectors/supabase
@@ -77,6 +80,9 @@ importers:
       '@ai-company/health-score':
         specifier: workspace:*
         version: link:../../packages/services/health-score
+      '@ai-company/portfolio-intelligence-engine':
+        specifier: workspace:*
+        version: link:../../packages/portfolio-intelligence-engine
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
@@ -188,6 +194,9 @@ importers:
       '@ai-company/decision-support-engine':
         specifier: workspace:*
         version: link:../decision-support-engine
+      '@ai-company/portfolio-intelligence-engine':
+        specifier: workspace:*
+        version: link:../portfolio-intelligence-engine
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../shared-types
@@ -367,6 +376,28 @@ importers:
         specifier: ^5.6.3
         version: 5.9.3
 
+  packages/connectors/portfolio-intelligence:
+    dependencies:
+      '@ai-company/business-funnel-engine':
+        specifier: workspace:*
+        version: link:../../business-funnel-engine
+      '@ai-company/connector-foodtruck-business':
+        specifier: workspace:*
+        version: link:../foodtruck-business
+      '@ai-company/decision-support-engine':
+        specifier: workspace:*
+        version: link:../../decision-support-engine
+      '@ai-company/portfolio-intelligence-engine':
+        specifier: workspace:*
+        version: link:../../portfolio-intelligence-engine
+      '@ai-company/shared-types':
+        specifier: workspace:*
+        version: link:../../shared-types
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
   packages/connectors/supabase:
     dependencies:
       '@ai-company/shared-types':
@@ -394,6 +425,16 @@ importers:
         version: 5.9.3
 
   packages/decision-support-engine:
+    dependencies:
+      '@ai-company/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
+  packages/portfolio-intelligence-engine:
     dependencies:
       '@ai-company/shared-types':
         specifier: workspace:*
