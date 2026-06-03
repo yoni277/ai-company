@@ -1,4 +1,6 @@
 import { loadRegisteredProjects } from '@ai-company/project-registry';
+import { loadRevenueSnapshots } from '@ai-company/connector-revenue';
+import { aggregatePortfolioRevenue } from '@ai-company/revenue-intelligence-engine';
 import {
   aggregatePortfolioIntelligence,
   formatPortfolioSummary,
@@ -8,6 +10,7 @@ import type {
   FunnelSnapshot,
   PortfolioIntelligenceSnapshot,
   ProjectIntelligenceBundle,
+  RevenueSnapshot,
 } from '@ai-company/shared-types';
 import {
   buildBundleForProject,
@@ -19,6 +22,7 @@ export interface PortfolioIntelligenceLoadResult {
   funnels: FunnelSnapshot[];
   decisionSupport: DecisionSupportResult[];
   bundles: ProjectIntelligenceBundle[];
+  revenueSnapshots: RevenueSnapshot[];
 }
 
 /**
@@ -28,9 +32,13 @@ export async function loadPortfolioIntelligence(): Promise<PortfolioIntelligence
   const registered = await loadRegisteredProjects();
   const active = registered.filter((p) => p.definition.enabled && p.definition.status === 'active');
 
-  const bundles = await Promise.all(active.map((p) => buildBundleForProject(p)));
-  const funnels = await Promise.all(active.map((p) => buildFunnelSnapshotForProject(p)));
-  const portfolio = aggregatePortfolioIntelligence(bundles);
+  const [bundles, funnels, revenueSnapshots] = await Promise.all([
+    Promise.all(active.map((p) => buildBundleForProject(p))),
+    Promise.all(active.map((p) => buildFunnelSnapshotForProject(p))),
+    loadRevenueSnapshots(),
+  ]);
+  const revenue = aggregatePortfolioRevenue(revenueSnapshots);
+  const portfolio = aggregatePortfolioIntelligence(bundles, revenue);
   const decisionSupport = bundles.map((b) => ({
     projectId: b.projectId,
     projectName: b.projectName,
@@ -38,7 +46,7 @@ export async function loadPortfolioIntelligence(): Promise<PortfolioIntelligence
     generatedAt: new Date().toISOString(),
   }));
 
-  return { portfolio, funnels, decisionSupport, bundles };
+  return { portfolio, funnels, decisionSupport, bundles, revenueSnapshots };
 }
 
 export function portfolioSummaryFromLoad(result: PortfolioIntelligenceLoadResult): string {

@@ -3,6 +3,7 @@ import type {
   PortfolioHealthSnapshot,
   PortfolioIntelligenceSnapshot,
   PortfolioPriority,
+  PortfolioRevenueSnapshot,
   ProjectHealthSnapshot,
   ProjectIntelligenceBundle,
   RecommendedAction,
@@ -25,13 +26,14 @@ const PRIORITY_ACTION_RANK: Record<RecommendedAction['priority'], number> = {
  */
 export function aggregatePortfolioIntelligence(
   bundles: ProjectIntelligenceBundle[],
+  revenue?: PortfolioRevenueSnapshot | null,
 ): PortfolioIntelligenceSnapshot {
   const projects = bundles.map(buildProjectHealthSnapshot);
   const priorities = rankProjects(projects);
   const health = buildPortfolioHealth(projects);
   const actionQueue = buildActionQueue(bundles);
 
-  return { health, projects, priorities, actionQueue };
+  return { health, projects, priorities, actionQueue, revenue: revenue ?? null };
 }
 
 /** CEO brief line — deterministic, no LLM. */
