@@ -1,0 +1,14 @@
+{
+  "name": "@ai-company/instance-yoni-company",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ai-company/database": "workspace:*",
+    "@ai-company/connector-framework": "workspace:*",
+    "@ai-company/connector-foodtruck-il": "workspace:*",
+    "@ai-company/connector-lab-os": "workspace:*",
+    "@ai-company/connector-inventory-engine": "workspace:*",
+    "@ai-company/connector-whatsapp-engine": "workspace:*"
+  }
+}
