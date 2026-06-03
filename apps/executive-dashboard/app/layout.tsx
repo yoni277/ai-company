@@ -8,6 +8,7 @@ export const metadata = {
 };
 
 const nav = [
+  { href: '/ceo', label: 'Command Center' },
   { href: '/', label: 'Overview' },
   { href: '/projects', label: 'Projects' },
   { href: '/registry', label: 'Registry' },
