@@ -13,6 +13,7 @@ import type {
 } from '@ai-company/shared-types';
 import type { Risk } from '@ai-company/shared-types';
 import { generateDailyBrief } from '@ai-company/ai-chief-of-staff';
+import { loadFoodTruckBusinessMetrics } from './owner-acquisition';
 import type { Repositories } from '@ai-company/database';
 
 export type { Phase2Snapshot, PendingApproval };
@@ -52,12 +53,16 @@ export async function loadPhase2Snapshot(repos: Repositories): Promise<Phase2Sna
 }
 
 export async function loadDailyCeoBrief(repos: Repositories): Promise<DailyBrief> {
-  const snapshot = await loadPhase2Snapshot(repos);
+  const [snapshot, foodTruck] = await Promise.all([
+    loadPhase2Snapshot(repos),
+    loadFoodTruckBusinessMetrics(),
+  ]);
   const input: DailyBriefMetricsInput = {
     github: snapshot.github,
     supabase: snapshot.supabase,
     health: snapshot.health,
     pendingApprovalCount: snapshot.pendingApprovals.length,
+    foodTruck: foodTruck.metrics,
   };
   return generateDailyBrief(input);
 }

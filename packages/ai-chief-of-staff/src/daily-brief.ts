@@ -1,10 +1,11 @@
 import OpenAI from 'openai';
 import type { DailyBrief, DailyBriefMetricsInput } from '@ai-company/shared-types';
+import { buildOwnerAcquisitionSummary } from '@ai-company/connector-foodtruck-business';
 
 const EXPLAIN_ONLY_SYSTEM = `You are the AI Chief of Staff for a CEO daily brief.
 You receive pre-computed metrics. Your job is to EXPLAIN them in plain language.
 You must NOT invent, recalculate, or contradict the numbers provided.
-Return JSON with keys: companyHealth (string), topRisks (string[]), opportunities (string[]), approvalsWaiting (string[]).`;
+Return JSON with keys: companyHealth (string), ownerAcquisitionSummary (string), topRisks (string[]), opportunities (string[]), approvalsWaiting (string[]).`;
 
 /**
  * Generate a CEO daily brief from pre-computed metrics.
@@ -57,8 +58,9 @@ function buildExplainPrompt(m: DailyBriefMetricsInput): string {
     `Supabase DB healthy: ${m.supabase.databaseHealthy}`,
     `Supabase metric writes (7d): ${m.supabase.transactionCount}`,
     `Pending approvals count: ${m.pendingApprovalCount}`,
+    ownerAcquisitionPromptLine(m),
     '',
-    'Write a CEO brief: companyHealth (1-2 sentences), topRisks (3 bullets max), opportunities (3 max), approvalsWaiting (list items or say none).',
+    'Write a CEO brief: companyHealth (1-2 sentences), ownerAcquisitionSummary (one sentence with exact truck counts), topRisks (3 bullets max), opportunities (3 max), approvalsWaiting (list items or say none).',
   ].join('\n');
 }
 
@@ -78,9 +80,25 @@ function normalizeDailyBrief(
         ? [`${metrics.pendingApprovalCount} item(s) awaiting CEO approval`]
         : ['No pending approvals'],
     );
-    return { companyHealth, topRisks, opportunities, approvalsWaiting };
+    const ownerAcquisitionSummary =
+      typeof o.ownerAcquisitionSummary === 'string'
+        ? o.ownerAcquisitionSummary
+        : ownerSummaryFromInput(metrics);
+    return { companyHealth, topRisks, opportunities, approvalsWaiting, ownerAcquisitionSummary };
   }
   return deterministicDailyBrief(metrics);
+}
+
+function ownerAcquisitionPromptLine(m: DailyBriefMetricsInput): string {
+  if (!m.foodTruck) return 'Owner acquisition: not available.';
+  const r = m.foodTruck.registry;
+  const a = m.foodTruck.acquisition;
+  return `FoodTruck: ${r.totalRegisteredTrucks} registered, ${r.approvedTrucks} approved, ${r.pendingTrucks} pending, activation ${a.activationRate}%.`;
+}
+
+function ownerSummaryFromInput(m: DailyBriefMetricsInput): string {
+  if (!m.foodTruck) return 'Owner acquisition metrics not available.';
+  return buildOwnerAcquisitionSummary(m.foodTruck);
 }
 
 function stringArray(v: unknown, fallback: string[]): string[] {
@@ -120,6 +138,7 @@ export function deterministicDailyBrief(metrics: DailyBriefMetricsInput): DailyB
       metrics.pendingApprovalCount > 0
         ? [`${metrics.pendingApprovalCount} approval(s) need CEO attention today.`]
         : ['No pending approvals.'],
+    ownerAcquisitionSummary: ownerSummaryFromInput(metrics),
   };
 }
 
