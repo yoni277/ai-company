@@ -1,5 +1,5 @@
 import type { PortfolioFinancialSnapshot } from '@ai-company/shared-types';
-import { Card, Stat } from './Card';
+import { Badge, Card, Stat } from './Card';
 
 function money(amount: number, currency: string): string {
   const symbol = currency === 'ILS' ? '₪' : currency === 'USD' ? '$' : currency;
@@ -51,7 +51,8 @@ export function FinancialIntelligencePanel({
                 <th className="pb-2 pr-4">Transactions</th>
                 <th className="pb-2 pr-4">Avg transaction</th>
                 <th className="pb-2 pr-4">Revenue growth</th>
-                <th className="pb-2">Txn growth</th>
+                <th className="pb-2 pr-4">Txn growth</th>
+                <th className="pb-2">Data</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -69,8 +70,19 @@ export function FinancialIntelligencePanel({
                   <td className="py-3 pr-4 text-slate-400">
                     {trendCell(p.trend.revenueGrowthPercent)}
                   </td>
-                  <td className="py-3 text-slate-400">
+                  <td className="py-3 pr-4 text-slate-400">
                     {trendCell(p.trend.transactionGrowthPercent)}
+                  </td>
+                  <td className="py-3">
+                    <Badge
+                      className={
+                        p.live
+                          ? 'bg-emerald-500/15 text-emerald-300'
+                          : 'bg-slate-700 text-slate-400'
+                      }
+                    >
+                      {p.live ? 'live' : 'mock'}
+                    </Badge>
                   </td>
                 </tr>
               ))}

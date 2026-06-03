@@ -48,6 +48,7 @@ export function buildFinancialIntelligenceFromRevenueSnapshots(
       projectName: s.projectName,
       financial,
       trend,
+      live: s.live,
     };
   });
 

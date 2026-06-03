@@ -22,6 +22,8 @@ export interface FinancialIntelligenceSnapshot {
   projectName: string;
   financial: FinancialSnapshot;
   trend: FinancialTrend;
+  /** From revenue connector — live vs mock-configured amounts. */
+  live: boolean;
 }
 
 /** Portfolio-wide financial rollup. */
