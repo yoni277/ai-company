@@ -3,13 +3,14 @@ import type { DailyBrief, DailyBriefMetricsInput } from '@ai-company/shared-type
 import { formatFunnelSummary } from '@ai-company/business-funnel-engine';
 import { formatRecommendedActionsBrief } from '@ai-company/decision-support-engine';
 import { formatPortfolioSummary } from '@ai-company/portfolio-intelligence-engine';
+import { formatFinancialOverviews } from '@ai-company/financial-intelligence-engine';
 import { formatRevenueSummaries } from '@ai-company/revenue-intelligence-engine';
 import { buildOwnerAcquisitionSummary } from '@ai-company/connector-foodtruck-business';
 
 const EXPLAIN_ONLY_SYSTEM = `You are the AI Chief of Staff for a CEO daily brief.
 You receive pre-computed metrics. Your job is to EXPLAIN them in plain language.
 You must NOT invent, recalculate, or contradict the numbers provided.
-Return JSON with keys: companyHealth (string), ownerAcquisitionSummary (string), funnelSummaries (string[]), recommendedActions (string[]), portfolioSummary (string), revenueSummaries (string[]), topRisks (string[]), opportunities (string[]), approvalsWaiting (string[]).`;
+Return JSON with keys: companyHealth (string), ownerAcquisitionSummary (string), funnelSummaries (string[]), recommendedActions (string[]), portfolioSummary (string), revenueSummaries (string[]), financialOverviews (string[]), topRisks (string[]), opportunities (string[]), approvalsWaiting (string[]).`;
 
 /**
  * Generate a CEO daily brief from pre-computed metrics.
@@ -67,8 +68,9 @@ function buildExplainPrompt(m: DailyBriefMetricsInput): string {
     recommendedActionsPromptLines(m),
     portfolioSummaryPromptLine(m),
     revenueSummariesPromptLine(m),
+    financialOverviewsPromptLine(m),
     '',
-    'Write a CEO brief: companyHealth (1-2 sentences), ownerAcquisitionSummary (one sentence with exact truck counts), funnelSummaries (one string per funnel, exact counts), recommendedActions (numbered lines, exact wording provided), portfolioSummary (one sentence, exact wording provided), revenueSummaries (one string per project, exact wording provided), topRisks (3 bullets max), opportunities (3 max), approvalsWaiting (list items or say none).',
+    'Write a CEO brief: companyHealth (1-2 sentences), ownerAcquisitionSummary (one sentence with exact truck counts), funnelSummaries (one string per funnel, exact counts), recommendedActions (numbered lines, exact wording provided), portfolioSummary (one sentence, exact wording provided), revenueSummaries (one string per project, exact wording provided), financialOverviews (one string per project, exact wording provided), topRisks (3 bullets max), opportunities (3 max), approvalsWaiting (list items or say none).',
   ].join('\n');
 }
 
@@ -99,6 +101,7 @@ function normalizeDailyBrief(
         ? o.portfolioSummary
         : portfolioSummaryFromInput(metrics);
     const revenueSummaries = revenueSummariesFromRaw(o.revenueSummaries, metrics);
+    const financialOverviews = financialOverviewsFromRaw(o.financialOverviews, metrics);
     return {
       companyHealth,
       topRisks,
@@ -109,6 +112,7 @@ function normalizeDailyBrief(
       recommendedActions,
       portfolioSummary,
       revenueSummaries,
+      financialOverviews,
     };
   }
   return deterministicDailyBrief(metrics);
@@ -174,6 +178,21 @@ function revenueSummariesFromRaw(v: unknown, metrics: DailyBriefMetricsInput): s
   return revenueSummariesFromInput(metrics);
 }
 
+function financialOverviewsPromptLine(m: DailyBriefMetricsInput): string {
+  return financialOverviewsFromInput(m).join('\n');
+}
+
+function financialOverviewsFromInput(m: DailyBriefMetricsInput): string[] {
+  const fin = m.portfolioFinancial ?? m.portfolio?.financial ?? null;
+  if (!fin) return ['Financial intelligence not available.'];
+  return formatFinancialOverviews(fin);
+}
+
+function financialOverviewsFromRaw(v: unknown, metrics: DailyBriefMetricsInput): string[] {
+  if (Array.isArray(v) && v.every((x) => typeof x === 'string')) return v as string[];
+  return financialOverviewsFromInput(metrics);
+}
+
 function portfolioSummaryFromInput(m: DailyBriefMetricsInput): string {
   if (!m.portfolio) return 'Portfolio intelligence not available.';
   const detail = m.portfolioTopProjectBriefDetail;
@@ -225,6 +244,7 @@ export function deterministicDailyBrief(metrics: DailyBriefMetricsInput): DailyB
     recommendedActions: recommendedActionsFromInput(metrics),
     portfolioSummary: portfolioSummaryFromInput(metrics),
     revenueSummaries: revenueSummariesFromInput(metrics),
+    financialOverviews: financialOverviewsFromInput(metrics),
   };
 }
 
