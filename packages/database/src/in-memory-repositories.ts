@@ -20,9 +20,16 @@ import type {
   RiskRepository,
 } from './repositories';
 
+/** Shape an instance supplies when it wants the in-memory store seeded. */
+export type InMemorySeedProject = Pick<Project, 'slug' | 'name' | 'description' | 'status'>;
+
 /**
  * Singleton in-memory store. Survives within a single Node process
  * (good for dev and demo, not for prod).
+ *
+ * NOTE: this class is intentionally instance-agnostic. It holds whatever
+ * `seedProjects` the surrounding instance gives it — never a hardcoded
+ * portfolio. See docs/architecture/GENERIC_PLATFORM_BOUNDARY.md leak L6.
  */
 class Store {
   projects: Project[] = [];
@@ -32,39 +39,20 @@ class Store {
   opportunities: Opportunity[] = [];
   reports: ExecutiveReport[] = [];
 
-  private seeded = false;
+  /**
+   * Set by the instance layer (via `InMemoryRepositories` constructor) before
+   * the first read. After `seeded` flips to true this field is frozen — later
+   * constructors with a different seed are ignored to preserve singleton semantics.
+   */
+  seedProjects: InMemorySeedProject[] = [];
+  seeded = false;
 
   ensureSeed() {
     if (this.seeded) return;
     this.seeded = true;
+    if (this.seedProjects.length === 0) return;
     const now = new Date().toISOString();
-    const projects: Array<Pick<Project, 'slug' | 'name' | 'description' | 'status'>> = [
-      {
-        slug: 'foodtruck-il',
-        name: 'FoodTruck-IL',
-        description: 'Israeli food truck operations platform.',
-        status: 'healthy',
-      },
-      {
-        slug: 'lab-os',
-        name: 'Lab-OS',
-        description: 'Laboratory operating system.',
-        status: 'at_risk',
-      },
-      {
-        slug: 'inventory-engine',
-        name: 'Inventory Management Engine',
-        description: 'Generic inventory engine across business lines.',
-        status: 'healthy',
-      },
-      {
-        slug: 'whatsapp-engine',
-        name: 'WhatsApp Platform',
-        description: 'Customer messaging and automation over WhatsApp.',
-        status: 'healthy',
-      },
-    ];
-    for (const p of projects) {
+    for (const p of this.seedProjects) {
       this.projects.push({
         id: randomUUID(),
         slug: p.slug,
@@ -80,10 +68,17 @@ class Store {
 
 const globalKey = Symbol.for('ai-company.in-memory-store');
 type GlobalWithStore = typeof globalThis & { [globalKey]?: Store };
-function store(): Store {
+
+/** Returns the singleton store WITHOUT triggering `ensureSeed`. */
+function rawStore(): Store {
   const g = globalThis as GlobalWithStore;
   if (!g[globalKey]) g[globalKey] = new Store();
-  const s = g[globalKey];
+  return g[globalKey];
+}
+
+/** Returns the singleton store WITH `ensureSeed` applied. Used by all reads/writes. */
+function store(): Store {
+  const s = rawStore();
   s.ensureSeed();
   return s;
 }
@@ -247,6 +242,16 @@ class InMemoryExecutiveReportRepository implements ExecutiveReportRepository {
   }
 }
 
+export interface InMemoryRepositoriesOptions {
+  /**
+   * Project records the instance layer wants pre-seeded into the in-memory store.
+   * Only the FIRST constructor to supply a non-empty list wins (process-singleton
+   * semantics); later instantiations are no-ops. Leave undefined or empty to get
+   * an empty store — the correct generic-platform default.
+   */
+  seedProjects?: InMemorySeedProject[];
+}
+
 export class InMemoryRepositories implements Repositories {
   readonly projects = new InMemoryProjectRepository();
   readonly dataSources = new InMemoryDataSourceRepository();
@@ -254,4 +259,14 @@ export class InMemoryRepositories implements Repositories {
   readonly risks = new InMemoryRiskRepository();
   readonly opportunities = new InMemoryOpportunityRepository();
   readonly reports = new InMemoryExecutiveReportRepository();
+
+  constructor(options?: InMemoryRepositoriesOptions) {
+    if (options?.seedProjects && options.seedProjects.length > 0) {
+      const raw = rawStore();
+      // Once the store has been seeded, the seed is frozen — late constructors
+      // with a different seed are ignored. This preserves singleton semantics
+      // across multiple `new InMemoryRepositories()` calls within one process.
+      if (!raw.seeded) raw.seedProjects = options.seedProjects;
+    }
+  }
 }

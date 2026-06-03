@@ -4,6 +4,7 @@ import {
   envFromProcessEnv,
   type Repositories,
 } from '@ai-company/database';
+import { INSTANCE_PROJECTS_SEED } from './instance-seed';
 import {
   ConnectorRegistry,
   SyncOrchestrator,
@@ -60,7 +61,13 @@ let cached: Platform | null = null;
  */
 export function getPlatform(): Platform {
   if (cached) return cached;
-  const repos = createRepositories(envFromProcessEnv());
+  // Attach the instance-layer mock seed so that `AI_COMPANY_DATA_MODE=mock`
+  // pre-populates this company's projects. The platform package itself never
+  // names a project — the seed lives in lib/instance-seed.ts and the platform
+  // simply receives it. See GENERIC_PLATFORM_BOUNDARY.md leak L6.
+  const env = envFromProcessEnv();
+  env.mockSeed = INSTANCE_PROJECTS_SEED;
+  const repos = createRepositories(env);
 
   const registry = new ConnectorRegistry();
   const active = (process.env.AI_COMPANY_ACTIVE_CONNECTORS ?? '')
@@ -71,13 +78,25 @@ export function getPlatform(): Platform {
   // FoodTruck-IL talks to its own Supabase project. The Foodtruck project happens
   // to be the same Postgres host as our `ai_company` schema today, but the connector
   // doesn't assume that — it takes its own credentials so it can move independently.
-  const foodTruckUrl = process.env.FOODTRUCK_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  //
+  // Important: we use `||` (not `??`) so that an empty-string env (FOODTRUCK_SUPABASE_URL=)
+  // falls back to NEXT_PUBLIC_SUPABASE_URL instead of being treated as "set but empty".
+  // Without this, the connector silently goes into mock mode whenever the .env.local
+  // template ships with empty FOODTRUCK_* placeholders.
+  const foodTruckUrl =
+    process.env.FOODTRUCK_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const foodTruckKey =
-    process.env.FOODTRUCK_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+    process.env.FOODTRUCK_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const foodTruckConnector =
     foodTruckUrl && foodTruckKey
       ? new FoodTruckIlConnector({ supabaseUrl: foodTruckUrl, serviceRoleKey: foodTruckKey })
       : new FoodTruckIlConnector();
+  if (process.env.AI_COMPANY_LOG_CONNECTOR_MODE === '1') {
+    // eslint-disable-next-line no-console
+    console.log(
+      `[platform] FoodTruck-IL connector: ${foodTruckUrl && foodTruckKey ? 'live' : 'mock'} (url=${foodTruckUrl ? 'set' : 'unset'}, key=${foodTruckKey ? 'set' : 'unset'})`,
+    );
+  }
 
   const all = [
     foodTruckConnector,

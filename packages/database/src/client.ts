@@ -1,5 +1,5 @@
 import type { Repositories } from './repositories';
-import { InMemoryRepositories } from './in-memory-repositories';
+import { InMemoryRepositories, type InMemorySeedProject } from './in-memory-repositories';
 import { createSupabaseRepositories } from './supabase-repositories';
 
 export type DataMode = 'mock' | 'supabase';
@@ -10,12 +10,20 @@ export interface PlatformEnv {
   supabaseServiceRoleKey?: string;
   /** PostgREST schema. Defaults to `ai_company`. Override with SUPABASE_SCHEMA. */
   supabaseSchema?: string;
+  /**
+   * Instance-supplied seed for `mock` mode. The platform never hardcodes a
+   * portfolio — when an instance wants its mock dashboard pre-populated it
+   * passes a `mockSeed` here. See docs/architecture/GENERIC_PLATFORM_BOUNDARY.md
+   * leak L6.
+   */
+  mockSeed?: InMemorySeedProject[];
 }
 
 /**
  * Build the repository layer based on env.
  *
- * - `mock`: in-memory store seeded with the four Phase 1 projects. Zero infra.
+ * - `mock`: in-memory store. Empty by default — the instance layer can supply
+ *   a `mockSeed` to pre-populate projects (see `PlatformEnv.mockSeed`).
  * - `supabase`: real Supabase, requires url + service-role key.
  */
 export function createRepositories(env: PlatformEnv): Repositories {
@@ -31,7 +39,9 @@ export function createRepositories(env: PlatformEnv): Repositories {
       ...(env.supabaseSchema ? { schema: env.supabaseSchema } : {}),
     });
   }
-  return new InMemoryRepositories();
+  return new InMemoryRepositories(
+    env.mockSeed ? { seedProjects: env.mockSeed } : undefined,
+  );
 }
 
 export function envFromProcessEnv(): PlatformEnv {
