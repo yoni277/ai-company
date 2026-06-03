@@ -65,6 +65,9 @@ importers:
       '@ai-company/connector-portfolio-intelligence':
         specifier: workspace:*
         version: link:../../packages/connectors/portfolio-intelligence
+      '@ai-company/connector-revenue':
+        specifier: workspace:*
+        version: link:../../packages/connectors/revenue
       '@ai-company/connector-supabase':
         specifier: workspace:*
         version: link:../../packages/connectors/supabase
@@ -86,6 +89,9 @@ importers:
       '@ai-company/project-registry':
         specifier: workspace:*
         version: link:../../packages/project-registry
+      '@ai-company/revenue-intelligence-engine':
+        specifier: workspace:*
+        version: link:../../packages/revenue-intelligence-engine
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
@@ -200,6 +206,9 @@ importers:
       '@ai-company/portfolio-intelligence-engine':
         specifier: workspace:*
         version: link:../portfolio-intelligence-engine
+      '@ai-company/revenue-intelligence-engine':
+        specifier: workspace:*
+        version: link:../revenue-intelligence-engine
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../shared-types
@@ -387,6 +396,9 @@ importers:
       '@ai-company/connector-foodtruck-business':
         specifier: workspace:*
         version: link:../foodtruck-business
+      '@ai-company/connector-revenue':
+        specifier: workspace:*
+        version: link:../revenue
       '@ai-company/decision-support-engine':
         specifier: workspace:*
         version: link:../../decision-support-engine
@@ -396,9 +408,31 @@ importers:
       '@ai-company/project-registry':
         specifier: workspace:*
         version: link:../../project-registry
+      '@ai-company/revenue-intelligence-engine':
+        specifier: workspace:*
+        version: link:../../revenue-intelligence-engine
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../../shared-types
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
+  packages/connectors/revenue:
+    dependencies:
+      '@ai-company/project-registry':
+        specifier: workspace:*
+        version: link:../../project-registry
+      '@ai-company/revenue-intelligence-engine':
+        specifier: workspace:*
+        version: link:../../revenue-intelligence-engine
+      '@ai-company/shared-types':
+        specifier: workspace:*
+        version: link:../../shared-types
+      '@supabase/supabase-js':
+        specifier: ^2.47.10
+        version: 2.107.0
     devDependencies:
       typescript:
         specifier: ^5.6.3
@@ -461,6 +495,16 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.47.10
         version: 2.107.0
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
+  packages/revenue-intelligence-engine:
+    dependencies:
+      '@ai-company/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
     devDependencies:
       typescript:
         specifier: ^5.6.3
