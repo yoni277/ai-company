@@ -1,74 +1,52 @@
 # Dashboard Validation
 
 **Date:** 2026-06-03  
-**App:** `apps/executive-dashboard` (`http://localhost:3000`)  
-**Page:** Overview (`/`)
+**App:** `apps/executive-dashboard`  
+**URL:** `http://localhost:3000/`  
+**Status:** **PASS** (Phase 2 panels); **PARTIAL** (portfolio layer)
 
-## Panels verified (UI structure)
+## Panels verified
 
-| Panel | Visible | Data source (current) |
-|-------|---------|------------------------|
-| Company Health | ✅ | Deterministic health score from GitHub issue count + DB risks |
-| GitHub Metrics | ✅ | **Mock** (`live: false`) |
-| Supabase Metrics | ✅ | **Live connector, empty DB** (`live: true`, zeros) |
-| Top Risks | ✅ | In-memory repos (`AI_COMPANY_DATA_MODE=mock`) |
-| Pending Approvals | ✅ | In-memory + keyword / FoodTruck metric rules |
+| Panel | Visible | Data source |
+|-------|---------|-------------|
+| Company Health | ✅ | Live — score `100`, level `green` (`GET /api/health/score`) |
+| GitHub Metrics | ✅ | **Live** — `yoni277/foodtruck-il-backend`, 46 commits (7d) |
+| Supabase Metrics | ✅ | **Live** — 4 projects, DB healthy |
+| Top Risks | ✅ | **Mock** — `AI_COMPANY_DATA_MODE=mock` (in-memory repos) |
+| Pending Approvals | ✅ | **Mock** — seeded / keyword rules on mock portfolio |
 
-## Live vs mock sections
+## Live vs mock (remaining)
 
-| Section | Mode | Notes |
-|---------|------|-------|
-| Phase 2 GitHub panel | **Mock** | No `GITHUB_TOKEN` / `GITHUB_REPOSITORY` |
-| Phase 2 Supabase panel | **Live attempt** | Credentials OK; schema not exposed → zeros |
-| Company health score | **Mixed** | Formula is real; inputs include mock GitHub issues |
-| Projects list (below fold) | **Mock** | `AI_COMPANY_DATA_MODE=mock` |
-| Open risks / opportunities | **Mock** | Seeded in-memory on first load |
-| Chief of Staff legacy briefing | **Mock / LLM** | Separate from Phase 2 daily brief |
-| Daily CEO brief (Phase 2) | **Mock narrative** | Uses metrics bundle above |
+| Section | Mode |
+|---------|------|
+| Phase 2 GitHub panel | **Live** (`live: true`) |
+| Phase 2 Supabase panel | **Live** (`live: true`, `databaseHealthy: true`) |
+| Company health score | **Live inputs** from real GitHub + DB risks (risks still mock-backed) |
+| Projects list | **Mock** |
+| Open risks / opportunities (lower sections) | **Mock** |
+| Legacy Chief of Staff briefing | **Mock repos** (separate flow) |
+| Phase 2 Daily CEO brief | **Live GitHub + live Supabase** metrics in narrative |
 
 ## API evidence (2026-06-03)
 
 ```
-GET /api/metrics/github     → live: false, repositoryName: "ai-company (mock)"
-GET /api/metrics/supabase   → live: true,  databaseHealthy: false, counts: 0
-GET /api/health/score       → { "score": 96, "level": "green" }
+GET /                           → 200
+GET /api/metrics/github         → 200, live: true
+GET /api/metrics/supabase       → 200, live: true, databaseHealthy: true
+GET /api/health/score           → score: 100, level: green
+POST /api/chief-of-staff/daily-brief → 200, grounded in live connector metrics
 ```
 
-## Environment finding
+## Runtime errors
 
-`.env.local` at **repo root** is not loaded by Next.js dev server by default. After copying to `apps/executive-dashboard/.env.local`:
+None observed during validation.
 
-- Supabase API flipped to `live: true`
-- GitHub still mock (missing token)
+## Recommended follow-ups (not blocking Phase 2 connectors)
 
-**Recommended fix:** Document in README that dashboard env lives in `apps/executive-dashboard/.env.local`, or add `envDir` in `next.config.mjs` pointing to monorepo root (no code change required for validation if copy step is documented).
-
-## Screenshots
-
-_Capture manually after unblock:_
-
-1. Overview with **GitHub live** + **Supabase live** badges  
-2. Non-zero Supabase metrics  
-3. Pending approvals with real FoodTruck pending trucks (supabase mode + sync)
-
-## Issues found
-
-1. **GitHub not configured** — CEO sees mock engineering metrics.  
-2. **`ai_company` schema not exposed** — Supabase connector live but unhealthy.  
-3. **Portfolio still mock** — `AI_COMPANY_DATA_MODE=mock`.  
-4. **Root `.env.local` not picked up** by Next without app-level copy.  
-5. **Health score green (96)** while Supabase unhealthy — misleading until inputs reflect live data.
-
-## Recommended fixes (no new features)
-
-| Priority | Fix |
-|----------|-----|
-| P0 | Expose `ai_company` schema in Supabase API settings |
-| P0 | Add GitHub PAT + `GITHUB_REPOSITORY` to app `.env.local` |
-| P1 | Set `AI_COMPANY_DATA_MODE=supabase` after schema + seed |
-| P1 | Document env file location for monorepo dashboard |
-| P2 | Surface `databaseHealthy: false` as red badge on Supabase panel |
+1. Set `AI_COMPANY_DATA_MODE=supabase` to move portfolio (projects/risks/reports) off in-memory mock.
+2. Run connector sync to populate `project_metrics` and raise `recentActivityCount`.
+3. Capture dashboard screenshots for CEO sign-off archive.
 
 ## Validation status
 
-**⚠️ PARTIAL** — Layout and Phase 2 panels work; **real production metrics not yet end-to-end**.
+**PASS** — Phase 2 production metrics panels display **real GitHub and Supabase data**.
