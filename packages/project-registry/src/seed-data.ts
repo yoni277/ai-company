@@ -77,10 +77,50 @@ export function buildInMemoryRegistrySeed(): RegisteredProject[] {
   };
 
   const connectors: Record<string, { type: string; config: Record<string, unknown> }> = {
-    'foodtruck-il': { type: 'foodtruck-business', config: { adapter: 'foodtruck' } },
-    'lab-os': { type: 'mock-funnel', config: {} },
-    'inventory-engine': { type: 'mock-funnel', config: {} },
-    burgerstop: { type: 'mock-funnel', config: {} },
+    'foodtruck-il': {
+      type: 'foodtruck-business',
+      config: {
+        adapter: 'foodtruck',
+        revenueSource: 'foodtruck-supabase-events',
+        reportingDays: 30,
+        currency: 'ILS',
+        avgTransactionValue: 329,
+        monthlySubscriptionFee: 199,
+      },
+    },
+    'lab-os': {
+      type: 'mock-funnel',
+      config: {
+        revenueSource: 'mock-revenue',
+        reportingDays: 30,
+        currency: 'USD',
+        totalRevenue: 4200,
+        recurringRevenue: 2800,
+        transactionCount: 14,
+      },
+    },
+    'inventory-engine': {
+      type: 'mock-funnel',
+      config: {
+        revenueSource: 'mock-revenue',
+        reportingDays: 30,
+        currency: 'USD',
+        totalRevenue: 1850,
+        recurringRevenue: 1200,
+        transactionCount: 6,
+      },
+    },
+    burgerstop: {
+      type: 'mock-funnel',
+      config: {
+        revenueSource: 'mock-revenue',
+        reportingDays: 30,
+        currency: 'ILS',
+        totalRevenue: 0,
+        recurringRevenue: 0,
+        transactionCount: 0,
+      },
+    },
   };
 
   return defs.map((d) => {
