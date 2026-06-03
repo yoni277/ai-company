@@ -1,4 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
+/** Untyped client — custom `ai_company` schema is not in generated Database yet. */
+type RepoClient = SupabaseClient;
 import type {
   Project,
   ProjectMetric,
@@ -6,7 +9,6 @@ import type {
   Opportunity,
   ExecutiveReport,
 } from '@ai-company/shared-types';
-import type { Database } from './generated-types.js';
 import type {
   DataSourceRecord,
   DataSourceRepository,
@@ -16,15 +18,60 @@ import type {
   ProjectRepository,
   Repositories,
   RiskRepository,
-} from './repositories.js';
+} from './repositories';
 
-type Tables = Database['public']['Tables'];
-type ProjectRow = Tables['projects']['Row'];
-type MetricRow = Tables['project_metrics']['Row'];
-type RiskRow = Tables['risks']['Row'];
-type OpportunityRow = Tables['opportunities']['Row'];
-type ReportRow = Tables['executive_reports']['Row'];
-type DataSourceRow = Tables['data_sources']['Row'];
+type ProjectRow = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  status: Project['status'];
+  created_at: string;
+  updated_at: string;
+};
+type MetricRow = {
+  id: string;
+  project_id: string;
+  metric_name: string;
+  metric_value: number;
+  unit: string | null;
+  timestamp: string;
+};
+type RiskRow = {
+  id: string;
+  project_id: string;
+  severity: Risk['severity'];
+  description: string;
+  source: string;
+  status: Risk['status'];
+  created_at: string;
+};
+type OpportunityRow = {
+  id: string;
+  project_id: string;
+  priority: Opportunity['priority'];
+  description: string;
+  source: string;
+  created_at: string;
+};
+type ReportRow = {
+  id: string;
+  executive_id: string;
+  report_type: ExecutiveReport['reportType'];
+  summary: string;
+  body: unknown;
+  created_at: string;
+};
+type DataSourceRow = {
+  id: string;
+  project_id: string;
+  source_type: string;
+  status: DataSourceRecord['status'];
+  last_sync: string | null;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 function mapProject(row: ProjectRow): Project {
   return {
@@ -97,12 +144,19 @@ function mapDataSource(row: DataSourceRow): DataSourceRecord {
 export interface SupabaseConfig {
   url: string;
   serviceRoleKey: string;
+  /**
+   * Postgres schema PostgREST should route all queries through.
+   * Defaults to `ai_company` so the platform's tables stay namespaced
+   * inside a Supabase project that may host another app in `public`.
+   */
+  schema?: string;
 }
 
 export function createSupabaseRepositories(config: SupabaseConfig): Repositories {
-  const client = createClient<Database>(config.url, config.serviceRoleKey, {
+  const client = createClient(config.url, config.serviceRoleKey, {
     auth: { persistSession: false },
-  });
+    db: { schema: config.schema ?? 'ai_company' },
+  }) as RepoClient;
 
   return {
     projects: new SupabaseProjectRepository(client),
@@ -115,7 +169,7 @@ export function createSupabaseRepositories(config: SupabaseConfig): Repositories
 }
 
 class SupabaseProjectRepository implements ProjectRepository {
-  constructor(private readonly client: SupabaseClient<Database>) {}
+  constructor(private readonly client: RepoClient) {}
 
   async list(): Promise<Project[]> {
     const { data, error } = await this.client
@@ -163,7 +217,7 @@ class SupabaseProjectRepository implements ProjectRepository {
 }
 
 class SupabaseDataSourceRepository implements DataSourceRepository {
-  constructor(private readonly client: SupabaseClient<Database>) {}
+  constructor(private readonly client: RepoClient) {}
 
   async listByProject(projectId: string): Promise<DataSourceRecord[]> {
     const { data, error } = await this.client
@@ -195,7 +249,7 @@ class SupabaseDataSourceRepository implements DataSourceRepository {
 }
 
 class SupabaseProjectMetricRepository implements ProjectMetricRepository {
-  constructor(private readonly client: SupabaseClient<Database>) {}
+  constructor(private readonly client: RepoClient) {}
 
   async listLatestByProject(projectId: string, limitPerName = 1): Promise<ProjectMetric[]> {
     // Pull a window then keep N most-recent per metric_name client-side.
@@ -237,7 +291,7 @@ class SupabaseProjectMetricRepository implements ProjectMetricRepository {
 }
 
 class SupabaseRiskRepository implements RiskRepository {
-  constructor(private readonly client: SupabaseClient<Database>) {}
+  constructor(private readonly client: RepoClient) {}
 
   async listOpen(): Promise<Risk[]> {
     const { data, error } = await this.client.from('risks').select('*').eq('status', 'open');
@@ -278,7 +332,7 @@ class SupabaseRiskRepository implements RiskRepository {
 }
 
 class SupabaseOpportunityRepository implements OpportunityRepository {
-  constructor(private readonly client: SupabaseClient<Database>) {}
+  constructor(private readonly client: RepoClient) {}
 
   async listAll(): Promise<Opportunity[]> {
     const { data, error } = await this.client.from('opportunities').select('*');
@@ -316,7 +370,7 @@ class SupabaseOpportunityRepository implements OpportunityRepository {
 }
 
 class SupabaseExecutiveReportRepository implements ExecutiveReportRepository {
-  constructor(private readonly client: SupabaseClient<Database>) {}
+  constructor(private readonly client: RepoClient) {}
 
   async list(
     filter: Parameters<ExecutiveReportRepository['list']>[0] = {},

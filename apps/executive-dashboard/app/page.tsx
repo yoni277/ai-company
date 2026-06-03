@@ -1,8 +1,11 @@
 import Link from 'next/link';
 import { ensureSeededMockData, getPlatform } from '../lib/platform';
+import { loadPhase2Snapshot } from '../lib/phase2-metrics';
+import { deterministicDailyBrief } from '@ai-company/ai-chief-of-staff';
 import { Badge, Card, EmptyState, Stat } from '../components/Card';
 import { SyncButton } from '../components/SyncButton';
 import { BriefingButton } from '../components/BriefingButton';
+import { ProductionMetricsClient } from '../components/ProductionMetricsClient';
 import {
   HEALTH_COLOR,
   HEALTH_LABEL,
@@ -18,12 +21,20 @@ export default async function OverviewPage() {
   await ensureSeededMockData();
   const { repos } = getPlatform();
 
-  const [projects, openRisks, opportunities, latestBriefing] = await Promise.all([
+  const [projects, openRisks, opportunities, latestBriefing, phase2] = await Promise.all([
     repos.projects.list(),
     repos.risks.listOpen(),
     repos.opportunities.listAll(),
     repos.reports.latest(CHIEF_OF_STAFF_ID, 'daily_briefing'),
+    loadPhase2Snapshot(repos),
   ]);
+
+  const dailyBrief = deterministicDailyBrief({
+    github: phase2.github,
+    supabase: phase2.supabase,
+    health: phase2.health,
+    pendingApprovalCount: phase2.pendingApprovals.length,
+  });
 
   const live = projects.filter((p) => p.status !== 'archived' && p.status !== 'paused');
   const critical = projects.filter((p) => p.status === 'critical').length;
@@ -41,11 +52,13 @@ export default async function OverviewPage() {
             Cross-company snapshot · {live.length} live project{live.length === 1 ? '' : 's'}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap justify-end">
           <SyncButton />
           <BriefingButton reportType="daily_briefing" label="Generate daily briefing" />
         </div>
       </header>
+
+      <ProductionMetricsClient snapshot={phase2} initialBrief={dailyBrief} />
 
       <Card>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

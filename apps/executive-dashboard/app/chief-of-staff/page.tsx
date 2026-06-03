@@ -9,10 +9,8 @@ import {
   SEVERITY_COLOR,
   relativeTime,
 } from '../../lib/format';
-import {
-  CHIEF_OF_STAFF_ID,
-  type ChiefOfStaffOutput,
-} from '@ai-company/ai-chief-of-staff';
+import { CHIEF_OF_STAFF_ID } from '@ai-company/ai-chief-of-staff';
+import type { ChiefOfStaffOutput } from '@ai-company/shared-types';
 
 export const dynamic = 'force-dynamic';
 

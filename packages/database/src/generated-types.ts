@@ -5,9 +5,7 @@
  *   `supabase gen types typescript --project-id <id> > generated-types.ts`
  * The shape here is compatible with the generated form.
  */
-export interface Database {
-  public: {
-    Tables: {
+type SchemaTables = {
       projects: {
         Row: {
           id: string;
@@ -25,7 +23,7 @@ export interface Database {
           description?: string;
           status?: 'healthy' | 'at_risk' | 'critical' | 'paused' | 'archived';
         };
-        Update: Partial<Database['public']['Tables']['projects']['Insert']>;
+        Update: Partial<SchemaTables['projects']['Insert']>;
       };
       data_sources: {
         Row: {
@@ -46,7 +44,7 @@ export interface Database {
           last_sync?: string | null;
           last_error?: string | null;
         };
-        Update: Partial<Database['public']['Tables']['data_sources']['Insert']>;
+        Update: Partial<SchemaTables['data_sources']['Insert']>;
       };
       project_metrics: {
         Row: {
@@ -65,7 +63,7 @@ export interface Database {
           unit?: string | null;
           timestamp?: string;
         };
-        Update: Partial<Database['public']['Tables']['project_metrics']['Insert']>;
+        Update: Partial<SchemaTables['project_metrics']['Insert']>;
       };
       risks: {
         Row: {
@@ -85,7 +83,7 @@ export interface Database {
           source: string;
           status?: 'open' | 'monitoring' | 'mitigated' | 'accepted';
         };
-        Update: Partial<Database['public']['Tables']['risks']['Insert']>;
+        Update: Partial<SchemaTables['risks']['Insert']>;
       };
       opportunities: {
         Row: {
@@ -103,7 +101,7 @@ export interface Database {
           description: string;
           source: string;
         };
-        Update: Partial<Database['public']['Tables']['opportunities']['Insert']>;
+        Update: Partial<SchemaTables['opportunities']['Insert']>;
       };
       executive_reports: {
         Row: {
@@ -121,7 +119,7 @@ export interface Database {
           summary: string;
           body: unknown;
         };
-        Update: Partial<Database['public']['Tables']['executive_reports']['Insert']>;
+        Update: Partial<SchemaTables['executive_reports']['Insert']>;
       };
       report_links: {
         Row: {
@@ -129,9 +127,20 @@ export interface Database {
           entity_type: 'risk' | 'opportunity' | 'metric';
           entity_id: string;
         };
-        Insert: Database['public']['Tables']['report_links']['Row'];
-        Update: Partial<Database['public']['Tables']['report_links']['Row']>;
+        Insert: SchemaTables['report_links']['Row'];
+        Update: Partial<SchemaTables['report_links']['Row']>;
       };
-    };
-  };
+};
+
+type SchemaDefinition = {
+  Tables: SchemaTables;
+  Views: Record<string, never>;
+  Functions: Record<string, never>;
+  Enums: Record<string, never>;
+  CompositeTypes: Record<string, never>;
+};
+
+export interface Database {
+  public: SchemaDefinition;
+  ai_company: SchemaDefinition;
 }

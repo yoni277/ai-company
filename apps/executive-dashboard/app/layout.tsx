@@ -12,6 +12,11 @@ const nav = [
   { href: '/projects', label: 'Projects' },
   { href: '/reports', label: 'Reports' },
   { href: '/chief-of-staff', label: 'AI Chief of Staff' },
+  { href: '/cto', label: 'AI CTO' },
+  { href: '/coo', label: 'AI COO' },
+  { href: '/cfo', label: 'AI CFO' },
+  { href: '/vp-marketing', label: 'AI VP Marketing' },
+  { href: '/vp-sales', label: 'AI VP Sales' },
 ];
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -27,14 +32,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               {nav.map((item) => (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={item.href as never}
                   className="px-3 py-1.5 text-sm text-slate-300 hover:text-slate-100 hover:bg-slate-800/60 rounded-md transition"
                 >
                   {item.label}
                 </Link>
               ))}
             </nav>
-            <div className="ml-auto text-xs text-slate-500">Phase 1 · Chief of Staff only</div>
+            <div className="ml-auto text-xs text-slate-500">Phase 4 · Full executive team online</div>
           </header>
           <main className="flex-1 px-6 py-8 max-w-7xl w-full mx-auto">{children}</main>
         </div>

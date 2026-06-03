@@ -3,7 +3,7 @@ export class ConnectorError extends Error {
     public readonly connectorName: string,
     public readonly step: 'getStatus' | 'getMetrics' | 'getRisks' | 'getOpportunities' | 'healthCheck',
     message: string,
-    public readonly cause?: unknown,
+    public override readonly cause?: unknown,
   ) {
     super(`[${connectorName}:${step}] ${message}`);
     this.name = 'ConnectorError';
