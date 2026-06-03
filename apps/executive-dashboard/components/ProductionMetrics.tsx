@@ -118,6 +118,12 @@ export function ProductionMetricsPanel({
               </ul>
             </div>
           ) : null}
+          {dailyBrief.portfolioSummary ? (
+            <div className="mb-4">
+              <div className="text-xs text-slate-500 mb-1">Portfolio summary</div>
+              <p className="text-sm text-slate-200">{dailyBrief.portfolioSummary}</p>
+            </div>
+          ) : null}
           {dailyBrief.recommendedActions.length > 0 ? (
             <div className="mb-4">
               <div className="text-xs text-slate-500 mb-1">Recommended actions</div>

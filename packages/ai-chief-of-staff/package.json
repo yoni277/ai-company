@@ -20,6 +20,7 @@
     "@ai-company/database": "workspace:*",
     "@ai-company/business-funnel-engine": "workspace:*",
     "@ai-company/decision-support-engine": "workspace:*",
+    "@ai-company/portfolio-intelligence-engine": "workspace:*",
     "@ai-company/connector-foodtruck-business": "workspace:*",
     "@anthropic-ai/sdk": "^0.39.0",
     "openai": "^4.67.3"

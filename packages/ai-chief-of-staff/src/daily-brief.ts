@@ -2,12 +2,13 @@ import OpenAI from 'openai';
 import type { DailyBrief, DailyBriefMetricsInput } from '@ai-company/shared-types';
 import { formatFunnelSummary } from '@ai-company/business-funnel-engine';
 import { formatRecommendedActionsBrief } from '@ai-company/decision-support-engine';
+import { formatPortfolioSummary } from '@ai-company/portfolio-intelligence-engine';
 import { buildOwnerAcquisitionSummary } from '@ai-company/connector-foodtruck-business';
 
 const EXPLAIN_ONLY_SYSTEM = `You are the AI Chief of Staff for a CEO daily brief.
 You receive pre-computed metrics. Your job is to EXPLAIN them in plain language.
 You must NOT invent, recalculate, or contradict the numbers provided.
-Return JSON with keys: companyHealth (string), ownerAcquisitionSummary (string), funnelSummaries (string[]), recommendedActions (string[]), topRisks (string[]), opportunities (string[]), approvalsWaiting (string[]).`;
+Return JSON with keys: companyHealth (string), ownerAcquisitionSummary (string), funnelSummaries (string[]), recommendedActions (string[]), portfolioSummary (string), topRisks (string[]), opportunities (string[]), approvalsWaiting (string[]).`;
 
 /**
  * Generate a CEO daily brief from pre-computed metrics.
@@ -63,8 +64,9 @@ function buildExplainPrompt(m: DailyBriefMetricsInput): string {
     ownerAcquisitionPromptLine(m),
     funnelPromptLines(m),
     recommendedActionsPromptLines(m),
+    portfolioSummaryPromptLine(m),
     '',
-    'Write a CEO brief: companyHealth (1-2 sentences), ownerAcquisitionSummary (one sentence with exact truck counts), funnelSummaries (one string per funnel, exact counts), recommendedActions (numbered lines, exact wording provided), topRisks (3 bullets max), opportunities (3 max), approvalsWaiting (list items or say none).',
+    'Write a CEO brief: companyHealth (1-2 sentences), ownerAcquisitionSummary (one sentence with exact truck counts), funnelSummaries (one string per funnel, exact counts), recommendedActions (numbered lines, exact wording provided), portfolioSummary (one sentence, exact wording provided), topRisks (3 bullets max), opportunities (3 max), approvalsWaiting (list items or say none).',
   ].join('\n');
 }
 
@@ -90,6 +92,10 @@ function normalizeDailyBrief(
         : ownerSummaryFromInput(metrics);
     const funnelSummaries = funnelSummariesFromRaw(o.funnelSummaries, metrics);
     const recommendedActions = recommendedActionsFromRaw(o.recommendedActions, metrics);
+    const portfolioSummary =
+      typeof o.portfolioSummary === 'string'
+        ? o.portfolioSummary
+        : portfolioSummaryFromInput(metrics);
     return {
       companyHealth,
       topRisks,
@@ -98,6 +104,7 @@ function normalizeDailyBrief(
       ownerAcquisitionSummary,
       funnelSummaries,
       recommendedActions,
+      portfolioSummary,
     };
   }
   return deterministicDailyBrief(metrics);
@@ -145,6 +152,19 @@ function recommendedActionsFromRaw(v: unknown, metrics: DailyBriefMetricsInput):
   return recommendedActionsFromInput(metrics);
 }
 
+function portfolioSummaryPromptLine(m: DailyBriefMetricsInput): string {
+  return `Portfolio summary: ${portfolioSummaryFromInput(m)}`;
+}
+
+function portfolioSummaryFromInput(m: DailyBriefMetricsInput): string {
+  if (!m.portfolio) return 'Portfolio intelligence not available.';
+  const detail = m.portfolioTopProjectBriefDetail;
+  return formatPortfolioSummary(
+    m.portfolio,
+    detail !== undefined ? { topProjectBriefDetail: detail } : undefined,
+  );
+}
+
 function stringArray(v: unknown, fallback: string[]): string[] {
   if (Array.isArray(v) && v.every((x) => typeof x === 'string')) return v as string[];
   return fallback;
@@ -185,6 +205,7 @@ export function deterministicDailyBrief(metrics: DailyBriefMetricsInput): DailyB
     ownerAcquisitionSummary: ownerSummaryFromInput(metrics),
     funnelSummaries: funnelSummariesFromInput(metrics),
     recommendedActions: recommendedActionsFromInput(metrics),
+    portfolioSummary: portfolioSummaryFromInput(metrics),
   };
 }
 

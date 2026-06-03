@@ -14,8 +14,7 @@ import type {
 import type { Risk } from '@ai-company/shared-types';
 import { generateDailyBrief } from '@ai-company/ai-chief-of-staff';
 import { loadFoodTruckBusinessMetrics } from './owner-acquisition';
-import { loadFunnelSnapshots } from './funnel-intelligence';
-import { loadDecisionSupportResults } from './decision-support';
+import { loadPortfolioIntelligenceForDashboard } from './portfolio-intelligence';
 import type { Repositories } from '@ai-company/database';
 
 export type { Phase2Snapshot, PendingApproval };
@@ -55,20 +54,26 @@ export async function loadPhase2Snapshot(repos: Repositories): Promise<Phase2Sna
 }
 
 export async function loadDailyCeoBrief(repos: Repositories): Promise<DailyBrief> {
-  const [snapshot, foodTruck, funnels, decisionSupport] = await Promise.all([
+  const [snapshot, foodTruck, portfolioLoad] = await Promise.all([
     loadPhase2Snapshot(repos),
     loadFoodTruckBusinessMetrics(),
-    loadFunnelSnapshots(),
-    loadDecisionSupportResults(),
+    loadPortfolioIntelligenceForDashboard(),
   ]);
+  const topBundle = portfolioLoad.bundles.find(
+    (b) => b.projectId === portfolioLoad.portfolio.priorities[0]?.projectId,
+  );
   const input: DailyBriefMetricsInput = {
     github: snapshot.github,
     supabase: snapshot.supabase,
     health: snapshot.health,
     pendingApprovalCount: snapshot.pendingApprovals.length,
     foodTruck: foodTruck.metrics,
-    funnels,
-    decisionSupport,
+    funnels: portfolioLoad.funnels,
+    decisionSupport: portfolioLoad.decisionSupport,
+    portfolio: portfolioLoad.portfolio,
+    ...(topBundle?.briefDetail !== undefined
+      ? { portfolioTopProjectBriefDetail: topBundle.briefDetail }
+      : {}),
   };
   return generateDailyBrief(input);
 }
