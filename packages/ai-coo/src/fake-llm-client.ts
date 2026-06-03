@@ -7,6 +7,11 @@ import type {
 } from '@ai-company/shared-types';
 import type { CooLlmClient } from './llm-client';
 
+// Heuristic classifiers operating on connector-supplied metric NAMES (not on
+// project slugs). The tokens below are metric-naming heuristics — they let
+// the platform tag a metric whose name contains "vendor"/"quota"/"throughput"
+// without knowing which project it came from. Keep these generic; never add
+// a token that branches per project.
 const OPS_PATTERNS: Array<{ pattern: RegExp; kind: OperationalMetricKind }> = [
   { pattern: /(p99|p95|response[_-]?time|first[_-]?response|sla|on[_-]?time|dispatch[_-]?rate)/i, kind: 'sla' },
   { pattern: /(queue|backlog|pending|approval)/i, kind: 'queue' },
@@ -22,16 +27,6 @@ function classifyOps(name: string): OperationalMetricKind | null {
   return null;
 }
 
-const PROJECT_VENDORS: Record<string, Array<{ vendor: string; metricHint?: RegExp }>> = {
-  'foodtruck-il': [
-    { vendor: 'Wolt (delivery)' },
-    { vendor: 'Supabase (data)' },
-  ],
-  'lab-os': [{ vendor: 'Supabase (data)' }, { vendor: 'LIMS integrations' }],
-  'whatsapp-engine': [{ vendor: 'Meta WhatsApp Cloud API', metricHint: /meta_quota|template/i }],
-  'inventory-engine': [{ vendor: 'Connected consumer services', metricHint: /connected_consumers/i }],
-};
-
 function looksOps(text: string): boolean {
   return /(queue|backlog|incident|outage|sla|throughput|response|approval|vendor|wolt|meta|quota|integration|escalation)/i.test(
     text,
@@ -41,7 +36,13 @@ function looksOps(text: string): boolean {
 /**
  * Deterministic COO stand-in. Tags metrics by operational kind, derives bottlenecks from
  * platform risks that read as operational, and builds a per-project vendor health view
- * from project-specific hints. Used when ANTHROPIC_API_KEY isn't set.
+ * from instance-supplied vendor metadata (CompanyContext.projects[i].metadata?.vendors).
+ *
+ * No project-specific vendor map lives here — see GENERIC_PLATFORM_BOUNDARY.md leak L2.
+ * If the instance layer has not registered vendor metadata for a project, that project
+ * contributes no rows to `vendorHealth`; nothing is inferred from slug or name.
+ *
+ * Used when ANTHROPIC_API_KEY isn't set.
  */
 export class FakeCooLlmClient implements CooLlmClient {
   async generate(ctx: CompanyContext, reportType: ReportType): Promise<CooOutput> {
@@ -94,9 +95,12 @@ export class FakeCooLlmClient implements CooLlmClient {
 
     const vendorHealth: CooOutput['vendorHealth'] = [];
     for (const p of ctx.projects) {
-      const vendors = PROJECT_VENDORS[p.project.slug] ?? [];
+      const vendors = p.metadata?.vendors ?? [];
       for (const v of vendors) {
-        const relevant = p.latestMetrics.find((m) => v.metricHint?.test(m.name));
+        const hintRegex = v.metricHint ? safeRegex(v.metricHint) : null;
+        const relevant = hintRegex
+          ? p.latestMetrics.find((m) => hintRegex.test(m.name))
+          : undefined;
         const status: VendorStatus =
           p.project.status === 'critical'
             ? 'critical'
@@ -108,7 +112,7 @@ export class FakeCooLlmClient implements CooLlmClient {
           : `No vendor-specific signal in current sync — inferred from project status.`;
         vendorHealth.push({
           projectSlug: p.project.slug,
-          vendor: v.vendor,
+          vendor: v.name,
           status,
           notes,
         });
@@ -170,4 +174,12 @@ function summarize(p: CompanyContext['projects'][number]): string {
 
 function truncate(s: string, n: number): string {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
+}
+
+function safeRegex(source: string): RegExp | null {
+  try {
+    return new RegExp(source, 'i');
+  } catch {
+    return null;
+  }
 }

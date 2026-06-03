@@ -1,6 +1,36 @@
-import type { CompanyContext } from '@ai-company/shared-types';
+import type {
+  CompanyContext,
+  ProjectExecutiveMetadata,
+} from '@ai-company/shared-types';
 import type { Repositories } from '@ai-company/database';
 import { rollupCompanyHealth, hoursSince } from './analyzers/health';
+
+export type InstanceProjectMetadataProvider = (
+  projectSlug: string,
+) => ProjectExecutiveMetadata | undefined;
+
+let metadataProvider: InstanceProjectMetadataProvider | null = null;
+
+/**
+ * Called once by the instance layer (at module-load time, before the first
+ * `buildCompanyContext()` call) to inject the project-metadata provider.
+ * Idempotent: re-registering replaces the previous provider.
+ *
+ * The platform never infers vendor/channel data from a project slug or name.
+ * If no provider is registered, every project's `metadata` is `undefined`
+ * and executives default to neutral generic language. See
+ * GENERIC_PLATFORM_BOUNDARY.md leaks L2 + L3.
+ */
+export function registerInstanceProjectMetadata(
+  provider: InstanceProjectMetadataProvider,
+): void {
+  metadataProvider = provider;
+}
+
+/** Test-only: clear the registered provider. */
+export function __resetInstanceProjectMetadata(): void {
+  metadataProvider = null;
+}
 
 /**
  * Build the cross-project context every executive consumes as input.
@@ -24,12 +54,14 @@ export async function buildCompanyContext(repos: Repositories): Promise<CompanyC
         .filter((x): x is string => !!x)
         .sort()
         .at(-1);
+      const metadata = metadataProvider?.(project.slug);
       return {
         project,
         latestMetrics,
         openRisks,
         openOpportunities,
         freshnessHours: lastSync ? hoursSince(lastSync) : null,
+        ...(metadata ? { metadata } : {}),
       };
     }),
   );

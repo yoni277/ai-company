@@ -20,6 +20,8 @@ const nextConfig = {
         '../../instances/yoni-company/instance-connectors.ts',
       '@active-instance/project-registry-seed':
         '../../instances/yoni-company/project-registry-seed.ts',
+      '@active-instance/project-executive-metadata':
+        '../../instances/yoni-company/project-executive-metadata.ts',
     },
   },
   transpilePackages: [

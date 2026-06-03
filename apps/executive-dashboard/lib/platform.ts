@@ -11,6 +11,7 @@ import {
 // different company, change one alias in apps/executive-dashboard/tsconfig.json.
 import { INSTANCE_PROJECTS_SEED } from '@active-instance/instance-seed';
 import { buildInstanceRegistrySeed } from '@active-instance/project-registry-seed';
+import { getInstanceProjectMetadata } from '@active-instance/project-executive-metadata';
 import { registerInstanceRegistrySeed } from '@ai-company/project-registry';
 import {
   ConnectorRegistry,
@@ -21,6 +22,7 @@ import {
   ChiefOfStaff,
   buildDefaultChiefOfStaff,
   CHIEF_OF_STAFF_ID,
+  registerInstanceProjectMetadata,
 } from '@ai-company/ai-chief-of-staff';
 import { Cto, buildDefaultCto, CTO_ID } from '@ai-company/ai-cto';
 import {
@@ -47,6 +49,12 @@ import { buildInstanceConnectors } from '@active-instance/instance-connectors';
 // project-registry package no longer hardcodes a project list — it asks the
 // instance layer. See GENERIC_PLATFORM_BOUNDARY.md leak L8.
 registerInstanceRegistrySeed(buildInstanceRegistrySeed);
+
+// Register the instance-layer project executive metadata (vendors / marketing
+// channels / sales channels) so that COO / VP Marketing executives can read
+// per-project hints without the platform packages naming any vendor or channel.
+// See GENERIC_PLATFORM_BOUNDARY.md leaks L2 + L3.
+registerInstanceProjectMetadata(getInstanceProjectMetadata);
 
 export interface ExecutiveDescriptor {
   id: string;

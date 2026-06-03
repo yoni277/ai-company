@@ -7,7 +7,11 @@ import type {
 } from '@ai-company/shared-types';
 import type { VpMarketingLlmClient } from './llm-client';
 
-/** Heuristic — map a metric name to a funnel stage based on keywords. */
+/**
+ * Heuristic — map a metric NAME (not a project slug) to a funnel stage based
+ * on generic keywords. These tokens classify connector-supplied metric names;
+ * they do not branch on project identity. Keep the tokens generic.
+ */
 function stageFor(name: string): MarketingFunnelStage {
   const n = name.toLowerCase();
   if (/(impression|reach|view|awareness)/.test(n)) return 'awareness';
@@ -19,20 +23,25 @@ function stageFor(name: string): MarketingFunnelStage {
   return 'activation';
 }
 
-const PROJECT_CHANNEL_HINTS: Record<string, MarketingChannel[]> = {
-  'foodtruck-il': ['whatsapp', 'push', 'social', 'partnership'],
-  'lab-os': ['email', 'partnership', 'organic'],
-  'inventory-engine': ['partnership', 'product', 'organic'],
-  'whatsapp-engine': ['whatsapp', 'product', 'partnership'],
-};
-
-function defaultChannel(projectSlug: string): MarketingChannel {
-  return PROJECT_CHANNEL_HINTS[projectSlug]?.[0] ?? 'product';
+/**
+ * Default channel pick for a project. Reads from instance-supplied metadata
+ * (CompanyContext.projects[i].metadata?.marketingChannels). Falls back to
+ * `'product'` when no metadata is registered — the platform never infers a
+ * channel from project slug or name. See GENERIC_PLATFORM_BOUNDARY.md leak L3.
+ */
+function defaultChannel(
+  project: CompanyContext['projects'][number],
+): MarketingChannel {
+  return project.metadata?.marketingChannels?.[0] ?? 'product';
 }
 
 /**
  * Deterministic VP Marketing stand-in. Builds a plausible report directly from
  * the CompanyContext so the dashboard demos without an LLM key.
+ *
+ * No project-specific channel map lives here — channel hints come from the
+ * instance layer via the per-project metadata. Missing metadata → neutral
+ * `'product'` channel.
  */
 export class FakeVpMarketingLlmClient implements VpMarketingLlmClient {
   async generate(ctx: CompanyContext, reportType: ReportType): Promise<VpMarketingOutput> {
@@ -65,7 +74,7 @@ export class FakeVpMarketingLlmClient implements VpMarketingLlmClient {
       p.openOpportunities.slice(0, 2).map((o) => ({
         projectSlug: p.project.slug,
         title: truncate(o.description, 60),
-        channel: defaultChannel(p.project.slug),
+        channel: defaultChannel(p),
         priority: o.priority,
         description: o.description,
         expectedImpact:
