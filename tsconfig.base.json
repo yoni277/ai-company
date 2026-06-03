@@ -36,7 +36,9 @@
       "@ai-company/ai-coo": ["packages/ai-coo/src"],
       "@ai-company/ai-coo/*": ["packages/ai-coo/src/*"],
       "@ai-company/ai-vp-sales": ["packages/ai-vp-sales/src"],
-      "@ai-company/ai-vp-sales/*": ["packages/ai-vp-sales/src/*"]
+      "@ai-company/ai-vp-sales/*": ["packages/ai-vp-sales/src/*"],
+      "@ai-company/ai-executive-team": ["packages/ai-executive-team/src"],
+      "@ai-company/ai-executive-team/*": ["packages/ai-executive-team/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", ".next"]

@@ -11,6 +11,7 @@
     { "path": "./packages/ai-cfo" },
     { "path": "./packages/ai-coo" },
     { "path": "./packages/ai-vp-sales" },
+    { "path": "./packages/ai-executive-team" },
     { "path": "./apps/executive-dashboard" }
   ]
 }

@@ -19,6 +19,7 @@ const nav = [
   { href: '/cfo', label: 'AI CFO' },
   { href: '/vp-marketing', label: 'AI VP Marketing' },
   { href: '/vp-sales', label: 'AI VP Sales' },
+  { href: '/executive-team', label: 'Executive Team' },
 ];
 
 export default function RootLayout({ children }: { children: ReactNode }) {
