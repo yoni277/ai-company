@@ -4,7 +4,12 @@ import {
   envFromProcessEnv,
   type Repositories,
 } from '@ai-company/database';
-import { INSTANCE_PROJECTS_SEED } from './instance-seed';
+// The active instance's config lives outside the dashboard app — see
+// instances/yoni-company/. The dashboard never names the company directly;
+// `@active-instance/*` is a tsconfig path alias that points at whatever
+// instance directory the operator has chosen. To clone the platform for a
+// different company, change one alias in apps/executive-dashboard/tsconfig.json.
+import { INSTANCE_PROJECTS_SEED } from '@active-instance/instance-seed';
 import {
   ConnectorRegistry,
   SyncOrchestrator,
@@ -32,7 +37,7 @@ import {
 // connector-foodtruck-* / connector-lab-os / connector-inventory-engine /
 // connector-whatsapp-engine imports here — they belong in the instance layer.
 // See docs/architecture/GENERIC_PLATFORM_BOUNDARY.md leak L4.
-import { buildInstanceConnectors } from './instance-connectors';
+import { buildInstanceConnectors } from '@active-instance/instance-connectors';
 
 export interface ExecutiveDescriptor {
   id: string;

@@ -11,6 +11,7 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./*"],
+      "@active-instance/*": ["../../instances/yoni-company/*"],
       "@ai-company/shared-types": ["../../packages/shared-types/src"],
       "@ai-company/database": ["../../packages/database/src"],
       "@ai-company/connector-framework": ["../../packages/connector-framework/src"],
@@ -19,9 +20,16 @@
       "@ai-company/ai-vp-marketing": ["../../packages/ai-vp-marketing/src"],
       "@ai-company/ai-cfo": ["../../packages/ai-cfo/src"],
       "@ai-company/ai-coo": ["../../packages/ai-coo/src"],
-      "@ai-company/ai-vp-sales": ["../../packages/ai-vp-sales/src"]
+      "@ai-company/ai-vp-sales": ["../../packages/ai-vp-sales/src"],
+      "@ai-company/ai-executive-team": ["../../packages/ai-executive-team/src"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "../../instances/yoni-company/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }
