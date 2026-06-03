@@ -26,6 +26,10 @@ const nextConfig = {
     '@ai-company/connector-lab-os',
     '@ai-company/connector-inventory-engine',
     '@ai-company/connector-whatsapp-engine',
+    '@ai-company/connector-github',
+    '@ai-company/connector-supabase',
+    '@ai-company/connector-foodtruck-business',
+    '@ai-company/health-score',
   ],
 };
 

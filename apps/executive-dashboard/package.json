@@ -29,6 +29,7 @@
     "@ai-company/connector-github": "workspace:*",
     "@ai-company/connector-supabase": "workspace:*",
     "@ai-company/health-score": "workspace:*",
+    "@ai-company/connector-foodtruck-business": "workspace:*",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

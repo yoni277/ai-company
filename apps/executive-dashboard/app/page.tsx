@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { ensureSeededMockData, getPlatform } from '../lib/platform';
 import { loadPhase2Snapshot } from '../lib/phase2-metrics';
+import { loadFoodTruckBusinessMetrics } from '../lib/owner-acquisition';
+import { OwnerAcquisitionPanel } from '../components/OwnerAcquisitionPanel';
 import { deterministicDailyBrief } from '@ai-company/ai-chief-of-staff';
 import { Badge, Card, EmptyState, Stat } from '../components/Card';
 import { SyncButton } from '../components/SyncButton';
@@ -21,19 +23,22 @@ export default async function OverviewPage() {
   await ensureSeededMockData();
   const { repos } = getPlatform();
 
-  const [projects, openRisks, opportunities, latestBriefing, phase2] = await Promise.all([
-    repos.projects.list(),
-    repos.risks.listOpen(),
-    repos.opportunities.listAll(),
-    repos.reports.latest(CHIEF_OF_STAFF_ID, 'daily_briefing'),
-    loadPhase2Snapshot(repos),
-  ]);
+  const [projects, openRisks, opportunities, latestBriefing, phase2, foodTruck] =
+    await Promise.all([
+      repos.projects.list(),
+      repos.risks.listOpen(),
+      repos.opportunities.listAll(),
+      repos.reports.latest(CHIEF_OF_STAFF_ID, 'daily_briefing'),
+      loadPhase2Snapshot(repos),
+      loadFoodTruckBusinessMetrics(),
+    ]);
 
   const dailyBrief = deterministicDailyBrief({
     github: phase2.github,
     supabase: phase2.supabase,
     health: phase2.health,
     pendingApprovalCount: phase2.pendingApprovals.length,
+    foodTruck: foodTruck.metrics,
   });
 
   const live = projects.filter((p) => p.status !== 'archived' && p.status !== 'paused');
@@ -59,6 +64,8 @@ export default async function OverviewPage() {
       </header>
 
       <ProductionMetricsClient snapshot={phase2} initialBrief={dailyBrief} />
+
+      <OwnerAcquisitionPanel metrics={foodTruck.metrics} />
 
       <Card>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
