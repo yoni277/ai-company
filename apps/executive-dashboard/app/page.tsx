@@ -5,6 +5,7 @@ import { loadFoodTruckBusinessMetrics } from '../lib/owner-acquisition';
 import { loadPortfolioIntelligenceForDashboard } from '../lib/portfolio-intelligence';
 import { OwnerAcquisitionPanel } from '../components/OwnerAcquisitionPanel';
 import { PortfolioOverviewPanel } from '../components/PortfolioOverviewPanel';
+import { RevenueOverviewPanel } from '../components/RevenueOverviewPanel';
 import { FunnelIntelligencePanel } from '../components/FunnelIntelligencePanel';
 import { CeoActionQueuePanel } from '../components/CeoActionQueuePanel';
 import { deterministicDailyBrief } from '@ai-company/ai-chief-of-staff';
@@ -50,6 +51,7 @@ export default async function OverviewPage() {
     funnels,
     decisionSupport,
     portfolio,
+    revenueSnapshots: portfolioLoad.revenueSnapshots,
     ...(topBundle?.briefDetail !== undefined
       ? { portfolioTopProjectBriefDetail: topBundle.briefDetail }
       : {}),
@@ -80,6 +82,8 @@ export default async function OverviewPage() {
       <ProductionMetricsClient snapshot={phase2} initialBrief={dailyBrief} />
 
       <PortfolioOverviewPanel portfolio={portfolio} />
+
+      <RevenueOverviewPanel revenue={portfolio.revenue} />
 
       <OwnerAcquisitionPanel metrics={foodTruck.metrics} />
 

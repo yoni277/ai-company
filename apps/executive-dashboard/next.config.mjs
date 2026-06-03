@@ -34,6 +34,8 @@ const nextConfig = {
     '@ai-company/portfolio-intelligence-engine',
     '@ai-company/connector-portfolio-intelligence',
     '@ai-company/project-registry',
+    '@ai-company/revenue-intelligence-engine',
+    '@ai-company/connector-revenue',
     '@ai-company/health-score',
   ],
 };

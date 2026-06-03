@@ -14,8 +14,11 @@ export function PortfolioOverviewPanel({
 }: {
   portfolio: PortfolioIntelligenceSnapshot;
 }) {
-  const { health, projects, priorities } = portfolio;
+  const { health, projects, priorities, revenue } = portfolio;
   const rankByProject = new Map(priorities.map((p) => [p.projectId, p.rank]));
+  const revenueByProject = new Map(
+    (revenue?.projects ?? []).map((r) => [r.projectId, r]),
+  );
 
   return (
     <div className="space-y-4">
@@ -40,6 +43,8 @@ export function PortfolioOverviewPanel({
                 <th className="pb-2 pr-4">Health</th>
                 <th className="pb-2 pr-4">Bottleneck</th>
                 <th className="pb-2 pr-4">Recommendations</th>
+                <th className="pb-2 pr-4">Revenue</th>
+                <th className="pb-2 pr-4">Transactions</th>
                 <th className="pb-2">Data</th>
               </tr>
             </thead>
@@ -72,6 +77,14 @@ export function PortfolioOverviewPanel({
                           ({p.p1RecommendationCount} P1)
                         </span>
                       ) : null}
+                    </td>
+                    <td className="py-3 pr-4 text-slate-400">
+                      {revenueByProject.get(p.projectId)?.totalRevenue != null
+                        ? `${revenueByProject.get(p.projectId)!.currency === 'ILS' ? '₪' : '$'}${Math.round(revenueByProject.get(p.projectId)!.totalRevenue)}`
+                        : '—'}
+                    </td>
+                    <td className="py-3 pr-4 text-slate-400">
+                      {revenueByProject.get(p.projectId)?.transactionCount ?? '—'}
                     </td>
                     <td className="py-3">
                       <Badge

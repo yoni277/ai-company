@@ -71,6 +71,7 @@ export async function loadDailyCeoBrief(repos: Repositories): Promise<DailyBrief
     funnels: portfolioLoad.funnels,
     decisionSupport: portfolioLoad.decisionSupport,
     portfolio: portfolioLoad.portfolio,
+    revenueSnapshots: portfolioLoad.revenueSnapshots,
     ...(topBundle?.briefDetail !== undefined
       ? { portfolioTopProjectBriefDetail: topBundle.briefDetail }
       : {}),
