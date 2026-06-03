@@ -3,8 +3,10 @@ import { ensureSeededMockData, getPlatform } from '../lib/platform';
 import { loadPhase2Snapshot } from '../lib/phase2-metrics';
 import { loadFoodTruckBusinessMetrics } from '../lib/owner-acquisition';
 import { loadFunnelSnapshots } from '../lib/funnel-intelligence';
+import { loadDecisionSupportResults } from '../lib/decision-support';
 import { OwnerAcquisitionPanel } from '../components/OwnerAcquisitionPanel';
 import { FunnelIntelligencePanel } from '../components/FunnelIntelligencePanel';
+import { CeoActionQueuePanel } from '../components/CeoActionQueuePanel';
 import { deterministicDailyBrief } from '@ai-company/ai-chief-of-staff';
 import { Badge, Card, EmptyState, Stat } from '../components/Card';
 import { SyncButton } from '../components/SyncButton';
@@ -25,7 +27,7 @@ export default async function OverviewPage() {
   await ensureSeededMockData();
   const { repos } = getPlatform();
 
-  const [projects, openRisks, opportunities, latestBriefing, phase2, foodTruck, funnels] =
+  const [projects, openRisks, opportunities, latestBriefing, phase2, foodTruck, funnels, decisionSupport] =
     await Promise.all([
       repos.projects.list(),
       repos.risks.listOpen(),
@@ -34,6 +36,7 @@ export default async function OverviewPage() {
       loadPhase2Snapshot(repos),
       loadFoodTruckBusinessMetrics(),
       loadFunnelSnapshots(),
+      loadDecisionSupportResults(),
     ]);
 
   const dailyBrief = deterministicDailyBrief({
@@ -43,6 +46,7 @@ export default async function OverviewPage() {
     pendingApprovalCount: phase2.pendingApprovals.length,
     foodTruck: foodTruck.metrics,
     funnels,
+    decisionSupport,
   });
 
   const live = projects.filter((p) => p.status !== 'archived' && p.status !== 'paused');
@@ -72,6 +76,8 @@ export default async function OverviewPage() {
       <OwnerAcquisitionPanel metrics={foodTruck.metrics} />
 
       <FunnelIntelligencePanel snapshots={funnels} />
+
+      <CeoActionQueuePanel results={decisionSupport} />
 
       <Card>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

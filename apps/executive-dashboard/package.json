@@ -31,6 +31,7 @@
     "@ai-company/health-score": "workspace:*",
     "@ai-company/connector-foodtruck-business": "workspace:*",
     "@ai-company/business-funnel-engine": "workspace:*",
+    "@ai-company/decision-support-engine": "workspace:*",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

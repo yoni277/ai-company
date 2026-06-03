@@ -15,6 +15,7 @@ import type { Risk } from '@ai-company/shared-types';
 import { generateDailyBrief } from '@ai-company/ai-chief-of-staff';
 import { loadFoodTruckBusinessMetrics } from './owner-acquisition';
 import { loadFunnelSnapshots } from './funnel-intelligence';
+import { loadDecisionSupportResults } from './decision-support';
 import type { Repositories } from '@ai-company/database';
 
 export type { Phase2Snapshot, PendingApproval };
@@ -54,10 +55,11 @@ export async function loadPhase2Snapshot(repos: Repositories): Promise<Phase2Sna
 }
 
 export async function loadDailyCeoBrief(repos: Repositories): Promise<DailyBrief> {
-  const [snapshot, foodTruck, funnels] = await Promise.all([
+  const [snapshot, foodTruck, funnels, decisionSupport] = await Promise.all([
     loadPhase2Snapshot(repos),
     loadFoodTruckBusinessMetrics(),
     loadFunnelSnapshots(),
+    loadDecisionSupportResults(),
   ]);
   const input: DailyBriefMetricsInput = {
     github: snapshot.github,
@@ -66,6 +68,7 @@ export async function loadDailyCeoBrief(repos: Repositories): Promise<DailyBrief
     pendingApprovalCount: snapshot.pendingApprovals.length,
     foodTruck: foodTruck.metrics,
     funnels,
+    decisionSupport,
   };
   return generateDailyBrief(input);
 }
