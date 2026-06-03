@@ -1,5 +1,6 @@
 import { loadRegisteredProjects } from '@ai-company/project-registry';
 import { loadRevenueSnapshots } from '@ai-company/connector-revenue';
+import { buildFinancialIntelligenceFromRevenueSnapshots } from '@ai-company/financial-intelligence-engine';
 import { aggregatePortfolioRevenue } from '@ai-company/revenue-intelligence-engine';
 import {
   aggregatePortfolioIntelligence,
@@ -38,7 +39,8 @@ export async function loadPortfolioIntelligence(): Promise<PortfolioIntelligence
     loadRevenueSnapshots(),
   ]);
   const revenue = aggregatePortfolioRevenue(revenueSnapshots);
-  const portfolio = aggregatePortfolioIntelligence(bundles, revenue);
+  const financial = buildFinancialIntelligenceFromRevenueSnapshots(revenueSnapshots);
+  const portfolio = aggregatePortfolioIntelligence(bundles, revenue, financial);
   const decisionSupport = bundles.map((b) => ({
     projectId: b.projectId,
     projectName: b.projectName,
