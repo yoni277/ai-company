@@ -9,25 +9,34 @@ export function ensureCooOutput(value: unknown): CooOutput {
     throw new Error('CooOutput: not an object');
   }
   const v = value as Record<string, unknown>;
-  for (const k of [
-    'headline',
-    'operationsHealth',
-    'perProjectOperations',
-    'bottlenecks',
-    'vendorHealth',
-    'operationalPriorities',
-  ]) {
-    if (!(k in v)) throw new Error(`CooOutput: missing field "${k}"`);
+
+  if (typeof v.headline !== 'string') {
+    throw new Error('CooOutput: missing or non-string field "headline"');
   }
-  if (!Array.isArray(v.perProjectOperations))
-    throw new Error('CooOutput: perProjectOperations must be array');
-  if (!Array.isArray(v.bottlenecks)) throw new Error('CooOutput: bottlenecks must be array');
-  if (!Array.isArray(v.vendorHealth)) throw new Error('CooOutput: vendorHealth must be array');
-  if (!Array.isArray(v.operationalPriorities))
-    throw new Error('CooOutput: operationalPriorities must be array');
+  if (typeof v.operationsHealth !== 'string') {
+    throw new Error('CooOutput: missing or non-string field "operationsHealth"');
+  }
+
+  const arrayField = <T>(name: keyof CooOutput): T[] => {
+    const raw = v[name as string];
+    if (raw === undefined || raw === null) return [];
+    if (!Array.isArray(raw)) {
+      throw new Error(`CooOutput: "${String(name)}" must be an array when present`);
+    }
+    return raw as T[];
+  };
 
   return {
-    ...(v as unknown as CooOutput),
+    headline: v.headline,
+    operationsHealth: v.operationsHealth as CooOutput['operationsHealth'],
+    perProjectOperations: arrayField<CooOutput['perProjectOperations'][number]>(
+      'perProjectOperations',
+    ),
+    bottlenecks: arrayField<CooOutput['bottlenecks'][number]>('bottlenecks'),
+    vendorHealth: arrayField<CooOutput['vendorHealth'][number]>('vendorHealth'),
+    operationalPriorities: arrayField<CooOutput['operationalPriorities'][number]>(
+      'operationalPriorities',
+    ),
     generatedAt: typeof v.generatedAt === 'string' ? v.generatedAt : new Date().toISOString(),
   };
 }

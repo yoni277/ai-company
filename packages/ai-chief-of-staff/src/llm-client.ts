@@ -57,31 +57,41 @@ export class OpenAiLlmClient implements LlmClient {
   }
 }
 
+/**
+ * Validate the LLM payload. Required scalars must be present; array fields default
+ * to `[]` when the model omits them. Tolerant of benign Claude tool-use schema drift.
+ */
 export function ensureChiefOfStaffOutput(value: unknown): ChiefOfStaffOutput {
   if (!value || typeof value !== 'object') {
     throw new Error('ChiefOfStaffOutput: not an object');
   }
   const v = value as Record<string, unknown>;
-  const required = [
-    'headline',
-    'companyHealth',
-    'perProject',
-    'topRisks',
-    'topOpportunities',
-    'ceoPriorities',
-  ];
-  for (const k of required) {
-    if (!(k in v)) throw new Error(`ChiefOfStaffOutput: missing field "${k}"`);
+
+  if (typeof v.headline !== 'string') {
+    throw new Error('ChiefOfStaffOutput: missing or non-string field "headline"');
   }
-  if (!Array.isArray(v.perProject)) throw new Error('ChiefOfStaffOutput: perProject must be array');
-  if (!Array.isArray(v.topRisks)) throw new Error('ChiefOfStaffOutput: topRisks must be array');
-  if (!Array.isArray(v.topOpportunities))
-    throw new Error('ChiefOfStaffOutput: topOpportunities must be array');
-  if (!Array.isArray(v.ceoPriorities))
-    throw new Error('ChiefOfStaffOutput: ceoPriorities must be array');
+  if (typeof v.companyHealth !== 'string') {
+    throw new Error('ChiefOfStaffOutput: missing or non-string field "companyHealth"');
+  }
+
+  const arrayField = <T>(name: keyof ChiefOfStaffOutput): T[] => {
+    const raw = v[name as string];
+    if (raw === undefined || raw === null) return [];
+    if (!Array.isArray(raw)) {
+      throw new Error(`ChiefOfStaffOutput: "${String(name)}" must be an array when present`);
+    }
+    return raw as T[];
+  };
 
   return {
-    ...(v as unknown as ChiefOfStaffOutput),
+    headline: v.headline,
+    companyHealth: v.companyHealth as ChiefOfStaffOutput['companyHealth'],
+    perProject: arrayField<ChiefOfStaffOutput['perProject'][number]>('perProject'),
+    topRisks: arrayField<ChiefOfStaffOutput['topRisks'][number]>('topRisks'),
+    topOpportunities: arrayField<ChiefOfStaffOutput['topOpportunities'][number]>(
+      'topOpportunities',
+    ),
+    ceoPriorities: arrayField<ChiefOfStaffOutput['ceoPriorities'][number]>('ceoPriorities'),
     generatedAt: typeof v.generatedAt === 'string' ? v.generatedAt : new Date().toISOString(),
   };
 }
