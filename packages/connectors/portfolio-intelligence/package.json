@@ -13,6 +13,7 @@
     "test": "echo 'no-op'"
   },
   "dependencies": {
+    "@ai-company/project-registry": "workspace:*",
     "@ai-company/business-funnel-engine": "workspace:*",
     "@ai-company/connector-foodtruck-business": "workspace:*",
     "@ai-company/decision-support-engine": "workspace:*",

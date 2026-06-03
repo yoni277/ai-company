@@ -11,6 +11,7 @@
     { "path": "../../business-funnel-engine" },
     { "path": "../../decision-support-engine" },
     { "path": "../../portfolio-intelligence-engine" },
-    { "path": "../foodtruck-business" }
+    { "path": "../foodtruck-business" },
+    { "path": "../../project-registry" }
   ]
 }
