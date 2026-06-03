@@ -1,9 +1,15 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { analyzeFunnel } from '@ai-company/business-funnel-engine';
 import type {
   FoodTruckBusinessMetrics,
+  FunnelSnapshot,
   OwnerAcquisitionMetrics,
   TruckRegistryMetrics,
 } from '@ai-company/shared-types';
+import {
+  FOODTRUCK_FUNNEL_DEFINITION,
+  foodTruckRegistryToStageCounts,
+} from './funnel-config';
 
 export interface FoodTruckBusinessConnectorConfig {
   supabaseUrl: string;
@@ -40,6 +46,12 @@ export class FoodTruckBusinessConnector {
     const acquisition = await this.fetchAcquisition(registry);
     const registrationTrend = await this.fetchRegistrationTrend();
     return { registry, acquisition, live: true, registrationTrend };
+  }
+
+  /** Generic funnel snapshot from registry counts (no FoodTruck logic in engine). */
+  async fetchFunnelSnapshot(): Promise<FunnelSnapshot> {
+    const metrics = await this.fetchMetrics();
+    return buildFoodTruckFunnelSnapshot(metrics.registry);
   }
 
   private async fetchRegistry(): Promise<TruckRegistryMetrics> {
@@ -178,6 +190,13 @@ export function foodtruckBusinessConnectorFromEnv(): FoodTruckBusinessConnector 
     return new FoodTruckBusinessConnector({ supabaseUrl: url, serviceRoleKey: key });
   }
   return new FoodTruckBusinessConnector();
+}
+
+export function buildFoodTruckFunnelSnapshot(registry: TruckRegistryMetrics): FunnelSnapshot {
+  return analyzeFunnel(
+    FOODTRUCK_FUNNEL_DEFINITION,
+    foodTruckRegistryToStageCounts(registry),
+  );
 }
 
 export function buildOwnerAcquisitionSummary(metrics: FoodTruckBusinessMetrics): string {

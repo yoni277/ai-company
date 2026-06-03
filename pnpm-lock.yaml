@@ -41,6 +41,9 @@ importers:
       '@ai-company/ai-vp-sales':
         specifier: workspace:*
         version: link:../../packages/ai-vp-sales
+      '@ai-company/business-funnel-engine':
+        specifier: workspace:*
+        version: link:../../packages/business-funnel-engine
       '@ai-company/connector-foodtruck-business':
         specifier: workspace:*
         version: link:../../packages/connectors/foodtruck-business
@@ -170,6 +173,9 @@ importers:
 
   packages/ai-chief-of-staff:
     dependencies:
+      '@ai-company/business-funnel-engine':
+        specifier: workspace:*
+        version: link:../business-funnel-engine
       '@ai-company/connector-foodtruck-business':
         specifier: workspace:*
         version: link:../connectors/foodtruck-business
@@ -303,6 +309,16 @@ importers:
         specifier: ^5.6.3
         version: 5.9.3
 
+  packages/business-funnel-engine:
+    dependencies:
+      '@ai-company/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
   packages/connector-framework:
     dependencies:
       '@ai-company/database':
@@ -318,6 +334,9 @@ importers:
 
   packages/connectors/foodtruck-business:
     dependencies:
+      '@ai-company/business-funnel-engine':
+        specifier: workspace:*
+        version: link:../../business-funnel-engine
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../../shared-types

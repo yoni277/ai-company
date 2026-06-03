@@ -13,6 +13,7 @@
     "test": "echo 'no-op'"
   },
   "dependencies": {
+    "@ai-company/business-funnel-engine": "workspace:*",
     "@ai-company/shared-types": "workspace:*",
     "@supabase/supabase-js": "^2.47.10"
   },
