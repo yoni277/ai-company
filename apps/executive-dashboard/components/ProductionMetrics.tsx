@@ -144,6 +144,26 @@ export function ProductionMetricsPanel({
               </ul>
             </div>
           ) : null}
+          {dailyBrief.ceoDirectives.length > 0 ? (
+            <div className="mb-4">
+              <div className="text-xs text-slate-500 mb-1">CEO directives</div>
+              <ul className="text-sm text-slate-200 space-y-1">
+                {dailyBrief.ceoDirectives.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {dailyBrief.openCeoDecisions.length > 0 ? (
+            <div className="mb-4">
+              <div className="text-xs text-slate-500 mb-1">Open CEO decisions</div>
+              <ul className="text-sm text-slate-200 space-y-1">
+                {dailyBrief.openCeoDecisions.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {dailyBrief.recommendedActions.length > 0 ? (
             <div className="mb-4">
               <div className="text-xs text-slate-500 mb-1">Recommended actions</div>

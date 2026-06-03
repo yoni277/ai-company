@@ -10,7 +10,7 @@ import { buildOwnerAcquisitionSummary } from '@ai-company/connector-foodtruck-bu
 const EXPLAIN_ONLY_SYSTEM = `You are the AI Chief of Staff for a CEO daily brief.
 You receive pre-computed metrics. Your job is to EXPLAIN them in plain language.
 You must NOT invent, recalculate, or contradict the numbers provided.
-Return JSON with keys: companyHealth (string), ownerAcquisitionSummary (string), funnelSummaries (string[]), recommendedActions (string[]), portfolioSummary (string), revenueSummaries (string[]), financialOverviews (string[]), topRisks (string[]), opportunities (string[]), approvalsWaiting (string[]).`;
+Return JSON with keys: companyHealth (string), ownerAcquisitionSummary (string), funnelSummaries (string[]), recommendedActions (string[]), portfolioSummary (string), revenueSummaries (string[]), financialOverviews (string[]), ceoDirectives (string[]), openCeoDecisions (string[]), topRisks (string[]), opportunities (string[]), approvalsWaiting (string[]).`;
 
 /**
  * Generate a CEO daily brief from pre-computed metrics.
@@ -69,8 +69,10 @@ function buildExplainPrompt(m: DailyBriefMetricsInput): string {
     portfolioSummaryPromptLine(m),
     revenueSummariesPromptLine(m),
     financialOverviewsPromptLine(m),
+    ceoDirectivesPromptLine(m),
+    openCeoDecisionsPromptLine(m),
     '',
-    'Write a CEO brief: companyHealth (1-2 sentences), ownerAcquisitionSummary (one sentence with exact truck counts), funnelSummaries (one string per funnel, exact counts), recommendedActions (numbered lines, exact wording provided), portfolioSummary (one sentence, exact wording provided), revenueSummaries (one string per project, exact wording provided), financialOverviews (one string per project, exact wording provided), topRisks (3 bullets max), opportunities (3 max), approvalsWaiting (list items or say none).',
+    'Write a CEO brief: companyHealth (1-2 sentences), ownerAcquisitionSummary (one sentence with exact truck counts), funnelSummaries (one string per funnel, exact counts), recommendedActions (numbered lines, exact wording provided), portfolioSummary (one sentence, exact wording provided), revenueSummaries (one string per project, exact wording provided), financialOverviews (one string per project, exact wording provided), ceoDirectives (exact wording provided), openCeoDecisions (exact wording provided), topRisks (3 bullets max), opportunities (3 max), approvalsWaiting (list items or say none).',
   ].join('\n');
 }
 
@@ -102,6 +104,8 @@ function normalizeDailyBrief(
         : portfolioSummaryFromInput(metrics);
     const revenueSummaries = revenueSummariesFromRaw(o.revenueSummaries, metrics);
     const financialOverviews = financialOverviewsFromRaw(o.financialOverviews, metrics);
+    const ceoDirectives = ceoDirectivesFromRaw(o.ceoDirectives, metrics);
+    const openCeoDecisions = openCeoDecisionsFromRaw(o.openCeoDecisions, metrics);
     return {
       companyHealth,
       topRisks,
@@ -113,6 +117,8 @@ function normalizeDailyBrief(
       portfolioSummary,
       revenueSummaries,
       financialOverviews,
+      ceoDirectives,
+      openCeoDecisions,
     };
   }
   return deterministicDailyBrief(metrics);
@@ -193,6 +199,45 @@ function financialOverviewsFromRaw(v: unknown, metrics: DailyBriefMetricsInput):
   return financialOverviewsFromInput(metrics);
 }
 
+function ceoDirectivesFromInput(m: DailyBriefMetricsInput): string[] {
+  if (!m.ceoDirectives?.length) return ['No active CEO directives.'];
+  return m.ceoDirectives.map((d) => {
+    const override = d.isOverride ? ' [OVERRIDE]' : '';
+    const project = d.targetProjectId ? ` (${d.targetProjectId})` : '';
+    return `${d.title}${override}${project}: ${d.directive}`;
+  });
+}
+
+function openCeoDecisionsFromInput(m: DailyBriefMetricsInput): string[] {
+  const open = (m.ceoDecisions ?? []).filter(
+    (d) => d.decisionStatus === 'approved' || d.decisionStatus === 'in_progress',
+  );
+  if (!open.length) return ['No approved or in-progress CEO decisions.'];
+  return open.map((d) => {
+    const owner = d.owner ? ` · owner: ${d.owner}` : '';
+    const due = d.dueDate ? ` · due: ${d.dueDate}` : '';
+    return `[${d.decisionStatus}] ${d.decisionTitle}${owner}${due}`;
+  });
+}
+
+function ceoDirectivesPromptLine(m: DailyBriefMetricsInput): string {
+  return ceoDirectivesFromInput(m).join('\n');
+}
+
+function openCeoDecisionsPromptLine(m: DailyBriefMetricsInput): string {
+  return openCeoDecisionsFromInput(m).join('\n');
+}
+
+function ceoDirectivesFromRaw(v: unknown, metrics: DailyBriefMetricsInput): string[] {
+  if (Array.isArray(v) && v.every((x) => typeof x === 'string')) return v as string[];
+  return ceoDirectivesFromInput(metrics);
+}
+
+function openCeoDecisionsFromRaw(v: unknown, metrics: DailyBriefMetricsInput): string[] {
+  if (Array.isArray(v) && v.every((x) => typeof x === 'string')) return v as string[];
+  return openCeoDecisionsFromInput(metrics);
+}
+
 function portfolioSummaryFromInput(m: DailyBriefMetricsInput): string {
   if (!m.portfolio) return 'Portfolio intelligence not available.';
   const detail = m.portfolioTopProjectBriefDetail;
@@ -245,6 +290,8 @@ export function deterministicDailyBrief(metrics: DailyBriefMetricsInput): DailyB
     portfolioSummary: portfolioSummaryFromInput(metrics),
     revenueSummaries: revenueSummariesFromInput(metrics),
     financialOverviews: financialOverviewsFromInput(metrics),
+    ceoDirectives: ceoDirectivesFromInput(metrics),
+    openCeoDecisions: openCeoDecisionsFromInput(metrics),
   };
 }
 

@@ -3,6 +3,7 @@ import { ensureSeededMockData, getPlatform } from '../lib/platform';
 import { loadPhase2Snapshot } from '../lib/phase2-metrics';
 import { loadFoodTruckBusinessMetrics } from '../lib/owner-acquisition';
 import { loadPortfolioIntelligenceForDashboard } from '../lib/portfolio-intelligence';
+import { listActiveDirectives, listDecisions } from '../lib/ceo-operating-system';
 import { OwnerAcquisitionPanel } from '../components/OwnerAcquisitionPanel';
 import { PortfolioOverviewPanel } from '../components/PortfolioOverviewPanel';
 import { RevenueOverviewPanel } from '../components/RevenueOverviewPanel';
@@ -29,7 +30,7 @@ export default async function OverviewPage() {
   await ensureSeededMockData();
   const { repos } = getPlatform();
 
-  const [projects, openRisks, opportunities, latestBriefing, phase2, foodTruck, portfolioLoad] =
+  const [projects, openRisks, opportunities, latestBriefing, phase2, foodTruck, portfolioLoad, ceoDirectives, ceoDecisions] =
     await Promise.all([
       repos.projects.list(),
       repos.risks.listOpen(),
@@ -38,6 +39,8 @@ export default async function OverviewPage() {
       loadPhase2Snapshot(repos),
       loadFoodTruckBusinessMetrics(),
       loadPortfolioIntelligenceForDashboard(),
+      listActiveDirectives(),
+      listDecisions(),
     ]);
 
   const { portfolio, funnels, decisionSupport, bundles } = portfolioLoad;
@@ -53,6 +56,8 @@ export default async function OverviewPage() {
     decisionSupport,
     portfolio,
     revenueSnapshots: portfolioLoad.revenueSnapshots,
+    ceoDirectives,
+    ceoDecisions,
     ...(portfolio.financial ? { portfolioFinancial: portfolio.financial } : {}),
     ...(topBundle?.briefDetail !== undefined
       ? { portfolioTopProjectBriefDetail: topBundle.briefDetail }

@@ -15,6 +15,7 @@ import type { Risk } from '@ai-company/shared-types';
 import { generateDailyBrief } from '@ai-company/ai-chief-of-staff';
 import { loadFoodTruckBusinessMetrics } from './owner-acquisition';
 import { loadPortfolioIntelligenceForDashboard } from './portfolio-intelligence';
+import { listActiveDirectives, listDecisions } from './ceo-operating-system';
 import type { Repositories } from '@ai-company/database';
 
 export type { Phase2Snapshot, PendingApproval };
@@ -54,10 +55,12 @@ export async function loadPhase2Snapshot(repos: Repositories): Promise<Phase2Sna
 }
 
 export async function loadDailyCeoBrief(repos: Repositories): Promise<DailyBrief> {
-  const [snapshot, foodTruck, portfolioLoad] = await Promise.all([
+  const [snapshot, foodTruck, portfolioLoad, ceoDirectives, ceoDecisions] = await Promise.all([
     loadPhase2Snapshot(repos),
     loadFoodTruckBusinessMetrics(),
     loadPortfolioIntelligenceForDashboard(),
+    listActiveDirectives(),
+    listDecisions(),
   ]);
   const topBundle = portfolioLoad.bundles.find(
     (b) => b.projectId === portfolioLoad.portfolio.priorities[0]?.projectId,
@@ -75,6 +78,8 @@ export async function loadDailyCeoBrief(repos: Repositories): Promise<DailyBrief
     ...(portfolioLoad.portfolio.financial
       ? { portfolioFinancial: portfolioLoad.portfolio.financial }
       : {}),
+    ceoDirectives,
+    ceoDecisions,
     ...(topBundle?.briefDetail !== undefined
       ? { portfolioTopProjectBriefDetail: topBundle.briefDetail }
       : {}),
