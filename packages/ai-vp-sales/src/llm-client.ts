@@ -9,25 +9,36 @@ export function ensureVpSalesOutput(value: unknown): VpSalesOutput {
     throw new Error('VpSalesOutput: not an object');
   }
   const v = value as Record<string, unknown>;
-  for (const k of [
-    'headline',
-    'salesHealth',
-    'perProjectSales',
-    'deals',
-    'salesRisks',
-    'salesPriorities',
-  ]) {
-    if (!(k in v)) throw new Error(`VpSalesOutput: missing field "${k}"`);
-  }
-  if (!Array.isArray(v.perProjectSales))
-    throw new Error('VpSalesOutput: perProjectSales must be array');
-  if (!Array.isArray(v.deals)) throw new Error('VpSalesOutput: deals must be array');
-  if (!Array.isArray(v.salesRisks)) throw new Error('VpSalesOutput: salesRisks must be array');
-  if (!Array.isArray(v.salesPriorities))
-    throw new Error('VpSalesOutput: salesPriorities must be array');
 
-  return {
-    ...(v as unknown as VpSalesOutput),
+  if (typeof v.headline !== 'string') {
+    throw new Error('VpSalesOutput: missing or non-string field "headline"');
+  }
+  if (typeof v.salesHealth !== 'string') {
+    throw new Error('VpSalesOutput: missing or non-string field "salesHealth"');
+  }
+
+  const arrayField = <T>(name: keyof VpSalesOutput): T[] => {
+    const raw = v[name as string];
+    if (raw === undefined || raw === null) return [];
+    if (!Array.isArray(raw)) {
+      throw new Error(`VpSalesOutput: "${String(name)}" must be an array when present`);
+    }
+    return raw as T[];
+  };
+
+  const result: VpSalesOutput = {
+    headline: v.headline,
+    salesHealth: v.salesHealth as VpSalesOutput['salesHealth'],
+    perProjectSales: arrayField<VpSalesOutput['perProjectSales'][number]>('perProjectSales'),
+    deals: arrayField<VpSalesOutput['deals'][number]>('deals'),
+    salesRisks: arrayField<VpSalesOutput['salesRisks'][number]>('salesRisks'),
+    salesPriorities: arrayField<VpSalesOutput['salesPriorities'][number]>('salesPriorities'),
     generatedAt: typeof v.generatedAt === 'string' ? v.generatedAt : new Date().toISOString(),
   };
+
+  if (v.forecastSummary && typeof v.forecastSummary === 'object') {
+    result.forecastSummary = v.forecastSummary as NonNullable<VpSalesOutput['forecastSummary']>;
+  }
+
+  return result;
 }

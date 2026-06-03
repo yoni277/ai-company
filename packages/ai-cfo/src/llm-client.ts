@@ -9,27 +9,41 @@ export function ensureCfoOutput(value: unknown): CfoOutput {
     throw new Error('CfoOutput: not an object');
   }
   const v = value as Record<string, unknown>;
-  for (const k of [
-    'headline',
-    'financialHealth',
-    'perProjectFinancials',
-    'financialRisks',
-    'capitalAllocations',
-    'financialPriorities',
-  ]) {
-    if (!(k in v)) throw new Error(`CfoOutput: missing field "${k}"`);
-  }
-  if (!Array.isArray(v.perProjectFinancials))
-    throw new Error('CfoOutput: perProjectFinancials must be array');
-  if (!Array.isArray(v.financialRisks))
-    throw new Error('CfoOutput: financialRisks must be array');
-  if (!Array.isArray(v.capitalAllocations))
-    throw new Error('CfoOutput: capitalAllocations must be array');
-  if (!Array.isArray(v.financialPriorities))
-    throw new Error('CfoOutput: financialPriorities must be array');
 
-  return {
-    ...(v as unknown as CfoOutput),
+  if (typeof v.headline !== 'string') {
+    throw new Error('CfoOutput: missing or non-string field "headline"');
+  }
+  if (typeof v.financialHealth !== 'string') {
+    throw new Error('CfoOutput: missing or non-string field "financialHealth"');
+  }
+
+  const arrayField = <T>(name: keyof CfoOutput): T[] => {
+    const raw = v[name as string];
+    if (raw === undefined || raw === null) return [];
+    if (!Array.isArray(raw)) {
+      throw new Error(`CfoOutput: "${String(name)}" must be an array when present`);
+    }
+    return raw as T[];
+  };
+
+  const result: CfoOutput = {
+    headline: v.headline,
+    financialHealth: v.financialHealth as CfoOutput['financialHealth'],
+    perProjectFinancials: arrayField<CfoOutput['perProjectFinancials'][number]>(
+      'perProjectFinancials',
+    ),
+    financialRisks: arrayField<CfoOutput['financialRisks'][number]>('financialRisks'),
+    capitalAllocations: arrayField<CfoOutput['capitalAllocations'][number]>('capitalAllocations'),
+    financialPriorities: arrayField<CfoOutput['financialPriorities'][number]>(
+      'financialPriorities',
+    ),
     generatedAt: typeof v.generatedAt === 'string' ? v.generatedAt : new Date().toISOString(),
   };
+
+  // cashSnapshot is optional, pass it through if shaped correctly.
+  if (v.cashSnapshot && typeof v.cashSnapshot === 'object') {
+    result.cashSnapshot = v.cashSnapshot as NonNullable<CfoOutput['cashSnapshot']>;
+  }
+
+  return result;
 }
