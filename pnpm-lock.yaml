@@ -83,6 +83,9 @@ importers:
       '@ai-company/portfolio-intelligence-engine':
         specifier: workspace:*
         version: link:../../packages/portfolio-intelligence-engine
+      '@ai-company/project-registry':
+        specifier: workspace:*
+        version: link:../../packages/project-registry
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
@@ -390,6 +393,9 @@ importers:
       '@ai-company/portfolio-intelligence-engine':
         specifier: workspace:*
         version: link:../../portfolio-intelligence-engine
+      '@ai-company/project-registry':
+        specifier: workspace:*
+        version: link:../../project-registry
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../../shared-types
@@ -439,6 +445,22 @@ importers:
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
+  packages/project-registry:
+    dependencies:
+      '@ai-company/database':
+        specifier: workspace:*
+        version: link:../database
+      '@ai-company/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
+      '@supabase/supabase-js':
+        specifier: ^2.47.10
+        version: 2.107.0
     devDependencies:
       typescript:
         specifier: ^5.6.3
