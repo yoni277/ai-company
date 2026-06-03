@@ -27,10 +27,12 @@ import {
   buildDefaultExecutiveTeam,
   type ExecutiveTeam,
 } from '@ai-company/ai-executive-team';
-import { FoodTruckIlConnector } from '@ai-company/connector-foodtruck-il';
-import { LabOsConnector } from '@ai-company/connector-lab-os';
-import { InventoryEngineConnector } from '@ai-company/connector-inventory-engine';
-import { WhatsAppEngineConnector } from '@ai-company/connector-whatsapp-engine';
+// Instance connectors are registered through lib/instance-connectors.ts so
+// that this platform module stays project-agnostic. Do NOT re-introduce
+// connector-foodtruck-* / connector-lab-os / connector-inventory-engine /
+// connector-whatsapp-engine imports here — they belong in the instance layer.
+// See docs/architecture/GENERIC_PLATFORM_BOUNDARY.md leak L4.
+import { buildInstanceConnectors } from './instance-connectors';
 
 export interface ExecutiveDescriptor {
   id: string;
@@ -75,35 +77,12 @@ export function getPlatform(): Platform {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  // FoodTruck-IL talks to its own Supabase project. The Foodtruck project happens
-  // to be the same Postgres host as our `ai_company` schema today, but the connector
-  // doesn't assume that — it takes its own credentials so it can move independently.
-  //
-  // Important: we use `||` (not `??`) so that an empty-string env (FOODTRUCK_SUPABASE_URL=)
-  // falls back to NEXT_PUBLIC_SUPABASE_URL instead of being treated as "set but empty".
-  // Without this, the connector silently goes into mock mode whenever the .env.local
-  // template ships with empty FOODTRUCK_* placeholders.
-  const foodTruckUrl =
-    process.env.FOODTRUCK_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const foodTruckKey =
-    process.env.FOODTRUCK_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-  const foodTruckConnector =
-    foodTruckUrl && foodTruckKey
-      ? new FoodTruckIlConnector({ supabaseUrl: foodTruckUrl, serviceRoleKey: foodTruckKey })
-      : new FoodTruckIlConnector();
-  if (process.env.AI_COMPANY_LOG_CONNECTOR_MODE === '1') {
-    // eslint-disable-next-line no-console
-    console.log(
-      `[platform] FoodTruck-IL connector: ${foodTruckUrl && foodTruckKey ? 'live' : 'mock'} (url=${foodTruckUrl ? 'set' : 'unset'}, key=${foodTruckKey ? 'set' : 'unset'})`,
-    );
-  }
-
-  const all = [
-    foodTruckConnector,
-    new LabOsConnector(),
-    new InventoryEngineConnector(),
-    new WhatsAppEngineConnector(),
-  ];
+  // Instance-supplied connector list. The platform never imports a specific
+  // connector — `instance-connectors.ts` owns all project-specific wiring
+  // (credentials, mock fallback, diagnostic logging). The platform stays
+  // generic and only applies the AI_COMPANY_ACTIVE_CONNECTORS allow-list filter,
+  // which is slug-agnostic.
+  const all = buildInstanceConnectors(process.env);
   registry.registerMany(
     active.length === 0 ? all : all.filter((c) => active.includes(c.name)),
   );
