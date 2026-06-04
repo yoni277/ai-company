@@ -1,41 +1,134 @@
-# FoodTruck-IL Friction Log — Production Validation Instance #1
+# 📓 AI-Company: Stage 1 Friction Log & Admission Gate
 
-Every time AI-Company makes you do something manually, takes too long, gives
-you the wrong answer, or you route around it (Slack, spreadsheet, SQL,
-memory), write one line here. Don't elaborate. Don't classify yet.
-Friday's weekly review is the classification step.
+**Positioning:** Founder Operating System (Pre-MVP Startup Phase)
+**Current Validation Target:** FoodTruck-IL
+**Mission:** Help the founder reach MVP launch with less cognitive load, better prioritization, and faster decision-making.
 
-## Fields
+> FoodTruck-IL is not a source of features.
+> FoodTruck-IL is a source of management problems.
+> The platform learns generic management capabilities.
+> The platform does not learn food truck functionality.
 
-`date | area | description | workaround | cost | category`
+---
 
-- **date** — `YYYY-MM-DD` (the day it happened, not when you logged it)
-- **area** — one-word category: `briefing`, `ceo-os`, `registry`, `connector`, `auth`, `data`, `latency`, `prompt`, `other`
-- **description** — what broke or annoyed you (one short sentence)
-- **workaround** — what you did instead (or "none" if it just blocked you)
-- **cost** — how much attention it cost: `s` (seconds), `m` (minutes), `h` (hours)
-- **category** — leave blank during the week. Set on Friday to `A` (platform), `B` (instance-specific), or `C` (bug).
+## 🚦 The Classification Gate
 
-## Entries
+Before any capability enters AI-Company Core (`packages/*`), it must pass both tests:
 
-| date       | area    | description | workaround | cost | category |
-|------------|---------|-------------|------------|------|----------|
-| 2026-06-04 | other   | (example — delete this row) Chief of Staff briefing said nothing actionable for 3 days running | none, but consider whether daily cadence is too frequent | m | |
-| 2026-06-04 | data    | (example — delete this row) Registry showed 4 projects but real FoodTruck-IL has 12 active trucks; couldn't see them anywhere | opened Supabase SQL editor directly | h | |
-| 2026-06-04 | latency | (example — delete this row) `/api/coo/briefing` took 47s, exceeds the 8s budget from test-plan-phase-5 | none, waited | m | |
+### Question 1 — Independent Existence Test
+If FoodTruck-IL disappeared tomorrow, would this capability still make sense?
 
-## Weekly review process
+### Question 2 — Vocabulary Test
+Can I describe this capability without using FoodTruck-specific vocabulary?
 
-Every Friday afternoon (or whenever you protect the platform-improvement slot):
+**Examples:**
 
-1. Walk through every unclassified row above.
-2. Set `category`:
-   - **A** — Platform Improvement. Useful to 30-50%+ of future companies, industry/vendor/currency agnostic, configurable, passes AcmeCo Clone Test. Promote to AI-Company backlog.
-   - **B** — Instance-Specific. Only useful to FoodTruck-IL or food-truck businesses generally. Stays inside `instances/yoni-company/*`.
-   - **C** — Bug. Something the platform claims to do but doesn't. Fix in `packages/*` is OK without admission review.
-3. Move classified rows into the closed-out section at the bottom (or leave in place; the column makes it grep-able).
-4. The Category A list becomes input to the 20% effort window for the following week.
+- ❌ `Truck Approval Queue` → ✅ `Entity Approval Queue`
+- ❌ `Food Truck Owner Outreach Tracker` → ✅ `Relationship Pipeline`
+- ❌ `Menu Approval Workflow` → ✅ `Content Approval Workflow`
 
-## Closed entries
+If either test fails:
+→ Keep it inside `instances/yoni-company/*`.
 
-(rows here have been classified and acted on — keep for retrospective)
+---
+
+## 📊 Stage 1 Success Metric
+
+The primary validation metric is not architecture.
+The primary validation metric is **adoption**.
+
+### Daily Usage Threshold
+
+> Did I open AI-Company before 11:00 AM on at least **20 of 30** validation days?
+
+If not:
+**The platform failed validation regardless of any other metric.**
+
+(Track daily — one tick per morning. Honest answer only; "I opened it at 11:02" is a No.)
+
+---
+
+## ☀️ Daily Founder Questions
+
+Every morning AI-Company must help answer:
+
+1. **What is blocking MVP launch?**
+2. **What decision requires my attention?**
+3. **What should I work on today?**
+4. **What can be deferred?**
+5. **What creates the biggest launch risk?**
+
+Whenever AI-Company cannot answer one of these questions adequately, create a friction entry.
+
+---
+
+## 📥 Friction Stream
+
+**Instructions:**
+
+Create an entry immediately whenever:
+
+- You leave AI-Company to complete a task manually.
+- One of the five questions cannot be answered.
+- AI-Company surfaces incorrect information.
+- AI-Company creates more work than it saves.
+- You think: *"I wish the system could help me with this."*
+
+**Do not design a solution.**
+**Do not create a feature request.**
+**Only describe the management problem.**
+
+Classification, platform implications, and feature decisions happen on Friday — not in the moment of friction.
+
+| Date | Failed Question / Situation | What actually happened? | Time Lost | Temporary Workaround | Platform Candidate? | Status |
+|---|---|---|---|---|---|---|
+| *2026-06-05* | *Question #2* | *AI-Company showed a decision already resolved yesterday in Supabase* | *10 min* | *Verified manually in Supabase* | *TBD Friday* | `Example — delete after first real entry` |
+| | | | | | | |
+| | | | | | | |
+| | | | | | | |
+
+---
+
+## 📅 Friday Review Process
+
+Every Friday, 08:00–12:00. Protected slot. No FoodTruck-IL operational work during this window.
+
+**Step 1** — Review all entries from the past week.
+
+**Step 2** — For each entry, ask:
+
+- Is this a **Platform capability**?
+- Is this **Instance-specific**?
+- Is this a **Bug**?
+
+**Step 3** — Apply the Classification Gate (both questions above) to anything that looks like a Platform candidate.
+
+**Step 4** — Move approved Platform items to:
+`docs/platform/PLATFORM_IMPROVEMENTS.md`
+
+**Step 5** — Move FoodTruck-specific items to:
+`instances/yoni-company/*` (the appropriate file — backlog, config, or new instance-layer module).
+
+**Step 6** — Mark bugs as `[Bug]` in the Status column and fix them in `packages/*` without admission review (bugs don't need to be useful to other companies; they need to not exist).
+
+---
+
+## ⛔ Stage 1 Constraint — No Founder Mode Features Yet
+
+Do not build any new Founder Mode capability during the first two weeks.
+
+First, run the five morning questions using the platform **exactly as it exists today**. Every place where the platform cannot answer those questions becomes a friction entry.
+
+Only after **1–2 weeks of real friction data** should we decide whether new Founder OS capabilities are required.
+
+This rule exists to prevent AI-Company from turning into another architecture project and to force the roadmap to come from actual usage.
+
+---
+
+## 🧠 Reminder
+
+**FoodTruck-IL is not a source of features.**
+**FoodTruck-IL is a source of management problems.**
+
+The platform learns generic management capabilities.
+The platform does not learn food truck functionality.
