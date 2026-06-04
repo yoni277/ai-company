@@ -154,7 +154,67 @@ These are the checkpoints the refactor plan drives toward.
 
 ---
 
-## 6. What this document is NOT
+## 6. Platform neutrality rules
+
+These rules sit at the same level of authority as the Primary Rule in §1. They are platform-wide invariants — not refactor items to be sequenced. Every package, prompt, schema, and piece of generated content must comply at all times.
+
+### 6.1 Language Neutrality Rule
+
+**AI-Company is multilingual by design.**
+
+- **English is the platform default** for all source code, prompts, metadata, schemas, documentation, UI copy, log lines, error messages, and LLM-generated content shipped from `packages/*`.
+- **All user-facing text must be localizable.** Hardcoded strings in any natural language other than English are forbidden in the platform layer.
+- **No platform package may assume a specific language.** Prompts that need to specify an output language must do so via a runtime parameter, never via a hardcoded `"Respond in Hebrew."` / `"Respond in Spanish."` instruction.
+- **Language ownership is layered.** Three separate concepts:
+
+  | Layer | What it controls | Example for FoodTruck-IL today |
+  |---|---|---|
+  | **Platform** (`packages/*`, `apps/executive-dashboard/`) | Default language for source code, prompts, schemas, docs | English (fixed forever) |
+  | **Instance** (`instances/yoni-company/*`) | `defaultLanguage` + `supportedLanguages` for this company | `'en'` default, `['en', 'he']` supported |
+  | **User** (per-session setting) | Display language chosen by the operator at runtime | `'he'` for Yoni; `'en'` for an English-speaking contractor |
+
+  Each layer is independent. The platform stays English forever; the instance declares which languages it can serve; the user picks among them. Without this layering, "language" stays a single muddled concept that bleeds across layers and becomes impossible to retrofit.
+
+Concrete consequences:
+
+| Layer | Allowed | Forbidden |
+|---|---|---|
+| `packages/*` source code | English identifiers, English strings | Hebrew/other-language identifiers; hardcoded non-English UI labels |
+| `packages/ai-*/src/prompts/` | `"Respond in {{language}}."` parameterised | `"Respond in Hebrew."` hardcoded |
+| `packages/database/*` schemas | `language_code VARCHAR(10)` columns where content varies by language | tables that implicitly assume a single language |
+| `instances/yoni-company/*` | Any language, any locale, any copy in any script | (this is the layer that *can* be language-specific) |
+| `docs/*` | English | Mixed-language docs that assume a Hebrew-reader audience |
+| Friction log, ADRs, validation playbooks | English | Hebrew-only content (write in English even if you think in Hebrew) |
+
+This rule is parallel to the Currency Neutrality Rule below. Both prevent locale-specific assumptions from contaminating the platform core.
+
+### 6.2 Currency Neutrality Rule
+
+**Currency belongs to instance configuration, not to platform code.**
+
+- **No platform package may assume a specific currency.** No hardcoded `'ILS'`, `'USD'`, `'₪'`, `'$'`, or implicit assumptions that revenue is in any one currency.
+- **All revenue, financial, and pricing data must carry an explicit currency code.** The platform requires a typed `currency: string` field on every monetary record — it must not be optional.
+- **Default at the platform layer is `'USD'`.** Each connector declares the currency of the data it emits; the platform performs no currency conversion.
+
+Concrete consequences:
+
+| Layer | Allowed | Forbidden |
+|---|---|---|
+| `packages/*` revenue ledger entries | `{ amount: 329, currency: 'USD' }` | `{ amount: 329 }` with implicit currency |
+| `packages/ai-cfo/src/prompts/` | "Report in {{currency}}" | "Report in ILS" |
+| `instances/yoni-company/*` connector configs | `currency: 'ILS'` | (this is the layer that picks the currency) |
+
+L12 of the refactor plan tracks this rule's current implementation status. **L12 must ship before any real-money transaction is recorded in the platform**, not on a calendar date.
+
+### 6.3 Why both rules sit at this level
+
+Language and currency are the two most common ways generic platforms quietly become single-locale products. Both spread through code, prompts, schemas, defaults, and copy. Both are nearly impossible to retrofit cleanly once production data exists in the assumed locale. Both must be enforced **before** the data they govern lands in production — not as cleanup later.
+
+The architecture's other generic-platform rules (no project slugs, no vendor names, no channel hints in core) prevent *one specific company* from leaking in. The Language and Currency Neutrality Rules prevent *one specific locale* from leaking in. Both leaks are equally fatal to the off-the-shelf-product thesis.
+
+---
+
+## 7. What this document is NOT
 
 - **Not** a refactor — no code moves until the plan is accepted.
 - **Not** a re-architecture — the existing `Executive<TOutput>` / `DataConnector` / `Repositories` contracts are already correctly generic. The leak is in the concrete data baked alongside them.

@@ -125,6 +125,22 @@ This rule exists to prevent AI-Company from turning into another architecture pr
 
 ---
 
+## 📌 Platform Neutrality Invariants (Always-On Rules)
+
+These rules sit above Stage 1's normal admission flow. They are platform-wide invariants — any violation is a `[Bug]`, fixable in `packages/*` without admission review.
+
+- **Language Neutrality.** AI-Company is multilingual by design. English is the platform default. Any Hebrew (or non-English) string in `packages/*` or `apps/executive-dashboard/` is a leak. Language belongs to instance config. (See `docs/architecture/GENERIC_PLATFORM_BOUNDARY.md` §6.1 and refactor plan L13.)
+- **Currency Neutrality.** All monetary records carry an explicit `currency` field. No platform package assumes ILS or USD. Currency belongs to instance config. (See §6.2 and L12.)
+- **Locale Neutrality (general).** No platform code assumes a specific timezone, date format, calendar system, or measurement system. These belong to instance config when they matter.
+
+Both L12 (currency) and L13 (language) ship behind **milestone triggers**, not calendar dates:
+- L12 ships before the first real-money transaction is recorded.
+- L13 ships before any non-English content lands in production OR before a second instance arrives, whichever is first.
+
+If you write a friction entry that names language or currency, mark Platform Candidate = **Yes (Invariant)**. These are not subject to the Stage 1 "must serve one of the 5 morning questions" filter — they're invariants, not features.
+
+---
+
 ## 🧠 Reminder
 
 **FoodTruck-IL is not a source of features.**

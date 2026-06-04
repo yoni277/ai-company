@@ -353,6 +353,49 @@ supabase/migrations/0008_seed_revenue_connectors  → ILS for foodtruck-il
 
 ---
 
+### L13. Language assumptions in prompts, schemas, and copy
+
+**Severity:** High (forcing function for off-the-shelf-product positioning)
+
+**Trigger — implement immediately when any of the following occurs:**
+1. A second instance is created.
+2. Any user-facing content is generated in a language other than English.
+3. Any platform UI page requires translation.
+4. Any platform prompt requires language selection at runtime.
+5. Any external user (contractor, advisor, second operator) begins using AI-Company.
+
+The trigger list is intentionally broad. Language assumptions become permanent the moment they leak through daily usage — by the time you notice, the assumption is already locked in by every downstream caller. The trigger fires on the first event, not when "enough" events have accumulated.
+
+**Why it leaks:** Without explicit guardrails, language assumptions spread the same way currency does — through prompt strings, UI labels, notifications, executive briefings, decision titles, log lines, and connector copy. Once Hebrew copy lands in `packages/*` or the dashboard shell, the platform stops being multilingual-by-design and becomes Hebrew-with-English-fallback.
+
+**Target:** Language belongs to instance configuration. The platform reads `defaultLanguage` from the instance-metadata provider and passes it as a parameter to LLM prompts and any localizable output. See §6.1 of `docs/architecture/GENERIC_PLATFORM_BOUNDARY.md`.
+
+**Audit findings (2026-06-04 pre-validation sweep):**
+- `packages/*` — clean. `grep '[֐-׿]' packages/` returns zero matches.
+- `packages/ai-*/src/prompts/` + `anthropic-llm-client.ts` — clean. No hardcoded `"Respond in Hebrew."` / `"Respond in English."` directives.
+- `apps/executive-dashboard/app/ceo/page.tsx` — **three Hebrew strings found** (`מרכז פיקוד מנכ״ל`, `תמונת מצב אחת לכל הפורטפוליו`, `Overview מפורט ←`). Per §6.1, the dashboard shell is platform layer; these are leaks. Listed here so the L13 implementation has a concrete starting point.
+
+**Migration steps:**
+1. Audit every prompt under `packages/ai-*/src/prompts/` and `packages/ai-*/src/anthropic-llm-client.ts` for hardcoded language instructions (`"Respond in Hebrew."`, `"Translate to English"`, etc.). Replace with `"Respond in {{language}}."` and thread `language` through the prompt builder.
+2. Add `defaultLanguage: string` and `supportedLanguages: string[]` to `ProjectExecutiveMetadata` (or a new instance-level config field — TBD whether language is per-project or per-instance).
+3. Extend the instance-metadata provider so the platform can read the active language at prompt-build time.
+4. Add `language_code VARCHAR(10)` columns to any table that stores localizable content (e.g. decision titles, directive descriptions, generated briefings). Even if only `'en'` is used initially, the column makes future i18n a forward migration, not a retrofit.
+5. Audit all UI labels in `apps/executive-dashboard/` for Hebrew or non-English strings. Move any user-facing copy into a strings table keyed by language.
+6. Confirm `docs/*` is entirely English. Any Hebrew-only ADR, friction-log template, or validation playbook is rewritten in English (the friction log content itself can be bilingual, but the *template* must be English).
+
+**Acceptance test:**
+- `grep -r '[֐-׿]' packages/` returns zero matches (no Hebrew characters in the platform layer).
+- `grep -ri 'respond in hebrew\|respond in english' packages/ai-*/src/` returns zero matches.
+- The same prompts produce English output when the instance declares `defaultLanguage: 'en'` and produce Hebrew output when the instance declares `defaultLanguage: 'he'`, with **no code change** between the two runs.
+- The AcmeCo Clone Test passes with `instances/acme-co/` declaring `defaultLanguage: 'en'` while `instances/yoni-company/` declares `defaultLanguage: 'en', supportedLanguages: ['en', 'he']`.
+
+**Why this is L13 and not deferred to L99:**
+Language assumptions, like currency assumptions, are nearly impossible to retrofit cleanly once production data exists in the assumed locale. Decision titles, briefing texts, and approval messages all become locked to whatever language they were first written in. Establishing the rule now — even if the only supported language at launch is English — is dramatically cheaper than untangling a Hebrew-locked database six months from now.
+
+This leak is treated as a **platform invariant** (per §6.1 of the boundary doc), not a future feature. The implementation is sequenced relative to L12 (currency): both ship before the relevant data class first lands in production.
+
+---
+
 ## Cross-cutting acceptance test — "the AcmeCo clone test"
 
 After all 12 leaks are addressed, this dry run must succeed without any platform-layer edit:
