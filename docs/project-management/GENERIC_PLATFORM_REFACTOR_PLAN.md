@@ -370,10 +370,17 @@ The trigger list is intentionally broad. Language assumptions become permanent t
 
 **Target:** Language belongs to instance configuration. The platform reads `defaultLanguage` from the instance-metadata provider and passes it as a parameter to LLM prompts and any localizable output. See §6.1 of `docs/architecture/GENERIC_PLATFORM_BOUNDARY.md`.
 
-**Audit findings (2026-06-04 pre-validation sweep):**
+**Audit findings (2026-06-04 pre-validation sweep) — known violations of an active platform invariant:**
+
+These are not "technical debt." The Language Neutrality Rule is active *now*; the findings below are violations of an active invariant that we have chosen not to interrupt validation work to fix. Future contributors should treat them as known leaks, not as deferred features.
+
 - `packages/*` — clean. `grep '[֐-׿]' packages/` returns zero matches.
 - `packages/ai-*/src/prompts/` + `anthropic-llm-client.ts` — clean. No hardcoded `"Respond in Hebrew."` / `"Respond in English."` directives.
-- `apps/executive-dashboard/app/ceo/page.tsx` — **three Hebrew strings found** (`מרכז פיקוד מנכ״ל`, `תמונת מצב אחת לכל הפורטפוליו`, `Overview מפורט ←`). Per §6.1, the dashboard shell is platform layer; these are leaks. Listed here so the L13 implementation has a concrete starting point.
+- `apps/executive-dashboard/app/ceo/page.tsx` — **three Hebrew strings found** (`מרכז פיקוד מנכ״ל`, `תמונת מצב אחת לכל הפורטפוליו`, `Overview מפורט ←`). Per §6.1, the dashboard shell is platform layer; these are active-invariant violations.
+
+**Severity note:** these three strings live in the application shell (`apps/`), not the platform core (`packages/`). That's a meaningful distinction — shell-layer language leaks are recoverable by making the shell language-aware later, without touching `packages/*`. Core-layer leaks would force a deeper refactor. We were lucky here: the leak landed in the right layer.
+
+**Going forward:** no new non-English content may be added to `packages/*` or `apps/executive-dashboard/`. The three known violations above are bounded; if the count grows during validation, the trigger is considered to have fired and L13 must be implemented immediately regardless of which clause caught it.
 
 **Migration steps:**
 1. Audit every prompt under `packages/ai-*/src/prompts/` and `packages/ai-*/src/anthropic-llm-client.ts` for hardcoded language instructions (`"Respond in Hebrew."`, `"Translate to English"`, etc.). Replace with `"Respond in {{language}}."` and thread `language` through the prompt builder.

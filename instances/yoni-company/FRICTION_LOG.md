@@ -134,10 +134,22 @@ These rules sit above Stage 1's normal admission flow. They are platform-wide in
 - **Locale Neutrality (general).** No platform code assumes a specific timezone, date format, calendar system, or measurement system. These belong to instance config when they matter.
 
 Both L12 (currency) and L13 (language) ship behind **milestone triggers**, not calendar dates:
-- L12 ships before the first real-money transaction is recorded.
-- L13 ships before any non-English content lands in production OR before a second instance arrives, whichever is first.
 
-If you write a friction entry that names language or currency, mark Platform Candidate = **Yes (Invariant)**. These are not subject to the Stage 1 "must serve one of the 5 morning questions" filter — they're invariants, not features.
+- **L12 ships before the first real-money transaction is recorded.**
+- **L13 ships immediately when any of:** a second instance is created, any user-facing content is generated in a non-English language, any UI page requires translation, any prompt requires runtime language selection, or any external user begins using AI-Company.
+
+**Language Ownership — three independent layers:**
+
+| Layer | What it controls | Today |
+|---|---|---|
+| Platform (`packages/*`, `apps/`) | Default for all source, prompts, schemas, docs | English (fixed) |
+| Instance (`instances/yoni-company/*`) | `defaultLanguage` + `supportedLanguages` for this company | `'en'` default, `['en', 'he']` supported |
+| User (per-session) | Display language picked by operator | Yoni: `'he'`; future contractor: `'en'` |
+
+**Known invariant violations (logged, not yet fixed):**
+- `apps/executive-dashboard/app/ceo/page.tsx` — three Hebrew strings. These are **active-invariant violations**, not technical debt. We chose not to interrupt validation work to fix them; they will be addressed at the L13 milestone trigger or before any external user starts using the dashboard, whichever is first.
+
+If you write a friction entry that names language or currency, mark Platform Candidate = **Yes (Invariant)**. These are not subject to the Stage 1 "must serve one of the 5 morning questions" filter — they're invariants, not features. Any new non-English string added to `packages/*` or `apps/` during validation **fires the L13 trigger** and must be fixed before the next merge to `main`.
 
 ---
 
