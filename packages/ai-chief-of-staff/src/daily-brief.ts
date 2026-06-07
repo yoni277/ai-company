@@ -77,7 +77,7 @@ function buildExplainPrompt(m: DailyBriefMetricsInput): string {
     ceoDirectivesPromptLine(m),
     openCeoDecisionsPromptLine(m),
     '',
-    'Write a CEO brief: companyHealth (1-2 sentences), ownerAcquisitionSummary (one sentence with exact truck counts), funnelSummaries (one string per funnel, exact counts), recommendedActions (numbered lines, exact wording provided), portfolioSummary (one sentence, exact wording provided), revenueSummaries (one string per project, exact wording provided), financialOverviews (one string per project, exact wording provided), ceoDirectives (exact wording provided), openCeoDecisions (exact wording provided), topRisks (3 bullets max), opportunities (3 max), approvalsWaiting (list items or say none).',
+    'Write a CEO brief: companyHealth (1-2 sentences), ownerAcquisitionSummary (one sentence; use the instance-supplied acquisition summary verbatim), funnelSummaries (one string per funnel, exact counts), recommendedActions (numbered lines, exact wording provided), portfolioSummary (one sentence, exact wording provided), revenueSummaries (one string per project, exact wording provided), financialOverviews (one string per project, exact wording provided), ceoDirectives (exact wording provided), openCeoDecisions (exact wording provided), topRisks (3 bullets max), opportunities (3 max), approvalsWaiting (list items or say none).',
   ].join('\n');
 }
 
@@ -134,12 +134,12 @@ function ownerAcquisitionPromptLine(m: DailyBriefMetricsInput): string {
   // The Chief of Staff intentionally has no knowledge of what business this
   // summary describes; it only renders the supplied strings.
   if (m.acquisitionSummary?.promptLine) return m.acquisitionSummary.promptLine;
-  return 'Owner acquisition: not available.';
+  return 'Acquisition summary: not available.';
 }
 
 function ownerSummaryFromInput(m: DailyBriefMetricsInput): string {
   if (m.acquisitionSummary?.fallbackSummary) return m.acquisitionSummary.fallbackSummary;
-  return 'Owner acquisition metrics not available.';
+  return 'Acquisition metrics not available.';
 }
 
 function funnelPromptLines(m: DailyBriefMetricsInput): string {

@@ -105,7 +105,7 @@ export function ProductionMetricsPanel({
         <Card title="Daily CEO brief" subtitle="AI explains pre-computed metrics only">
           <p className="text-sm text-slate-100 mb-4">{dailyBrief.companyHealth}</p>
           <div className="mb-4">
-            <div className="text-xs text-slate-500 mb-1">Owner acquisition summary</div>
+            <div className="text-xs text-slate-500 mb-1">Acquisition summary</div>
             <p className="text-sm text-slate-200">{dailyBrief.ownerAcquisitionSummary}</p>
           </div>
           {dailyBrief.funnelSummaries.length > 0 ? (

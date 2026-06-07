@@ -16,7 +16,7 @@ import type { VpMarketingLlmClient } from './llm-client';
 function stageFor(name: string): MarketingFunnelStage {
   const n = name.toLowerCase();
   if (/(impression|reach|view|awareness)/.test(n)) return 'awareness';
-  if (/(signup|install|new[_-]?user|acquisition|truck|lab|consumer)/.test(n)) return 'acquisition';
+  if (/(signup|install|new[_-]?user|acquisition|consumer)/.test(n)) return 'acquisition';
   if (/(activation|first[_-]?|onboard|verified|approved)/.test(n)) return 'activation';
   if (/(retention|active|dau|wau|mau|return|repeat)/.test(n)) return 'retention';
   if (/(referral|share|favorite|rating)/.test(n)) return 'referral';
@@ -198,7 +198,7 @@ function capabilityForChannel(channel: MarketingChannel): string {
 }
 
 function isGrowthSignal(name: string): boolean {
-  return /(user|signup|active|favorite|rating|truck|paying|mrr|orders?|conversion|response|message|customer|consumer|ratio)/i.test(
+  return /(user|signup|active|favorite|rating|paying|mrr|orders?|conversion|response|message|customer|consumer|ratio)/i.test(
     name,
   );
 }

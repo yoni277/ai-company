@@ -17,7 +17,7 @@ const OPS_PATTERNS: Array<{ pattern: RegExp; kind: OperationalMetricKind }> = [
   { pattern: /(queue|backlog|pending|approval)/i, kind: 'queue' },
   { pattern: /(utilization|quota|capacity)/i, kind: 'utilization' },
   { pattern: /(vendor|meta|wolt|cibus|paybox)/i, kind: 'vendor' },
-  { pattern: /(throughput|orders?|events?|samples?|messages?|active|trucks?|labs?)/i, kind: 'throughput' },
+  { pattern: /(throughput|orders?|events?|samples?|messages?|active)/i, kind: 'throughput' },
 ];
 
 function classifyOps(name: string): OperationalMetricKind | null {
