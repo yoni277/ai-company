@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Enable Corepack + activate pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.15.0 --activate
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm build
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Doctrine gate (audit:leaks — includes folded-in Test E)
+        run: pnpm audit:leaks
+      - name: Test
+        run: pnpm test
