@@ -37,6 +37,17 @@ interface VpSalesOutput {
     title: string;
     rationale: string;
   }>;
+  // P005 — Directive → Task fan-out. Optional. Include ONLY when responding
+  // to a CEO directive. <= 3 entries. Each capabilityRequired is a
+  // deterministic capability slug (e.g. 'follow_up_deal',
+  // 'qualify_prospect', 'send_proposal'), never a vendor name.
+  proposedTasks?: Array<{
+    title: string;
+    description?: string;
+    capabilityRequired: string;
+    priority?: 'low' | 'medium' | 'high';
+    dueInDays?: number;
+  }>;
   generatedAt: string;                // ISO timestamp
 }
 `.trim();

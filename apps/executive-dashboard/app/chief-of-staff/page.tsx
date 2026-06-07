@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ensureSeededMockData, getPlatform } from '../../lib/platform';
+import { getPlatform } from '../../lib/platform';
 import { Badge, Card, EmptyState } from '../../components/Card';
 import { BriefingButton } from '../../components/BriefingButton';
 import {
@@ -15,7 +15,6 @@ import type { ChiefOfStaffOutput } from '@ai-company/shared-types';
 export const dynamic = 'force-dynamic';
 
 export default async function ChiefOfStaffPage() {
-  await ensureSeededMockData();
   const { repos } = getPlatform();
   const [latest, recent] = await Promise.all([
     repos.reports.latest(CHIEF_OF_STAFF_ID, 'daily_briefing'),

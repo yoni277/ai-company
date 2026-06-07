@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ensureSeededMockData, getPlatform } from '../../lib/platform';
+import { getPlatform } from '../../lib/platform';
 import { Badge, Card, EmptyState } from '../../components/Card';
 import { BoardDigestButton } from '../../components/BoardDigestButton';
 import { HEALTH_COLOR, HEALTH_LABEL, SEVERITY_COLOR, relativeTime } from '../../lib/format';
@@ -16,7 +16,6 @@ function healthBadge(h: ProjectHealth | '') {
 }
 
 export default async function ExecutiveTeamPage() {
-  await ensureSeededMockData();
   const { repos } = getPlatform();
   const [latest, recent] = await Promise.all([
     repos.reports.latest(EXECUTIVE_TEAM_ID, 'daily_briefing'),

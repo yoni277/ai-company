@@ -1,11 +1,14 @@
 import type { CompanyContext } from '@ai-company/shared-types';
+import { buildDirectiveSection } from '../directive-prompt';
 import { chiefOfStaffOutputSchemaText } from './schema';
 
 export function dailyBriefingPrompt(ctx: CompanyContext): string {
+  const directiveSection = buildDirectiveSection(ctx);
   return [
-    'You are producing the CEO\'s DAILY BRIEFING.',
+    "You are producing the CEO's DAILY BRIEFING.",
     'Use only the company context below; do not invent facts.',
     'Be terse. Each project summary <= 2 sentences. Each recommended action <= 1 sentence.',
+    ...(directiveSection ? ['', directiveSection] : []),
     '',
     'Return ONLY valid JSON matching this TypeScript type:',
     chiefOfStaffOutputSchemaText,

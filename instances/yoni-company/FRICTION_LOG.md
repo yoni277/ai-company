@@ -160,3 +160,9 @@ If you write a friction entry that names language or currency, mark Platform Can
 
 The platform learns generic management capabilities.
 The platform does not learn food truck functionality.
+- [2026-06-04 22:18:38] sandbox verification: log-friction wired and writing markdown only
+- [2026-06-05 11:31:35] Directive form does not auto-populate responding_executives from category — operator has to discover this on the detail page when 'No responders configured' appears, then go through Edit → tick boxes → fake content change → Save to re-trigger. Should be invisible to operator.
+- [2026-06-05 11:31:35] After saving a new directive, dashboard does not auto-navigate to detail page; operator has to find the directive in Active list and click in. Two extra clicks per directive.
+- [2026-06-05 11:31:35] No 'Run errored' button — directive_responses rows in error state are not re-runnable from UI; recovery requires editing directive or PATCH curl.
+- [2026-06-05 11:31:35] Per-row retry impossible — if 1 of 3 responders errors, retrigger re-runs all 3 instead of just the failed row. Wastes tokens and clock.
+- [2026-06-05 11:31:36] Report view from directive detail opens in same tab, no quick back-to-directive nav; operator loses context when reading multiple executive reports in a row.

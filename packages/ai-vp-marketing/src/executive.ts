@@ -1,10 +1,12 @@
 import type {
+  CEODirective,
   CompanyContext,
   Executive,
   ExecutiveReport,
   ReportType,
   VpMarketingOutput,
 } from '@ai-company/shared-types';
+import { fingerprintRisk } from '@ai-company/shared-types';
 import type { Repositories } from '@ai-company/database';
 import { buildCompanyContext } from '@ai-company/ai-chief-of-staff';
 import type { VpMarketingLlmClient } from './llm-client';
@@ -40,12 +42,23 @@ export interface VpMarketingBriefingRunResult {
  * so they show up on the cross-executive Overview alongside CoS and CTO risks. Campaign ideas
  * stay in the report body — Phase 5 may give them their own table once we add a campaign tracker.
  */
+export interface RunVpMarketingBriefingOptions {
+  /** When set, this directive is the primary question the briefing should answer. */
+  focusDirective?: CEODirective;
+  /** All currently-active directives, surfaced as context to the LLM. */
+  activeDirectives?: CEODirective[];
+}
+
 export async function runVpMarketingBriefing(
   repos: Repositories,
   vp: VpMarketing,
   reportType: ReportType,
+  options: RunVpMarketingBriefingOptions = {},
 ): Promise<VpMarketingBriefingRunResult> {
-  const context = await buildCompanyContext(repos);
+  const context = await buildCompanyContext(repos, {
+    ...(options.activeDirectives ? { activeDirectives: options.activeDirectives } : {}),
+    ...(options.focusDirective ? { focusDirective: options.focusDirective } : {}),
+  });
   const output = await vp.generateReport(context, reportType);
 
   const projectsBySlug = new Map(context.projects.map((p) => [p.project.slug, p.project]));
@@ -55,6 +68,8 @@ export async function runVpMarketingBriefing(
       p.openRisks.map((r) => `${p.project.id}|${r.description.toLowerCase()}`),
     ),
   );
+  // P006A — every risk write carries provenance + fingerprint for dedup.
+  const recordedBy = `executive:${VP_MARKETING_ID}`;
   const newRisks = output.growthRisks
     .map((r) => {
       const project = projectsBySlug.get(r.projectSlug);
@@ -65,8 +80,16 @@ export async function runVpMarketingBriefing(
         projectId: project.id,
         severity: r.severity,
         description: r.description,
-        source: `executive:${VP_MARKETING_ID}`,
+        source: recordedBy,
         status: 'open' as const,
+        recordedBy,
+        fingerprint: fingerprintRisk({
+          projectId: project.id,
+          recordedBy,
+          severity: r.severity,
+          description: r.description,
+        }),
+        generation: 1,
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
@@ -77,6 +100,7 @@ export async function runVpMarketingBriefing(
     reportType,
     summary: output.headline,
     body: output,
+    sourceDirectiveId: options.focusDirective?.id ?? null,
   })) as ExecutiveReport<VpMarketingOutput>;
 
   return { context, output, report };

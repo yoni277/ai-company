@@ -1,5 +1,6 @@
 import type { ProjectHealth } from './projects';
 import type { RiskSeverity } from './risks';
+import type { TaskProposal } from './doos';
 
 export type PipelineStage =
   | 'prospect'
@@ -56,5 +57,7 @@ export interface VpSalesOutput {
     title: string;
     rationale: string;
   }>;
+  /** P005 — see VpMarketingOutput.proposedTasks for semantics. */
+  proposedTasks?: TaskProposal[];
   generatedAt: string;
 }

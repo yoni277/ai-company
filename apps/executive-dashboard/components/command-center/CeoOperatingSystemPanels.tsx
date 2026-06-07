@@ -1,11 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import type {
   CEODecision,
   CEODecisionStatus,
   CEODirective,
+  ExecutiveId,
   RecommendedAction,
   UpdateCEODecisionInput,
 } from '@ai-company/shared-types';
@@ -13,12 +15,23 @@ import { Badge, Card } from '../Card';
 
 const CATEGORIES = ['strategy', 'operations', 'finance', 'product', 'people', 'override'] as const;
 const PRIORITIES = ['P1', 'P2', 'P3'] as const;
-const PROJECTS = [
+// Generic default: target the whole portfolio. Concrete project options are
+// supplied by the caller from the live registry — the platform hardcodes no
+// business slugs here.
+const DEFAULT_PROJECT_OPTIONS: Array<{ id: string; label: string }> = [
   { id: '', label: 'All portfolio' },
-  { id: 'foodtruck-il', label: 'FoodTruck-IL' },
-  { id: 'lab-os', label: 'Lab-OS' },
-  { id: 'inventory-engine', label: 'Inventory Engine' },
-  { id: 'burgerstop', label: 'BurgerStop' },
+];
+
+// P005A — the directive form needs explicit responding-executive selection so
+// the CEO can target specific roles. Without this, the system falls back to
+// category-based routing and only one executive runs.
+const ALL_EXECUTIVES: Array<{ id: ExecutiveId; label: string }> = [
+  { id: 'chief-of-staff', label: 'Chief of Staff' },
+  { id: 'cto', label: 'CTO' },
+  { id: 'coo', label: 'COO' },
+  { id: 'cfo', label: 'CFO' },
+  { id: 'vp-marketing', label: 'VP Marketing' },
+  { id: 'vp-sales', label: 'VP Sales' },
 ];
 
 const STATUS_COLOR: Record<CEODecisionStatus, string> = {
@@ -41,10 +54,17 @@ export function CeoOperatingSystemPanels({
   initialDirectives,
   initialDecisions,
   recommendedActions,
+  activeObjectives,
+  projectOptions = DEFAULT_PROJECT_OPTIONS,
 }: {
   initialDirectives: CEODirective[];
   initialDecisions: CEODecision[];
   recommendedActions: RecommendedAction[];
+  /** P005A — active objectives offered as link targets in the directive form. */
+  activeObjectives: Array<{ id: string; title: string }>;
+  /** Project targeting options for the directive form, supplied from the live
+   *  registry by the caller. Defaults to "All portfolio" only. */
+  projectOptions?: Array<{ id: string; label: string }>;
 }) {
   const router = useRouter();
   const [directives, setDirectives] = useState(initialDirectives);
@@ -59,6 +79,18 @@ export function CeoOperatingSystemPanels({
   const [isOverride, setIsOverride] = useState(false);
   const [targetProjectId, setTargetProjectId] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+  const [objectiveId, setObjectiveId] = useState('');
+  // P005A — default-pick VP Marketing only so the smoke test path produces a
+  // predictable 1–3 proposal rows. Operator can tick any subset.
+  const [respondingExecutives, setRespondingExecutives] = useState<ExecutiveId[]>([
+    'vp-marketing',
+  ]);
+
+  const toggleExecutive = (id: ExecutiveId) => {
+    setRespondingExecutives((prev) =>
+      prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id],
+    );
+  };
 
   const decisionByActionId = useMemo(() => {
     const m = new Map<string, CEODecision>();
@@ -89,6 +121,8 @@ export function CeoOperatingSystemPanels({
             isOverride,
             targetProjectId: targetProjectId || null,
             expiresAt: expiresAt || null,
+            objectiveId: objectiveId || null,
+            respondingExecutives,
           }),
         }),
       );
@@ -247,12 +281,46 @@ export function CeoOperatingSystemPanels({
               value={targetProjectId}
               onChange={(e) => setTargetProjectId(e.target.value)}
             >
-              {PROJECTS.map((p) => (
+              {projectOptions.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.label}
                 </option>
               ))}
             </select>
+            <div className="space-y-1">
+              <label className="text-xs uppercase tracking-wide text-slate-500">
+                Linked objective (required for task fan-out)
+              </label>
+              <select
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                value={objectiveId}
+                onChange={(e) => setObjectiveId(e.target.value)}
+              >
+                <option value="">— none (no proposals will be generated) —</option>
+                {activeObjectives.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs uppercase tracking-wide text-slate-500">
+                Responding executives
+              </label>
+              <div className="grid grid-cols-2 gap-2 text-sm text-slate-300">
+                {ALL_EXECUTIVES.map((e) => (
+                  <label key={e.id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={respondingExecutives.includes(e.id)}
+                      onChange={() => toggleExecutive(e.id)}
+                    />
+                    {e.label}
+                  </label>
+                ))}
+              </div>
+            </div>
             <label className="flex items-center gap-2 text-sm text-slate-300">
               <input
                 type="checkbox"
@@ -285,18 +353,28 @@ export function CeoOperatingSystemPanels({
             <ul className="space-y-4 max-h-[420px] overflow-y-auto">
               {directives.map((d) => (
                 <li key={d.id} className="border-b border-slate-800 pb-3 last:border-0">
-                  <div className="flex flex-wrap gap-2 mb-1">
-                    <span className="text-sm font-medium text-slate-100">{d.title}</span>
-                    <Badge className="bg-slate-700 text-slate-300">{d.priority}</Badge>
-                    <Badge className="bg-slate-700 text-slate-400">{d.category}</Badge>
-                    {d.isOverride ? (
-                      <Badge className="bg-amber-500/15 text-amber-300">override</Badge>
+                  <Link
+                    href={`/ceo/directives/${d.id}` as never}
+                    className="block hover:bg-slate-900/40 -mx-2 px-2 py-1 rounded"
+                  >
+                    <div className="flex flex-wrap gap-2 mb-1 items-center">
+                      <span className="text-sm font-medium text-slate-100 hover:underline">
+                        {d.title}
+                      </span>
+                      <Badge className="bg-slate-700 text-slate-300">{d.priority}</Badge>
+                      <Badge className="bg-slate-700 text-slate-400">{d.category}</Badge>
+                      {d.isOverride ? (
+                        <Badge className="bg-amber-500/15 text-amber-300">override</Badge>
+                      ) : null}
+                      <span className="text-xs text-slate-500 ml-auto">
+                        View progress →
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-400">{d.directive}</p>
+                    {d.expiresAt ? (
+                      <p className="text-xs text-slate-500 mt-1">Expires {d.expiresAt.slice(0, 10)}</p>
                     ) : null}
-                  </div>
-                  <p className="text-sm text-slate-400">{d.directive}</p>
-                  {d.expiresAt ? (
-                    <p className="text-xs text-slate-500 mt-1">Expires {d.expiresAt.slice(0, 10)}</p>
-                  ) : null}
+                  </Link>
                 </li>
               ))}
             </ul>

@@ -22,6 +22,12 @@
       "@active-instance/project-executive-metadata": [
         "../../instances/yoni-company/project-executive-metadata.ts"
       ],
+      "@active-instance/governance-policy": [
+        "../../instances/yoni-company/governance-policy.ts"
+      ],
+      "@active-instance/research-capability": [
+        "../../instances/yoni-company/research-capability.ts"
+      ],
       "@ai-company/shared-types": ["../../packages/shared-types/src"],
       "@ai-company/database": ["../../packages/database/src"],
       "@ai-company/connector-framework": ["../../packages/connector-framework/src"],
@@ -35,7 +41,8 @@
       "@ai-company/connector-foodtruck-il": ["../../connectors/foodtruck-il/src"],
       "@ai-company/connector-lab-os": ["../../connectors/lab-os/src"],
       "@ai-company/connector-inventory-engine": ["../../connectors/inventory-engine/src"],
-      "@ai-company/connector-whatsapp-engine": ["../../connectors/whatsapp-engine/src"]
+      "@ai-company/connector-whatsapp-engine": ["../../connectors/whatsapp-engine/src"],
+      "@ai-company/doos-core": ["../../packages/doos-core/src"]
     }
   },
   "include": [

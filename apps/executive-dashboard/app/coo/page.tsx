@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ensureSeededMockData, getPlatform } from '../../lib/platform';
+import { getPlatform } from '../../lib/platform';
 import { Badge, Card, EmptyState } from '../../components/Card';
 import { CooBriefingButton } from '../../components/CooBriefingButton';
 import {
@@ -33,7 +33,6 @@ const VENDOR_COLOR: Record<VendorStatus, string> = {
 };
 
 export default async function CooPage() {
-  await ensureSeededMockData();
   const { repos } = getPlatform();
   const [latest, recent] = await Promise.all([
     repos.reports.latest(COO_ID, 'daily_briefing'),

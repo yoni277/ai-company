@@ -10,9 +10,9 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "lint": "echo 'no-op'",
-    "test": "echo 'no-op'",
+    "test": "node --import tsx --test tests/*.test.ts",
     "cli:briefing": "tsx src/cli/briefing.ts"
   },
   "dependencies": {

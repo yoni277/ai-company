@@ -1,5 +1,6 @@
 import type { ProjectHealth } from './projects';
 import type { RiskSeverity } from './risks';
+import type { TaskProposal } from './doos';
 
 export type RevenueSignalKind =
   | 'revenue'
@@ -61,5 +62,7 @@ export interface CfoOutput {
     title: string;
     rationale: string;
   }>;
+  /** P005 — see VpMarketingOutput.proposedTasks for semantics. */
+  proposedTasks?: TaskProposal[];
   generatedAt: string;
 }

@@ -25,6 +25,14 @@ interface ChiefOfStaffOutput {
     title: string;
     rationale: string;
   }>;
+  // P005 — see proposedTasksSchemaText. Optional. <=3 entries.
+  proposedTasks?: Array<{
+    title: string;
+    description?: string;
+    capabilityRequired: string;
+    priority?: 'low' | 'medium' | 'high';
+    dueInDays?: number;
+  }>;
   generatedAt: string; // ISO timestamp
 }
 `.trim();

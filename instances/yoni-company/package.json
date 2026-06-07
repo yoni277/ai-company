@@ -10,6 +10,7 @@
     "@ai-company/connector-foodtruck-il": "workspace:*",
     "@ai-company/connector-lab-os": "workspace:*",
     "@ai-company/connector-inventory-engine": "workspace:*",
-    "@ai-company/connector-whatsapp-engine": "workspace:*"
+    "@ai-company/connector-whatsapp-engine": "workspace:*",
+    "@anthropic-ai/sdk": "^0.39.0"
   }
 }

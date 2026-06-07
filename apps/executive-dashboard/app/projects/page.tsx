@@ -1,14 +1,22 @@
 import Link from 'next/link';
-import { ensureSeededMockData, getPlatform } from '../../lib/platform';
+import { getPlatform } from '../../lib/platform';
 import { Badge, Card } from '../../components/Card';
 import { HEALTH_COLOR, HEALTH_LABEL } from '../../lib/format';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ProjectsPage() {
-  await ensureSeededMockData();
-  const { repos } = getPlatform();
+  const { repos, registry } = getPlatform();
   const projects = await repos.projects.list();
+
+  // P006 — diagnostic banner: surface connectors whose project_slug has no
+  // matching registered row. Under the new contract the orchestrator skips
+  // these silently; the banner gives the operator the breadcrumb to fix it.
+  const registeredSlugs = new Set(projects.map((p) => p.slug));
+  const unregisteredConnectors = registry
+    .list()
+    .filter((c) => !registeredSlugs.has(c.projectSlug))
+    .map((c) => ({ connector: c.name, projectSlug: c.projectSlug }));
 
   const enriched = await Promise.all(
     projects.map(async (p) => {
@@ -28,6 +36,27 @@ export default async function ProjectsPage() {
         <h1 className="text-2xl font-semibold text-slate-100">Projects</h1>
         <p className="text-sm text-slate-500 mt-1">All monitored businesses</p>
       </header>
+      {unregisteredConnectors.length > 0 && (
+        <div className="border border-amber-500/40 bg-amber-500/10 rounded-md px-4 py-3 text-sm text-amber-200">
+          <div className="font-medium mb-1">
+            {unregisteredConnectors.length} connector
+            {unregisteredConnectors.length === 1 ? '' : 's'} referencing
+            unregistered project slug
+            {unregisteredConnectors.length === 1 ? '' : 's'}
+          </div>
+          <ul className="text-xs space-y-1 list-disc list-inside">
+            {unregisteredConnectors.map((u) => (
+              <li key={u.connector}>
+                <code>{u.connector}</code> targets slug{' '}
+                <code>{u.projectSlug}</code> — sync is skipping until you
+                register it via{' '}
+                <code>pnpm cli:register-project --slug {u.projectSlug} ...</code>{' '}
+                or <code>POST /api/projects</code>.
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="grid md:grid-cols-2 gap-6">
         {enriched.map(({ project, metrics, risks, opps, sources }) => (
           <Card

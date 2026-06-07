@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ensureSeededMockData, getPlatform } from '../../../../lib/platform';
+import { getPlatform } from '../../../../lib/platform';
 import { runCooBriefing } from '@ai-company/ai-coo';
 import type { ReportType } from '@ai-company/shared-types';
 
@@ -8,7 +8,6 @@ export const dynamic = 'force-dynamic';
 const ALLOWED: ReportType[] = ['daily_briefing', 'weekly_report', 'ad_hoc'];
 
 export async function POST(req: Request) {
-  await ensureSeededMockData();
   let reportType: ReportType = 'daily_briefing';
   try {
     const body = (await req.json()) as { reportType?: ReportType };

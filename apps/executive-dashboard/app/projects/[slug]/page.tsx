@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { ensureSeededMockData, getPlatform } from '../../../lib/platform';
+import { getPlatform } from '../../../lib/platform';
 import { Badge, Card, EmptyState } from '../../../components/Card';
 import {
   HEALTH_COLOR,
@@ -17,7 +17,6 @@ export default async function ProjectDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  await ensureSeededMockData();
   const { slug } = await params;
   const { repos } = getPlatform();
   const project = await repos.projects.getBySlug(slug);

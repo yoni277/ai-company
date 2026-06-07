@@ -20,3 +20,8 @@ export * from './project-registry';
 export * from './revenue';
 export * from './financial';
 export * from './ceo-operating-system';
+export * from './directive-response';
+export * from './doos';
+export * from './research';
+export * from './outcomes';
+export * from './p006a-fingerprints';

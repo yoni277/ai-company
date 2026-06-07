@@ -34,6 +34,20 @@ interface VpMarketingOutput {
     title: string;
     rationale: string;
   }>;
+  // P005 — directive → task fan-out. Optional. When the report is produced
+  // in response to a CEO directive, propose AT MOST 3 concrete tasks the
+  // platform should create under the directive's objective. Omit or use []
+  // when no new tasks are needed (e.g. when surfacing existing risks is
+  // enough). Each capabilityRequired is a deterministic capability name
+  // (e.g. 'send_message', 'publish_post', 'analyze_funnel') — never a
+  // vendor name.
+  proposedTasks?: Array<{
+    title: string;                   // <= 80 chars
+    description?: string;            // 1-3 sentences explaining the task
+    capabilityRequired: string;      // deterministic capability slug
+    priority?: 'low' | 'medium' | 'high';
+    dueInDays?: number;              // non-negative integer
+  }>;
   generatedAt: string;               // ISO timestamp
 }
 `.trim();

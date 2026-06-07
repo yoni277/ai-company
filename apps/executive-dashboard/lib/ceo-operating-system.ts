@@ -7,12 +7,15 @@ import type {
   CEODirective,
   CreateCEODecisionInput,
   CreateCEODirectiveInput,
+  ExecutiveId,
   UpdateCEODecisionInput,
+  UpdateCEODirectiveInput,
 } from '@ai-company/shared-types';
 
 type DirectiveRow = {
   id: string;
   created_at: string;
+  updated_at: string;
   title: string;
   directive: string;
   category: string;
@@ -21,6 +24,8 @@ type DirectiveRow = {
   expires_at: string | null;
   is_override: boolean;
   target_project_id: string | null;
+  responding_executives: string[] | null;
+  objective_id: string | null;
 };
 
 type DecisionRow = {
@@ -37,10 +42,56 @@ type DecisionRow = {
   notes: string | null;
 };
 
+const ALL_EXECUTIVE_IDS: ExecutiveId[] = [
+  'chief-of-staff',
+  'cto',
+  'coo',
+  'cfo',
+  'vp-marketing',
+  'vp-sales',
+];
+
+function asExecutiveIds(raw: string[] | null | undefined): ExecutiveId[] {
+  if (!raw) return [];
+  const allowed = new Set<string>(ALL_EXECUTIVE_IDS);
+  return raw.filter((x): x is ExecutiveId => allowed.has(x));
+}
+
+/**
+ * Routing table: which executives should be asked to respond to a directive
+ * based on its category. Lives in the dashboard (instance layer) so the
+ * mapping can be tuned without touching shared packages.
+ *
+ * Unknown / free-form categories fall back to Chief of Staff so the directive
+ * is never silently dropped on the floor.
+ */
+export function defaultRespondingExecutives(category: string): ExecutiveId[] {
+  switch (category) {
+    case 'strategy':
+      return ['chief-of-staff', 'vp-marketing'];
+    case 'product':
+      return ['cto', 'vp-marketing'];
+    case 'growth':
+      return ['vp-marketing', 'vp-sales'];
+    case 'operations':
+      return ['coo', 'vp-sales'];
+    case 'finance':
+      return ['cfo'];
+    case 'people':
+      return ['chief-of-staff'];
+    case 'override':
+      // An override is a strong signal — fan out broadly so every leader sees it.
+      return [...ALL_EXECUTIVE_IDS];
+    default:
+      return ['chief-of-staff'];
+  }
+}
+
 function mapDirective(row: DirectiveRow): CEODirective {
   return {
     id: row.id,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
     title: row.title,
     directive: row.directive,
     category: row.category,
@@ -49,6 +100,8 @@ function mapDirective(row: DirectiveRow): CEODirective {
     expiresAt: row.expires_at,
     isOverride: row.is_override,
     targetProjectId: row.target_project_id,
+    respondingExecutives: asExecutiveIds(row.responding_executives),
+    objectiveId: row.objective_id,
   };
 }
 
@@ -106,6 +159,10 @@ export async function listActiveDirectives(): Promise<CEODirective[]> {
 }
 
 export async function createDirective(input: CreateCEODirectiveInput): Promise<CEODirective> {
+  // Caller may override; otherwise default by category. Empty array is allowed
+  // (informational directive — no fan-out).
+  const responders =
+    input.respondingExecutives ?? defaultRespondingExecutives(input.category);
   const row = {
     title: input.title,
     directive: input.directive,
@@ -115,12 +172,16 @@ export async function createDirective(input: CreateCEODirectiveInput): Promise<C
     expires_at: input.expiresAt ?? null,
     is_override: input.isOverride ?? false,
     target_project_id: input.targetProjectId ?? null,
+    responding_executives: responders,
+    objective_id: input.objectiveId ?? null,
   };
   const client = getClient();
   if (!client) {
+    const now = new Date().toISOString();
     const d: CEODirective = {
       id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
       title: row.title,
       directive: row.directive,
       category: row.category,
@@ -129,11 +190,79 @@ export async function createDirective(input: CreateCEODirectiveInput): Promise<C
       expiresAt: row.expires_at,
       isOverride: row.is_override,
       targetProjectId: row.target_project_id,
+      respondingExecutives: responders,
+      objectiveId: row.objective_id,
     };
     memoryDirectives.unshift(d);
     return d;
   }
   const { data, error } = await client.from('ceo_directives').insert(row).select().single();
+  if (error) throw new Error(error.message);
+  return mapDirective(data as DirectiveRow);
+}
+
+export async function getDirectiveById(id: string): Promise<CEODirective | null> {
+  const client = getClient();
+  if (!client) {
+    return memoryDirectives.find((d) => d.id === id) ?? null;
+  }
+  const { data, error } = await client
+    .from('ceo_directives')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? mapDirective(data as DirectiveRow) : null;
+}
+
+export async function updateDirective(
+  id: string,
+  input: UpdateCEODirectiveInput,
+): Promise<CEODirective> {
+  // Build column-name patch object; updated_at is handled by the DB trigger.
+  const patch: Record<string, unknown> = {};
+  if (input.title !== undefined) patch.title = input.title;
+  if (input.directive !== undefined) patch.directive = input.directive;
+  if (input.category !== undefined) patch.category = input.category;
+  if (input.priority !== undefined) patch.priority = input.priority;
+  if (input.active !== undefined) patch.active = input.active;
+  if (input.expiresAt !== undefined) patch.expires_at = input.expiresAt;
+  if (input.targetProjectId !== undefined) patch.target_project_id = input.targetProjectId;
+  if (input.respondingExecutives !== undefined)
+    patch.responding_executives = input.respondingExecutives;
+  if (input.objectiveId !== undefined) patch.objective_id = input.objectiveId;
+
+  const client = getClient();
+  if (!client) {
+    const idx = memoryDirectives.findIndex((d) => d.id === id);
+    if (idx < 0) throw new Error('Directive not found');
+    const cur = memoryDirectives[idx]!;
+    const next: CEODirective = {
+      ...cur,
+      ...(input.title !== undefined ? { title: input.title } : {}),
+      ...(input.directive !== undefined ? { directive: input.directive } : {}),
+      ...(input.category !== undefined ? { category: input.category } : {}),
+      ...(input.priority !== undefined ? { priority: input.priority } : {}),
+      ...(input.active !== undefined ? { active: input.active } : {}),
+      ...(input.expiresAt !== undefined ? { expiresAt: input.expiresAt } : {}),
+      ...(input.targetProjectId !== undefined
+        ? { targetProjectId: input.targetProjectId }
+        : {}),
+      ...(input.respondingExecutives !== undefined
+        ? { respondingExecutives: input.respondingExecutives }
+        : {}),
+      ...(input.objectiveId !== undefined ? { objectiveId: input.objectiveId } : {}),
+      updatedAt: new Date().toISOString(),
+    };
+    memoryDirectives[idx] = next;
+    return next;
+  }
+  const { data, error } = await client
+    .from('ceo_directives')
+    .update(patch)
+    .eq('id', id)
+    .select()
+    .single();
   if (error) throw new Error(error.message);
   return mapDirective(data as DirectiveRow);
 }

@@ -1,5 +1,7 @@
 import type { ProjectHealth } from './projects';
 import type { RiskSeverity } from './risks';
+import type { ResearchSource } from './research';
+import type { TaskProposal } from './doos';
 
 export type MarketingFunnelStage =
   | 'awareness'
@@ -62,5 +64,20 @@ export interface VpMarketingOutput {
     title: string;
     rationale: string;
   }>;
+  /**
+   * Phase 2A: sources the executive cited via research. Optional and
+   * absent on reports produced before the capability was wired or where
+   * the executive did not invoke `research`. Each entry includes its
+   * E2 tier marker (artifact) so consumers can distinguish E0 (assertion)
+   * claims about sources from the sources themselves.
+   */
+  researchSources?: ResearchSource[];
+  /**
+   * P005 — Optional proposals for new Tasks the executive thinks should be
+   * created under the active objective. Subject to the generic transformer
+   * gate (cap, missing-objective skip). Absent on reports produced before
+   * the fan-out was wired or where the executive proposed nothing.
+   */
+  proposedTasks?: TaskProposal[];
   generatedAt: string;
 }

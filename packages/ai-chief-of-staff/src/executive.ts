@@ -1,10 +1,12 @@
 import type {
+  CEODirective,
   ChiefOfStaffOutput,
   CompanyContext,
   Executive,
   ExecutiveReport,
   ReportType,
 } from '@ai-company/shared-types';
+import { fingerprintOpportunity, fingerprintRisk } from '@ai-company/shared-types';
 import type { Repositories } from '@ai-company/database';
 import { buildCompanyContext } from './context';
 import { FakeLlmClient } from './fake-llm-client';
@@ -41,12 +43,21 @@ export interface BriefingRunResult {
  * The Chief of Staff records new risks/opportunities it surfaces with `source: 'executive:chief-of-staff'`
  * so the dashboard can show provenance.
  */
+export interface RunBriefingOptions {
+  focusDirective?: CEODirective;
+  activeDirectives?: CEODirective[];
+}
+
 export async function runBriefing(
   repos: Repositories,
   chief: ChiefOfStaff,
   reportType: ReportType,
+  options: RunBriefingOptions = {},
 ): Promise<BriefingRunResult> {
-  const context = await buildCompanyContext(repos);
+  const context = await buildCompanyContext(repos, {
+    ...(options.activeDirectives ? { activeDirectives: options.activeDirectives } : {}),
+    ...(options.focusDirective ? { focusDirective: options.focusDirective } : {}),
+  });
   const output = await chief.generateReport(context, reportType);
 
   const projectsBySlug = new Map(context.projects.map((p) => [p.project.slug, p.project]));
@@ -57,6 +68,9 @@ export async function runBriefing(
       p.openRisks.map((r) => `${p.project.id}|${r.description.toLowerCase()}`),
     ),
   );
+  // P006A — every risk + opportunity write carries provenance + fingerprint.
+  const recordedBy = `executive:${CHIEF_OF_STAFF_ID}`;
+
   const newRisks = output.topRisks
     .map((r) => {
       const project = projectsBySlug.get(r.projectSlug);
@@ -67,8 +81,16 @@ export async function runBriefing(
         projectId: project.id,
         severity: r.severity,
         description: r.description,
-        source: `executive:${CHIEF_OF_STAFF_ID}`,
+        source: recordedBy,
         status: 'open' as const,
+        recordedBy,
+        fingerprint: fingerprintRisk({
+          projectId: project.id,
+          recordedBy,
+          severity: r.severity,
+          description: r.description,
+        }),
+        generation: 1,
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
@@ -89,7 +111,15 @@ export async function runBriefing(
         projectId: project.id,
         priority: o.priority,
         description: o.description,
-        source: `executive:${CHIEF_OF_STAFF_ID}`,
+        source: recordedBy,
+        recordedBy,
+        fingerprint: fingerprintOpportunity({
+          projectId: project.id,
+          recordedBy,
+          priority: o.priority,
+          description: o.description,
+        }),
+        generation: 1,
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
@@ -100,6 +130,7 @@ export async function runBriefing(
     reportType,
     summary: output.headline,
     body: output,
+    sourceDirectiveId: options.focusDirective?.id ?? null,
   })) as ExecutiveReport<ChiefOfStaffOutput>;
 
   return { context, output, report };

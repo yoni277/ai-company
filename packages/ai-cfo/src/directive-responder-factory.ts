@@ -1,0 +1,38 @@
+import type { CEODirective } from '@ai-company/shared-types';
+import type { Repositories } from '@ai-company/database';
+import {
+  type DirectiveResponder,
+  transformProposalsToProposals,
+} from '@ai-company/ai-chief-of-staff';
+import { CFO_ID, Cfo, runCfoBriefing } from './executive';
+
+export function createCfoDirectiveResponder(cfo: Cfo): DirectiveResponder {
+  return {
+    executiveId: CFO_ID,
+    async run(
+      repos: Repositories,
+      directive: CEODirective,
+      activeDirectives: CEODirective[],
+    ): Promise<string> {
+      const result = await runCfoBriefing(repos, cfo, 'ad_hoc', {
+        focusDirective: directive,
+        activeDirectives,
+      });
+      try {
+        const outcome = await transformProposalsToProposals(repos, {
+          directive,
+          sourceExecutiveId: CFO_ID,
+          proposals: result.output.proposedTasks,
+        });
+        if (outcome.warnings.length > 0) {
+          // eslint-disable-next-line no-console
+          console.warn(`[cfo] task fan-out warnings: ${outcome.warnings.join(' | ')}`);
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('[cfo] task fan-out failed', err);
+      }
+      return result.report.id;
+    },
+  };
+}
