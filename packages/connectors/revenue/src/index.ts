@@ -3,9 +3,17 @@ import type { RegisteredProject, RevenueSnapshot } from '@ai-company/shared-type
 import { createFoodTruckRevenueConnector } from './foodtruck';
 import { createSupabaseLedgerConnector } from './supabase-ledger';
 import { MockRevenueConnector } from './mock';
+import { getRevenueConnectorResolver } from './revenue-resolver-registry';
 import type { RevenueConnector, RevenueSourceConfig, RevenueSourceType } from './types';
 
 export type { RevenueConnector, RevenueSourceConfig, RevenueSourceType } from './types';
+// P015B — revenueSource → connector factory registry. The instance layer
+// registers a factory per revenue source it activates; generic platform code
+// stays project-agnostic.
+export {
+  registerRevenueConnectorResolver,
+  type RevenueConnectorResolver,
+} from './revenue-resolver-registry';
 export { FoodTruckRevenueConnector, createFoodTruckRevenueConnector } from './foodtruck';
 export { SupabaseLedgerRevenueConnector, createSupabaseLedgerConnector } from './supabase-ledger';
 export { MockRevenueConnector } from './mock';
@@ -19,6 +27,13 @@ export function createRevenueConnectorForProject(
   const slug = project.definition.slug;
   const name = project.definition.name;
 
+  const resolver = getRevenueConnectorResolver(source);
+  if (resolver) {
+    return resolver(project);
+  }
+
+  // Fallback (P015B Step 2 — to be removed once the instance layer registers
+  // the FoodTruck revenue resolver): legacy hardcoded switch.
   switch (source) {
     case 'foodtruck-supabase-events':
       return createFoodTruckRevenueConnector({ projectId: slug, projectName: name, config });

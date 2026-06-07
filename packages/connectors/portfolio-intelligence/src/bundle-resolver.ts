@@ -12,6 +12,7 @@ import type {
   ProjectIntelligenceBundle,
   RegisteredProject,
 } from '@ai-company/shared-types';
+import { getProjectBundleResolver } from './bundle-resolver-registry';
 
 export function registeredProjectToFunnelDefinition(
   project: RegisteredProject,
@@ -26,6 +27,12 @@ export function registeredProjectToFunnelDefinition(
 export async function buildBundleForProject(
   project: RegisteredProject,
 ): Promise<ProjectIntelligenceBundle> {
+  const resolver = getProjectBundleResolver(project.connector.connectorType);
+  if (resolver) {
+    return resolver.buildBundle(project);
+  }
+  // Fallback (P015B Step 1 — to be removed once the instance layer registers
+  // the FoodTruck resolver): legacy hardcoded branch, then mock.
   if (project.connector.connectorType === 'foodtruck-business') {
     return foodTruckBundleFromRegistry(project);
   }
@@ -35,6 +42,12 @@ export async function buildBundleForProject(
 export async function buildFunnelSnapshotForProject(
   project: RegisteredProject,
 ): Promise<FunnelSnapshot> {
+  const resolver = getProjectBundleResolver(project.connector.connectorType);
+  if (resolver) {
+    return resolver.buildFunnelSnapshot(project);
+  }
+  // Fallback (P015B Step 1 — to be removed once the instance layer registers
+  // the FoodTruck resolver): legacy hardcoded branch, then mock.
   if (project.connector.connectorType === 'foodtruck-business') {
     const conn = foodtruckBusinessConnectorFromEnv();
     return conn.fetchFunnelSnapshot();

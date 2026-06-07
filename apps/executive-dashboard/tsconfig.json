@@ -22,6 +22,9 @@
       "@active-instance/project-executive-metadata": [
         "../../instances/yoni-company/project-executive-metadata.ts"
       ],
+      "@active-instance/instance-resolvers": [
+        "../../instances/yoni-company/instance-resolvers.ts"
+      ],
       "@active-instance/governance-policy": [
         "../../instances/yoni-company/governance-policy.ts"
       ],

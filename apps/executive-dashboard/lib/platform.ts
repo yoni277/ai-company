@@ -68,6 +68,12 @@ import {
 // connector-whatsapp-engine imports here — they belong in the instance layer.
 // See docs/architecture/GENERIC_PLATFORM_BOUNDARY.md leak L4.
 import { buildInstanceConnectors } from '@active-instance/instance-connectors';
+// Register the instance's connector-type resolvers (intelligence bundle +
+// revenue) into the generic portfolio-intelligence / revenue registries. The
+// platform packages never name a connector — the instance teaches the registry
+// how to serve each connector type it activates. See GENERIC_PLATFORM_BOUNDARY.md
+// leaks L2/L8 family (P015B).
+import { registerInstanceResolvers } from '@active-instance/instance-resolvers';
 
 // Register the instance-layer project-registry seed at module load time, before
 // any caller invokes `ProjectRegistryService.loadProjects()`. The platform's
@@ -80,6 +86,11 @@ registerInstanceRegistrySeed(buildInstanceRegistrySeed);
 // per-project hints without the platform packages naming any vendor or channel.
 // See GENERIC_PLATFORM_BOUNDARY.md leaks L2 + L3.
 registerInstanceProjectMetadata(getInstanceProjectMetadata);
+
+// Register the instance-layer connector-type resolvers at module load time, so
+// portfolio-intelligence / revenue serve this company's connector types through
+// the generic registry rather than a hardcoded branch. See P015B.
+registerInstanceResolvers();
 
 export interface ExecutiveDescriptor {
   id: string;

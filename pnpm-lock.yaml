@@ -169,6 +169,9 @@ importers:
 
   instances/yoni-company:
     dependencies:
+      '@ai-company/connector-foodtruck-business':
+        specifier: workspace:*
+        version: link:../../packages/connectors/foodtruck-business
       '@ai-company/connector-foodtruck-il':
         specifier: workspace:*
         version: link:../../connectors/foodtruck-il
@@ -181,6 +184,12 @@ importers:
       '@ai-company/connector-lab-os':
         specifier: workspace:*
         version: link:../../connectors/lab-os
+      '@ai-company/connector-portfolio-intelligence':
+        specifier: workspace:*
+        version: link:../../packages/connectors/portfolio-intelligence
+      '@ai-company/connector-revenue':
+        specifier: workspace:*
+        version: link:../../packages/connectors/revenue
       '@ai-company/connector-whatsapp-engine':
         specifier: workspace:*
         version: link:../../connectors/whatsapp-engine
