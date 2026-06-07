@@ -21,22 +21,4 @@ export const INSTANCE_PROJECTS_SEED: InMemorySeedProject[] = [
     description: 'Israeli food truck operations platform.',
     status: 'healthy',
   },
-  {
-    slug: 'lab-os',
-    name: 'Lab-OS',
-    description: 'Laboratory operating system.',
-    status: 'at_risk',
-  },
-  {
-    slug: 'inventory-engine',
-    name: 'Inventory Management Engine',
-    description: 'Generic inventory engine across business lines.',
-    status: 'healthy',
-  },
-  {
-    slug: 'whatsapp-engine',
-    name: 'WhatsApp Platform',
-    description: 'Customer messaging and automation over WhatsApp.',
-    status: 'healthy',
-  },
 ];

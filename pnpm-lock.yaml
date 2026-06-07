@@ -68,6 +68,9 @@ importers:
       '@ai-company/decision-support-engine':
         specifier: workspace:*
         version: link:../../packages/decision-support-engine
+      '@ai-company/doos-core':
+        specifier: workspace:*
+        version: link:../../packages/doos-core
       '@ai-company/financial-intelligence-engine':
         specifier: workspace:*
         version: link:../../packages/financial-intelligence-engine
@@ -98,6 +101,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.2.7(react@19.2.7)
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.0.0
@@ -163,6 +169,9 @@ importers:
 
   instances/yoni-company:
     dependencies:
+      '@ai-company/connector-foodtruck-business':
+        specifier: workspace:*
+        version: link:../../packages/connectors/foodtruck-business
       '@ai-company/connector-foodtruck-il':
         specifier: workspace:*
         version: link:../../connectors/foodtruck-il
@@ -175,6 +184,12 @@ importers:
       '@ai-company/connector-lab-os':
         specifier: workspace:*
         version: link:../../connectors/lab-os
+      '@ai-company/connector-portfolio-intelligence':
+        specifier: workspace:*
+        version: link:../../packages/connectors/portfolio-intelligence
+      '@ai-company/connector-revenue':
+        specifier: workspace:*
+        version: link:../../packages/connectors/revenue
       '@ai-company/connector-whatsapp-engine':
         specifier: workspace:*
         version: link:../../connectors/whatsapp-engine
@@ -184,6 +199,9 @@ importers:
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
+      '@anthropic-ai/sdk':
+        specifier: ^0.39.0
+        version: 0.39.0
 
   packages/ai-cfo:
     dependencies:
@@ -373,6 +391,9 @@ importers:
         specifier: workspace:*
         version: link:../shared-types
     devDependencies:
+      tsx:
+        specifier: ^4.19.1
+        version: 4.22.4
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
@@ -382,6 +403,9 @@ importers:
       '@ai-company/business-funnel-engine':
         specifier: workspace:*
         version: link:../../business-funnel-engine
+      '@ai-company/connector-revenue':
+        specifier: workspace:*
+        version: link:../revenue
       '@ai-company/decision-support-engine':
         specifier: workspace:*
         version: link:../../decision-support-engine
@@ -411,9 +435,6 @@ importers:
       '@ai-company/business-funnel-engine':
         specifier: workspace:*
         version: link:../../business-funnel-engine
-      '@ai-company/connector-foodtruck-business':
-        specifier: workspace:*
-        version: link:../foodtruck-business
       '@ai-company/connector-revenue':
         specifier: workspace:*
         version: link:../revenue
@@ -491,6 +512,19 @@ importers:
         specifier: workspace:*
         version: link:../shared-types
     devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
+  packages/doos-core:
+    dependencies:
+      '@ai-company/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
+    devDependencies:
+      tsx:
+        specifier: ^4.19.1
+        version: 4.22.4
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
@@ -1371,6 +1405,9 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  server-only@0.0.1:
+    resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
+
   sharp@0.34.5:
     resolution: {integrity: sha512-Ou9I5Ft9WNcCbXrU9cMgPBcCK8LiwLqcbywW3t4oDV37n1pzpuNLsYiAV8eODnjbtQlSDwZ2cUEeQz4E54Hltg==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
@@ -2080,6 +2117,8 @@ snapshots:
 
   semver@7.8.1:
     optional: true
+
+  server-only@0.0.1: {}
 
   sharp@0.34.5:
     dependencies:

@@ -1,10 +1,12 @@
 import type {
+  CEODirective,
   CompanyContext,
   Executive,
   ExecutiveReport,
   ReportType,
   VpSalesOutput,
 } from '@ai-company/shared-types';
+import { fingerprintRisk } from '@ai-company/shared-types';
 import type { Repositories } from '@ai-company/database';
 import { buildCompanyContext } from '@ai-company/ai-chief-of-staff';
 import type { VpSalesLlmClient } from './llm-client';
@@ -40,12 +42,21 @@ export interface VpSalesBriefingRunResult {
  * on the cross-executive Overview. Deals live in the report body — Phase 5 may give them
  * their own table once a CRM connector lands.
  */
+export interface RunVpSalesBriefingOptions {
+  focusDirective?: CEODirective;
+  activeDirectives?: CEODirective[];
+}
+
 export async function runVpSalesBriefing(
   repos: Repositories,
   vp: VpSales,
   reportType: ReportType,
+  options: RunVpSalesBriefingOptions = {},
 ): Promise<VpSalesBriefingRunResult> {
-  const context = await buildCompanyContext(repos);
+  const context = await buildCompanyContext(repos, {
+    ...(options.activeDirectives ? { activeDirectives: options.activeDirectives } : {}),
+    ...(options.focusDirective ? { focusDirective: options.focusDirective } : {}),
+  });
   const output = await vp.generateReport(context, reportType);
 
   const projectsBySlug = new Map(context.projects.map((p) => [p.project.slug, p.project]));
@@ -55,6 +66,8 @@ export async function runVpSalesBriefing(
       p.openRisks.map((r) => `${p.project.id}|${r.description.toLowerCase()}`),
     ),
   );
+  // P006A — risk writes carry provenance + fingerprint.
+  const recordedBy = `executive:${VP_SALES_ID}`;
   const newRisks = output.salesRisks
     .map((r) => {
       const project = projectsBySlug.get(r.projectSlug);
@@ -65,8 +78,16 @@ export async function runVpSalesBriefing(
         projectId: project.id,
         severity: r.severity,
         description: r.description,
-        source: `executive:${VP_SALES_ID}`,
+        source: recordedBy,
         status: 'open' as const,
+        recordedBy,
+        fingerprint: fingerprintRisk({
+          projectId: project.id,
+          recordedBy,
+          severity: r.severity,
+          description: r.description,
+        }),
+        generation: 1,
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
@@ -77,6 +98,7 @@ export async function runVpSalesBriefing(
     reportType,
     summary: output.headline,
     body: output,
+    sourceDirectiveId: options.focusDirective?.id ?? null,
   })) as ExecutiveReport<VpSalesOutput>;
 
   return { context, output, report };

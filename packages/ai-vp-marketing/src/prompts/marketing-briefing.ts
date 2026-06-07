@@ -1,7 +1,9 @@
 import type { CompanyContext } from '@ai-company/shared-types';
+import { buildDirectiveSection } from '@ai-company/ai-chief-of-staff';
 import { vpMarketingOutputSchemaText } from './schema';
 
 export function marketingBriefingPrompt(ctx: CompanyContext): string {
+  const directiveSection = buildDirectiveSection(ctx);
   return [
     "You are producing the CEO's DAILY MARKETING BRIEFING.",
     'You are the AI VP Marketing — interpret the context through a growth lens, not a business or engineering lens.',
@@ -10,6 +12,7 @@ export function marketingBriefingPrompt(ctx: CompanyContext): string {
     'Surface risks that threaten growth (churn signal, acquisition stall, CAC blowup, broken activation).',
     'Be terse. Each summary <= 2 sentences. Each recommended action / expected impact <= 1 sentence.',
     'Use only the company context below; do not invent facts or fabricate metrics.',
+    ...(directiveSection ? ['', directiveSection] : []),
     '',
     'Return ONLY valid JSON matching this TypeScript type:',
     vpMarketingOutputSchemaText,

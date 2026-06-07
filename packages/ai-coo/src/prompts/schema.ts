@@ -33,6 +33,17 @@ interface CooOutput {
     title: string;
     rationale: string;
   }>;
+  // P005 — Directive → Task fan-out. Optional. Include ONLY when responding
+  // to a CEO directive. <= 3 entries. Each capabilityRequired is a
+  // deterministic capability slug (e.g. 'unblock_vendor_dependency',
+  // 'audit_pipeline', 'resolve_queue_backlog'), never a vendor name.
+  proposedTasks?: Array<{
+    title: string;
+    description?: string;
+    capabilityRequired: string;
+    priority?: 'low' | 'medium' | 'high';
+    dueInDays?: number;
+  }>;
   generatedAt: string;                // ISO timestamp
 }
 `.trim();

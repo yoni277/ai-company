@@ -1,9 +1,26 @@
 import type {
+  CEODirective,
   CompanyContext,
   ProjectExecutiveMetadata,
 } from '@ai-company/shared-types';
 import type { Repositories } from '@ai-company/database';
 import { rollupCompanyHealth, hoursSince } from './analyzers/health';
+
+/**
+ * Optional inputs for {@link buildCompanyContext}. Both are produced by the
+ * dashboard layer (it owns the directive table) and passed in here so that
+ * the ai-chief-of-staff package stays unaware of dashboard internals.
+ *
+ * - activeDirectives: the full active directive list, so every executive can
+ *   weigh them while forming priorities even on a normal daily briefing.
+ * - focusDirective: the single directive that this run is specifically
+ *   answering (directive fan-out). Setting this asks the executive to make
+ *   it the primary topic of its output.
+ */
+export interface CompanyContextOptions {
+  activeDirectives?: CEODirective[];
+  focusDirective?: CEODirective;
+}
 
 export type InstanceProjectMetadataProvider = (
   projectSlug: string,
@@ -38,7 +55,10 @@ export function __resetInstanceProjectMetadata(): void {
  * Intentionally narrow: we only pull what an executive briefing needs.
  * Heavier analytics belong in dedicated analyzers later.
  */
-export async function buildCompanyContext(repos: Repositories): Promise<CompanyContext> {
+export async function buildCompanyContext(
+  repos: Repositories,
+  options: CompanyContextOptions = {},
+): Promise<CompanyContext> {
   const projects = await repos.projects.list();
 
   const perProject = await Promise.all(
@@ -77,5 +97,9 @@ export async function buildCompanyContext(repos: Repositories): Promise<CompanyC
       openRiskCount: allOpenRisks.length,
       openOpportunityCount: allOpps.length,
     },
+    ...(options.activeDirectives && options.activeDirectives.length > 0
+      ? { activeDirectives: options.activeDirectives }
+      : {}),
+    ...(options.focusDirective ? { focusDirective: options.focusDirective } : {}),
   };
 }

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ensureSeededMockData, getPlatform } from '../../lib/platform';
+import { getPlatform } from '../../lib/platform';
 import { loadCommandCenterData } from '../../lib/command-center';
 import { CommandCenterView } from '../../components/command-center/CommandCenterView';
 import { CommandCenterGoalsRow } from '../../components/command-center/CommandCenterLayout';
@@ -10,14 +10,20 @@ import { listActiveDirectives, listDecisions } from '../../lib/ceo-operating-sys
 export const dynamic = 'force-dynamic';
 
 export default async function CeoCommandCenterPage() {
-  await ensureSeededMockData();
   const { repos } = getPlatform();
-  const [data, directives, decisions] = await Promise.all([
+  const [data, directives, decisions, objectives, projects] = await Promise.all([
     loadCommandCenterData(repos),
     listActiveDirectives(),
     listDecisions(),
+    repos.objectives.list({ status: 'active' }),
+    repos.projects.list(),
   ]);
   const recommendedActions = data.portfolio.actionQueue?.actions ?? [];
+  // Project targeting options come from the live registry — no hardcoded slugs.
+  const projectOptions = [
+    { id: '', label: 'All portfolio' },
+    ...projects.map((p) => ({ id: p.slug, label: p.name })),
+  ];
 
   return (
     <div dir="rtl" lang="he" className="space-y-6 max-w-[90rem]">
@@ -53,6 +59,8 @@ export default async function CeoCommandCenterPage() {
         initialDirectives={directives}
         initialDecisions={decisions}
         recommendedActions={recommendedActions}
+        activeObjectives={objectives.map((o) => ({ id: o.id, title: o.title }))}
+        projectOptions={projectOptions}
       />
     </div>
   );

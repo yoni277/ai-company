@@ -9,9 +9,13 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "corepack pnpm -r typecheck",
-    "test": "pnpm -r test",
+    "test": "corepack pnpm -r test",
     "clean": "pnpm -r exec rm -rf node_modules .next dist",
-    "chief:briefing": "pnpm -C packages/ai-chief-of-staff run cli:briefing"
+    "chief:briefing": "pnpm -C packages/ai-chief-of-staff run cli:briefing",
+    "audit:leaks": "node scripts/audit-leaks.mjs",
+    "log:friction": "node scripts/log-friction.mjs",
+    "cli:register-project": "node scripts/register-project.mjs",
+    "cli:seed-instance": "pnpm -C apps/executive-dashboard cli:seed-instance"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

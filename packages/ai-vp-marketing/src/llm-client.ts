@@ -1,4 +1,10 @@
-import type { CompanyContext, ReportType, VpMarketingOutput } from '@ai-company/shared-types';
+import type {
+  CompanyContext,
+  ReportType,
+  ResearchSource,
+  TaskProposal,
+  VpMarketingOutput,
+} from '@ai-company/shared-types';
 
 export interface VpMarketingLlmClient {
   generate(ctx: CompanyContext, reportType: ReportType): Promise<VpMarketingOutput>;
@@ -9,6 +15,12 @@ export interface VpMarketingLlmClient {
  * to `[]` when the model omits them. This guards against benign tool-use schema drift
  * (e.g. Claude skipping `growthRisks` when there are none to surface) without
  * silently corrupting the report shape.
+ *
+ * Optional fields (`proposedTasks`, `researchSources`) are PRESERVED when the
+ * model emits them and OMITTED when absent — never coerced to `[]`. The
+ * transformer at the platform layer reads `undefined` as "executive opted out
+ * of proposing", which is distinct from "executive emitted empty list" only
+ * for the researchSources audit log.
  */
 export function ensureVpMarketingOutput(value: unknown): VpMarketingOutput {
   if (!value || typeof value !== 'object') {
@@ -43,6 +55,16 @@ export function ensureVpMarketingOutput(value: unknown): VpMarketingOutput {
     'marketingPriorities',
   );
 
+  // P005A — preserve proposedTasks when the LLM emits it. Absent ⇒ omit
+  // (NOT empty array) so the transformer's no-proposals branch is taken
+  // for executives that opted out. Same treatment for researchSources.
+  const proposedTasks = Array.isArray(v.proposedTasks)
+    ? (v.proposedTasks as TaskProposal[])
+    : undefined;
+  const researchSources = Array.isArray(v.researchSources)
+    ? (v.researchSources as ResearchSource[])
+    : undefined;
+
   return {
     headline: v.headline,
     marketingHealth: v.marketingHealth as VpMarketingOutput['marketingHealth'],
@@ -50,6 +72,8 @@ export function ensureVpMarketingOutput(value: unknown): VpMarketingOutput {
     campaignIdeas,
     growthRisks,
     marketingPriorities,
+    ...(proposedTasks !== undefined ? { proposedTasks } : {}),
+    ...(researchSources !== undefined ? { researchSources } : {}),
     generatedAt: typeof v.generatedAt === 'string' ? v.generatedAt : new Date().toISOString(),
   };
 }

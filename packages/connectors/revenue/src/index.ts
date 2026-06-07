@@ -1,12 +1,18 @@
 import { loadRegisteredProjects } from '@ai-company/project-registry';
 import type { RegisteredProject, RevenueSnapshot } from '@ai-company/shared-types';
-import { createFoodTruckRevenueConnector } from './foodtruck';
 import { createSupabaseLedgerConnector } from './supabase-ledger';
 import { MockRevenueConnector } from './mock';
+import { getRevenueConnectorResolver } from './revenue-resolver-registry';
 import type { RevenueConnector, RevenueSourceConfig, RevenueSourceType } from './types';
 
 export type { RevenueConnector, RevenueSourceConfig, RevenueSourceType } from './types';
-export { FoodTruckRevenueConnector, createFoodTruckRevenueConnector } from './foodtruck';
+// P015B — revenueSource → connector factory registry. The instance layer
+// registers a factory per revenue source it activates; generic platform code
+// stays project-agnostic.
+export {
+  registerRevenueConnectorResolver,
+  type RevenueConnectorResolver,
+} from './revenue-resolver-registry';
 export { SupabaseLedgerRevenueConnector, createSupabaseLedgerConnector } from './supabase-ledger';
 export { MockRevenueConnector } from './mock';
 
@@ -19,9 +25,13 @@ export function createRevenueConnectorForProject(
   const slug = project.definition.slug;
   const name = project.definition.name;
 
+  const resolver = getRevenueConnectorResolver(source);
+  if (resolver) {
+    return resolver(project);
+  }
+
+  // Generic fallback when no instance resolver is registered for this source.
   switch (source) {
-    case 'foodtruck-supabase-events':
-      return createFoodTruckRevenueConnector({ projectId: slug, projectName: name, config });
     case 'supabase-ledger': {
       const ledger = createSupabaseLedgerConnector({
         projectId: slug,

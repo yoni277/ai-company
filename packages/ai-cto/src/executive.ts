@@ -1,10 +1,12 @@
 import type {
+  CEODirective,
   CompanyContext,
   CtoOutput,
   Executive,
   ExecutiveReport,
   ReportType,
 } from '@ai-company/shared-types';
+import { fingerprintRisk } from '@ai-company/shared-types';
 import type { Repositories } from '@ai-company/database';
 import { buildCompanyContext } from '@ai-company/ai-chief-of-staff';
 import type { CtoLlmClient } from './llm-client';
@@ -43,12 +45,21 @@ export interface CtoBriefingRunResult {
  * different concept and live in the report body only. Phase 4 may give them their
  * own table once we have a backlog grooming UI.
  */
+export interface RunCtoBriefingOptions {
+  focusDirective?: CEODirective;
+  activeDirectives?: CEODirective[];
+}
+
 export async function runCtoBriefing(
   repos: Repositories,
   cto: Cto,
   reportType: ReportType,
+  options: RunCtoBriefingOptions = {},
 ): Promise<CtoBriefingRunResult> {
-  const context = await buildCompanyContext(repos);
+  const context = await buildCompanyContext(repos, {
+    ...(options.activeDirectives ? { activeDirectives: options.activeDirectives } : {}),
+    ...(options.focusDirective ? { focusDirective: options.focusDirective } : {}),
+  });
   const output = await cto.generateReport(context, reportType);
 
   const projectsBySlug = new Map(context.projects.map((p) => [p.project.slug, p.project]));
@@ -58,6 +69,8 @@ export async function runCtoBriefing(
       p.openRisks.map((r) => `${p.project.id}|${r.description.toLowerCase()}`),
     ),
   );
+  // P006A — risk writes carry provenance + fingerprint.
+  const recordedBy = `executive:${CTO_ID}`;
   const newRisks = output.topTechnicalRisks
     .map((r) => {
       const project = projectsBySlug.get(r.projectSlug);
@@ -68,8 +81,16 @@ export async function runCtoBriefing(
         projectId: project.id,
         severity: r.severity,
         description: r.description,
-        source: `executive:${CTO_ID}`,
+        source: recordedBy,
         status: 'open' as const,
+        recordedBy,
+        fingerprint: fingerprintRisk({
+          projectId: project.id,
+          recordedBy,
+          severity: r.severity,
+          description: r.description,
+        }),
+        generation: 1,
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
@@ -80,6 +101,7 @@ export async function runCtoBriefing(
     reportType,
     summary: output.headline,
     body: output,
+    sourceDirectiveId: options.focusDirective?.id ?? null,
   })) as ExecutiveReport<CtoOutput>;
 
   return { context, output, report };

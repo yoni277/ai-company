@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ensureSeededMockData, getPlatform } from '../../lib/platform';
+import { getPlatform } from '../../lib/platform';
 import { Badge, Card, EmptyState } from '../../components/Card';
 import { VpMarketingBriefingButton } from '../../components/VpMarketingBriefingButton';
 import {
@@ -46,7 +46,6 @@ const PRIORITY_COLOR: Record<CampaignPriority, string> = {
 };
 
 export default async function VpMarketingPage() {
-  await ensureSeededMockData();
   const { repos } = getPlatform();
   const [latest, recent] = await Promise.all([
     repos.reports.latest(VP_MARKETING_ID, 'daily_briefing'),

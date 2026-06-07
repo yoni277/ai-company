@@ -31,6 +31,17 @@ interface CtoOutput {
     title: string;
     rationale: string;   // why this is the next-best engineering investment
   }>;
+  // P005 — Directive → Task fan-out. Optional. Include ONLY when responding
+  // to a CEO directive. <= 3 entries. Each capabilityRequired is a
+  // deterministic capability slug (e.g. 'audit_pipeline', 'review_design',
+  // 'patch_dependency'), never a vendor name.
+  proposedTasks?: Array<{
+    title: string;
+    description?: string;
+    capabilityRequired: string;
+    priority?: 'low' | 'medium' | 'high';
+    dueInDays?: number;
+  }>;
   generatedAt: string;   // ISO timestamp
 }
 `.trim();

@@ -1,0 +1,43 @@
+{
+  "capturedAt": "2026-06-06",
+  "supabaseProject": "wimsglxixekmjsfpnqjb",
+  "schema": "ai_company",
+  "backupSnapshotSchema": "ai_company_backup_20260606",
+  "note": "Row counts in ai_company schema immediately before the CEO-authorized full runtime reset. Snapshot schema verified row-for-row equal to source for every table.",
+  "counts": {
+    "projects": 1,
+    "project_definitions": 1,
+    "project_funnel_stages": 3,
+    "project_connector_configs": 1,
+    "data_sources": 1,
+    "project_metrics": 36,
+    "risks": 5,
+    "opportunities": 2,
+    "ceo_directives": 23,
+    "directive_responses": 18,
+    "executive_reports": 59,
+    "report_links": 0,
+    "task_proposals": 12,
+    "tasks": 2,
+    "evidence_tokens": 3,
+    "task_outcomes": 1,
+    "objectives": 1,
+    "objective_outcomes": 0,
+    "ceo_decisions": 1,
+    "revenue_transactions": 0
+  },
+  "scope": {
+    "deleted": [
+      "task_outcomes", "evidence_tokens", "tasks", "task_proposals",
+      "report_links", "directive_responses", "executive_reports",
+      "ceo_directives", "objective_outcomes", "objectives",
+      "project_metrics", "risks", "opportunities", "data_sources",
+      "ceo_decisions", "revenue_transactions", "projects"
+    ],
+    "kept": [
+      "project_definitions", "project_funnel_stages", "project_connector_configs"
+    ],
+    "keptRationale": "Project registry = 'connectors / platform configuration' per Rule 3 (Do NOT delete). Confirmed scope: full business-data wipe, keep registry.",
+    "directiveNamedButNonexistent": ["executive_scorecard_snapshots"]
+  }
+}

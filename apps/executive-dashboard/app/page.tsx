@@ -1,10 +1,8 @@
 import Link from 'next/link';
-import { ensureSeededMockData, getPlatform } from '../lib/platform';
+import { getPlatform } from '../lib/platform';
 import { loadPhase2Snapshot } from '../lib/phase2-metrics';
-import { loadFoodTruckBusinessMetrics } from '../lib/owner-acquisition';
 import { loadPortfolioIntelligenceForDashboard } from '../lib/portfolio-intelligence';
 import { listActiveDirectives, listDecisions } from '../lib/ceo-operating-system';
-import { OwnerAcquisitionPanel } from '../components/OwnerAcquisitionPanel';
 import { PortfolioOverviewPanel } from '../components/PortfolioOverviewPanel';
 import { RevenueOverviewPanel } from '../components/RevenueOverviewPanel';
 import { FinancialIntelligencePanel } from '../components/FinancialIntelligencePanel';
@@ -27,17 +25,15 @@ import { CHIEF_OF_STAFF_ID } from '@ai-company/ai-chief-of-staff';
 export const dynamic = 'force-dynamic';
 
 export default async function OverviewPage() {
-  await ensureSeededMockData();
   const { repos } = getPlatform();
 
-  const [projects, openRisks, opportunities, latestBriefing, phase2, foodTruck, portfolioLoad, ceoDirectives, ceoDecisions] =
+  const [projects, openRisks, opportunities, latestBriefing, phase2, portfolioLoad, ceoDirectives, ceoDecisions] =
     await Promise.all([
       repos.projects.list(),
       repos.risks.listOpen(),
       repos.opportunities.listAll(),
       repos.reports.latest(CHIEF_OF_STAFF_ID, 'daily_briefing'),
       loadPhase2Snapshot(repos),
-      loadFoodTruckBusinessMetrics(),
       loadPortfolioIntelligenceForDashboard(),
       listActiveDirectives(),
       listDecisions(),
@@ -51,11 +47,9 @@ export default async function OverviewPage() {
     supabase: phase2.supabase,
     health: phase2.health,
     pendingApprovalCount: phase2.pendingApprovals.length,
-    // Chief of Staff reads only `acquisitionSummary`; `foodTruck` is kept
-    // for the rest of the instance dashboard panels until the deprecated
-    // field is fully migrated out (see GENERIC_PLATFORM_REFACTOR_PLAN.md L1).
-    acquisitionSummary: foodTruck.acquisitionSummary,
-    foodTruck: foodTruck.metrics,
+    // Instance-specific acquisition metrics (e.g. owner-acquisition) are no
+    // longer loaded on this generic route. An instance that wants them must
+    // inject them through an instance-declared overview extension.
     funnels,
     decisionSupport,
     portfolio,
@@ -97,8 +91,6 @@ export default async function OverviewPage() {
       <RevenueOverviewPanel revenue={portfolio.revenue} />
 
       <FinancialIntelligencePanel financial={portfolio.financial} />
-
-      <OwnerAcquisitionPanel metrics={foodTruck.metrics} />
 
       <FunnelIntelligencePanel snapshots={funnels} />
 

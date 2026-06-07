@@ -15,9 +15,9 @@ import type { RegisteredProject } from '@ai-company/shared-types';
  * See docs/architecture/GENERIC_PLATFORM_BOUNDARY.md and
  * docs/project-management/GENERIC_PLATFORM_REFACTOR_PLAN.md leak L8.
  *
- * Do NOT re-introduce hardcoded `defs` / `funnels` / `connectors` /
- * `hasFoodTruckCredentials` in this file — that constituted leak L8 and was
- * the reason the platform could not be cloned for a different company.
+ * Do NOT re-introduce hardcoded `defs` / `funnels` / `connectors` or any
+ * per-business credential check in this file — that constituted leak L8 and
+ * was the reason the platform could not be cloned for a different company.
  */
 
 export type InstanceRegistrySeedBuilder = () => RegisteredProject[];

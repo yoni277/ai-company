@@ -10,15 +10,16 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "lint": "echo 'no-op'",
-    "test": "echo 'no-op'"
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@ai-company/shared-types": "workspace:*",
     "@ai-company/database": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.1"
   }
 }

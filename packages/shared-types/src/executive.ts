@@ -4,6 +4,7 @@ import type { Risk } from './risks';
 import type { Opportunity } from './opportunities';
 import type { ReportType } from './reports';
 import type { MarketingChannel } from './marketing';
+import type { CEODirective } from './ceo-operating-system';
 
 /**
  * Project-level metadata that executives consume but the platform itself
@@ -59,6 +60,20 @@ export interface CompanyContext {
     openRiskCount: number;
     openOpportunityCount: number;
   };
+  /**
+   * The full set of currently-active CEO directives. Every executive sees
+   * these and is expected to weigh them when forming priorities. Empty array
+   * if none. Distinct from `focusDirective`, which singles out the one
+   * directive that triggered this run (if any).
+   */
+  activeDirectives?: CEODirective[];
+  /**
+   * Present when this context was built specifically to respond to a single
+   * CEO directive (directive fan-out). The executive should treat it as the
+   * primary question to answer in its output. Undefined for normal daily /
+   * weekly briefings.
+   */
+  focusDirective?: CEODirective;
 }
 
 export interface Executive<TOutput = unknown> {

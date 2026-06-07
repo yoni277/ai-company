@@ -1,5 +1,6 @@
 import type { ProjectHealth } from './projects';
 import type { RiskSeverity } from './risks';
+import type { TaskProposal } from './doos';
 
 export type OperationalMetricKind = 'throughput' | 'sla' | 'queue' | 'utilization' | 'vendor';
 export type VendorStatus = 'healthy' | 'at_risk' | 'critical';
@@ -43,5 +44,7 @@ export interface CooOutput {
     title: string;
     rationale: string;
   }>;
+  /** P005 — see VpMarketingOutput.proposedTasks for semantics. */
+  proposedTasks?: TaskProposal[];
   generatedAt: string;
 }

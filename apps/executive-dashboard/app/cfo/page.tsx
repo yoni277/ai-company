@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ensureSeededMockData, getPlatform } from '../../lib/platform';
+import { getPlatform } from '../../lib/platform';
 import { Badge, Card, EmptyState } from '../../components/Card';
 import { CfoBriefingButton } from '../../components/CfoBriefingButton';
 import {
@@ -45,7 +45,6 @@ const ACTION_COLOR: Record<CapitalAction, string> = {
 };
 
 export default async function CfoPage() {
-  await ensureSeededMockData();
   const { repos } = getPlatform();
   const [latest, recent] = await Promise.all([
     repos.reports.latest(CFO_ID, 'daily_briefing'),

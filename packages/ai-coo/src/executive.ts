@@ -1,10 +1,12 @@
 import type {
+  CEODirective,
   CompanyContext,
   CooOutput,
   Executive,
   ExecutiveReport,
   ReportType,
 } from '@ai-company/shared-types';
+import { fingerprintRisk } from '@ai-company/shared-types';
 import type { Repositories } from '@ai-company/database';
 import { buildCompanyContext } from '@ai-company/ai-chief-of-staff';
 import type { CooLlmClient } from './llm-client';
@@ -39,12 +41,21 @@ export interface CooBriefingRunResult {
  * Ops briefing run. Persists bottlenecks as platform risks (source: executive:coo).
  * Vendor health snapshots and operational priorities live in the report body only.
  */
+export interface RunCooBriefingOptions {
+  focusDirective?: CEODirective;
+  activeDirectives?: CEODirective[];
+}
+
 export async function runCooBriefing(
   repos: Repositories,
   coo: Coo,
   reportType: ReportType,
+  options: RunCooBriefingOptions = {},
 ): Promise<CooBriefingRunResult> {
-  const context = await buildCompanyContext(repos);
+  const context = await buildCompanyContext(repos, {
+    ...(options.activeDirectives ? { activeDirectives: options.activeDirectives } : {}),
+    ...(options.focusDirective ? { focusDirective: options.focusDirective } : {}),
+  });
   const output = await coo.generateReport(context, reportType);
 
   const projectsBySlug = new Map(context.projects.map((p) => [p.project.slug, p.project]));
@@ -54,6 +65,8 @@ export async function runCooBriefing(
       p.openRisks.map((r) => `${p.project.id}|${r.description.toLowerCase()}`),
     ),
   );
+  // P006A — risk writes carry provenance + fingerprint.
+  const recordedBy = `executive:${COO_ID}`;
   const newRisks = output.bottlenecks
     .map((b) => {
       const project = projectsBySlug.get(b.projectSlug);
@@ -64,8 +77,16 @@ export async function runCooBriefing(
         projectId: project.id,
         severity: b.severity,
         description: b.description,
-        source: `executive:${COO_ID}`,
+        source: recordedBy,
         status: 'open' as const,
+        recordedBy,
+        fingerprint: fingerprintRisk({
+          projectId: project.id,
+          recordedBy,
+          severity: b.severity,
+          description: b.description,
+        }),
+        generation: 1,
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
@@ -76,6 +97,7 @@ export async function runCooBriefing(
     reportType,
     summary: output.headline,
     body: output,
+    sourceDirectiveId: options.focusDirective?.id ?? null,
   })) as ExecutiveReport<CooOutput>;
 
   return { context, output, report };

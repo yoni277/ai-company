@@ -3,6 +3,7 @@ import type {
   MarketingFunnelStage,
   MarketingChannel,
   ReportType,
+  TaskProposal,
   VpMarketingOutput,
 } from '@ai-company/shared-types';
 import type { VpMarketingLlmClient } from './llm-client';
@@ -122,6 +123,13 @@ export class FakeVpMarketingLlmClient implements VpMarketingLlmClient {
         ? `Weekly marketing read: ${live.length} project(s), ${campaignIdeas.length} candidate campaign(s), ${growthRisks.length} growth risk(s).`
         : `Marketing briefing: ${live.length} project(s), ${campaignIdeas.length} candidate campaign(s).`;
 
+    // P005 — emit at most 3 proposedTasks when the context targets a directive.
+    // Pure heuristic from campaign ideas / risks; the transformer at the
+    // platform layer enforces the cap, missing-objective skip, and validation.
+    const proposedTasks: TaskProposal[] = ctx.focusDirective
+      ? deriveProposedTasks(campaignIdeas, growthRisks)
+      : [];
+
     return {
       headline:
         marketingHealth === 'critical'
@@ -134,8 +142,58 @@ export class FakeVpMarketingLlmClient implements VpMarketingLlmClient {
       campaignIdeas: campaignIdeas.slice(0, 6),
       growthRisks: growthRisks.slice(0, 5),
       marketingPriorities,
+      ...(proposedTasks.length > 0 ? { proposedTasks } : {}),
       generatedAt: new Date().toISOString(),
     };
+  }
+}
+
+function deriveProposedTasks(
+  campaignIdeas: VpMarketingOutput['campaignIdeas'],
+  growthRisks: VpMarketingOutput['growthRisks'],
+): TaskProposal[] {
+  const fromCampaigns: TaskProposal[] = campaignIdeas
+    .filter((c) => c.priority === 'high')
+    .slice(0, 2)
+    .map((c) => ({
+      title: truncate(`Launch ${c.channel} campaign: ${c.title}`, 80),
+      description: c.description,
+      capabilityRequired: capabilityForChannel(c.channel),
+      priority: 'high' as const,
+      dueInDays: 7,
+    }));
+  const fromRisks: TaskProposal[] = growthRisks
+    .filter((r) => r.severity === 'critical' || r.severity === 'high')
+    .slice(0, 1)
+    .map((r) => ({
+      title: truncate(`Mitigate growth risk: ${r.description}`, 80),
+      description: r.recommendedAction,
+      capabilityRequired: 'analyze_funnel',
+      priority: r.severity === 'critical' ? ('high' as const) : ('medium' as const),
+      dueInDays: r.severity === 'critical' ? 1 : 5,
+    }));
+  return [...fromCampaigns, ...fromRisks].slice(0, 3);
+}
+
+function capabilityForChannel(channel: MarketingChannel): string {
+  // Generic capability slugs only — never vendor names. Instance layer maps
+  // the slug to a concrete connector at execution time.
+  switch (channel) {
+    case 'email':
+    case 'push':
+    case 'whatsapp':
+      return 'send_message';
+    case 'social':
+    case 'organic':
+      return 'publish_post';
+    case 'paid':
+      return 'launch_paid_campaign';
+    case 'partnership':
+      return 'coordinate_partnership';
+    case 'product':
+      return 'ship_product_change';
+    default:
+      return 'send_message';
   }
 }
 

@@ -1,6 +1,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { RevenueMetrics, RevenueSnapshot } from '@ai-company/shared-types';
-import type { RevenueConnector, RevenueSourceConfig } from './types';
+import type {
+  RevenueConnector,
+  RevenueSourceConfig,
+} from '@ai-company/connector-revenue';
 
 /**
  * FoodTruck-IL live revenue: real truck_events volume in the reporting window.

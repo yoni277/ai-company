@@ -1,5 +1,9 @@
-import type { DataConnector } from '@ai-company/shared-types';
-import type { Repositories } from '@ai-company/database';
+import {
+  fingerprintOpportunity,
+  fingerprintRisk,
+  type DataConnector,
+} from '@ai-company/shared-types';
+import { ProjectNotFoundError, type Repositories } from '@ai-company/database';
 import { ConnectorError, ConnectorTimeoutError } from './errors';
 import type { ConnectorRegistry } from './registry';
 
@@ -9,15 +13,27 @@ export interface SyncOptions {
   timeoutMs?: number;
 }
 
+/**
+ * P006 — `skipped` is the new status the orchestrator returns when a
+ * connector references an unregistered project slug. The orchestrator no
+ * longer creates project rows (D023 / D038). Operators register projects
+ * explicitly via POST /api/projects or the cli:register-project CLI.
+ */
+export type ConnectorSyncStatus = 'ok' | 'degraded' | 'error' | 'skipped';
+
+export type ConnectorSkipReason = 'project_not_registered';
+
 export interface ConnectorSyncResult {
   name: string;
   projectSlug: string;
-  status: 'ok' | 'degraded' | 'error';
+  status: ConnectorSyncStatus;
   durationMs: number;
   metricsRecorded: number;
   risksRecorded: number;
   opportunitiesRecorded: number;
   error?: string;
+  /** Set when status='skipped'. Diagnostic only — runtime never branches on it. */
+  skipReason?: ConnectorSkipReason;
 }
 
 export interface SyncRunResult {
@@ -68,20 +84,45 @@ export class SyncOrchestrator {
     };
 
     try {
-      // Ensure project row exists; without it nothing else can be persisted.
-      let project = await this.repos.projects.getBySlug(connector.projectSlug);
+      // P006 — orchestrator MAY refresh existing project rows but MAY NOT
+      // create them. If the slug is not registered, skip and return a
+      // structured skipReason so the operator sees what to register rather
+      // than silently nothing happening.
+      const existing = await this.repos.projects.getBySlug(connector.projectSlug);
+      if (!existing) {
+        return {
+          ...baseResult,
+          status: 'skipped',
+          skipReason: 'project_not_registered',
+          durationMs: Date.now() - startedAt,
+        };
+      }
       const status = await withTimeout(
         connector.getStatus(),
         timeoutMs,
         connector.name,
         'getStatus',
       );
-      project = await this.repos.projects.upsertBySlug({
-        slug: connector.projectSlug,
-        name: project?.name ?? connector.displayName,
-        description: project?.description ?? status.headline,
-        status: status.health,
-      });
+      let project;
+      try {
+        project = await this.repos.projects.updateBySlug(connector.projectSlug, {
+          name: connector.displayName,
+          description: status.headline,
+          status: status.health,
+        });
+      } catch (err) {
+        // Race: the project was deleted between getBySlug and updateBySlug.
+        // Treat as skipped — do NOT silently re-create.
+        if (err instanceof ProjectNotFoundError) {
+          return {
+            ...baseResult,
+            status: 'skipped',
+            skipReason: 'project_not_registered',
+            durationMs: Date.now() - startedAt,
+          };
+        }
+        throw err;
+      }
 
       const [metricsRaw, risksRaw, oppsRaw] = await Promise.all([
         withTimeout(connector.getMetrics(), timeoutMs, connector.name, 'getMetrics'),
@@ -98,6 +139,11 @@ export class SyncOrchestrator {
 
       const now = new Date().toISOString();
 
+      // P006A — every connector write carries provenance ('connector:<name>').
+      // Risks + opportunities also carry a fingerprint so re-detection on the
+      // next sync bumps generation instead of duplicating.
+      const recordedBy = `connector:${connector.name}`;
+
       const metrics = await this.repos.metrics.recordMany(
         metricsRaw.map((m) => ({
           projectId: project!.id,
@@ -105,6 +151,7 @@ export class SyncOrchestrator {
           value: m.value,
           ...(m.unit !== undefined ? { unit: m.unit } : {}),
           timestamp: m.timestamp ?? now,
+          recordedBy,
         })),
       );
 
@@ -115,6 +162,14 @@ export class SyncOrchestrator {
           description: r.description,
           source: `connector:${connector.name}`,
           status: 'open' as const,
+          recordedBy,
+          fingerprint: fingerprintRisk({
+            projectId: project!.id,
+            recordedBy,
+            severity: r.severity,
+            description: r.description,
+          }),
+          generation: 1,
         })),
       );
 
@@ -124,6 +179,14 @@ export class SyncOrchestrator {
           priority: o.priority,
           description: o.description,
           source: `connector:${connector.name}`,
+          recordedBy,
+          fingerprint: fingerprintOpportunity({
+            projectId: project!.id,
+            recordedBy,
+            priority: o.priority,
+            description: o.description,
+          }),
+          generation: 1,
         })),
       );
 

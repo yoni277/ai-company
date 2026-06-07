@@ -22,6 +22,10 @@ const nextConfig = {
         '../../instances/yoni-company/project-registry-seed.ts',
       '@active-instance/project-executive-metadata':
         '../../instances/yoni-company/project-executive-metadata.ts',
+      '@active-instance/governance-policy':
+        '../../instances/yoni-company/governance-policy.ts',
+      '@active-instance/research-capability':
+        '../../instances/yoni-company/research-capability.ts',
     },
   },
   transpilePackages: [
@@ -51,6 +55,7 @@ const nextConfig = {
     '@ai-company/financial-intelligence-engine',
     '@ai-company/connector-revenue',
     '@ai-company/health-score',
+    '@ai-company/doos-core',
   ],
 };
 

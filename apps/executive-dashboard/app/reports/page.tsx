@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ensureSeededMockData, getPlatform } from '../../lib/platform';
+import { getPlatform } from '../../lib/platform';
 import { Card, EmptyState } from '../../components/Card';
 import { BriefingButton } from '../../components/BriefingButton';
 import { relativeTime } from '../../lib/format';
@@ -7,7 +7,6 @@ import { relativeTime } from '../../lib/format';
 export const dynamic = 'force-dynamic';
 
 export default async function ReportsPage() {
-  await ensureSeededMockData();
   const { repos } = getPlatform();
   const reports = await repos.reports.list({ limit: 50 });
 

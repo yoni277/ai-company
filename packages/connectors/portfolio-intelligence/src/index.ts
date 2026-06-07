@@ -18,6 +18,14 @@ import {
   buildFunnelSnapshotForProject,
 } from './bundle-resolver';
 
+// P015B — connector-type → intelligence resolver registry. The instance layer
+// registers a resolver per connector type it activates; generic platform code
+// stays project-agnostic.
+export {
+  registerProjectBundleResolver,
+  type ProjectBundleResolver,
+} from './bundle-resolver-registry';
+
 export interface PortfolioIntelligenceLoadResult {
   portfolio: PortfolioIntelligenceSnapshot;
   funnels: FunnelSnapshot[];

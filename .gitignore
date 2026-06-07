@@ -30,3 +30,6 @@ coverage/
 # Supabase local
 supabase/.branches/
 supabase/.temp/
+
+# Trackers (Cowork-owned, kept out of git)
+AI-Company_Master_Status_Tracker*.xlsx

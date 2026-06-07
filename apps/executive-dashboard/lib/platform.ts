@@ -22,17 +22,42 @@ import {
   ChiefOfStaff,
   buildDefaultChiefOfStaff,
   CHIEF_OF_STAFF_ID,
+  createChiefOfStaffDirectiveResponder,
+  registerDirectiveResponder,
   registerInstanceProjectMetadata,
+  registerResearchCapability,
 } from '@ai-company/ai-chief-of-staff';
-import { Cto, buildDefaultCto, CTO_ID } from '@ai-company/ai-cto';
+import { AnthropicWebSearchResearchCapability } from '@active-instance/research-capability';
+import {
+  Cto,
+  buildDefaultCto,
+  CTO_ID,
+  createCtoDirectiveResponder,
+} from '@ai-company/ai-cto';
 import {
   VpMarketing,
   buildDefaultVpMarketing,
   VP_MARKETING_ID,
+  createVpMarketingDirectiveResponder,
 } from '@ai-company/ai-vp-marketing';
-import { Cfo, buildDefaultCfo, CFO_ID } from '@ai-company/ai-cfo';
-import { Coo, buildDefaultCoo, COO_ID } from '@ai-company/ai-coo';
-import { VpSales, buildDefaultVpSales, VP_SALES_ID } from '@ai-company/ai-vp-sales';
+import {
+  Cfo,
+  buildDefaultCfo,
+  CFO_ID,
+  createCfoDirectiveResponder,
+} from '@ai-company/ai-cfo';
+import {
+  Coo,
+  buildDefaultCoo,
+  COO_ID,
+  createCooDirectiveResponder,
+} from '@ai-company/ai-coo';
+import {
+  VpSales,
+  buildDefaultVpSales,
+  VP_SALES_ID,
+  createVpSalesDirectiveResponder,
+} from '@ai-company/ai-vp-sales';
 import {
   buildDefaultExecutiveTeam,
   type ExecutiveTeam,
@@ -43,6 +68,12 @@ import {
 // connector-whatsapp-engine imports here — they belong in the instance layer.
 // See docs/architecture/GENERIC_PLATFORM_BOUNDARY.md leak L4.
 import { buildInstanceConnectors } from '@active-instance/instance-connectors';
+// Register the instance's connector-type resolvers (intelligence bundle +
+// revenue) into the generic portfolio-intelligence / revenue registries. The
+// platform packages never name a connector — the instance teaches the registry
+// how to serve each connector type it activates. See GENERIC_PLATFORM_BOUNDARY.md
+// leaks L2/L8 family (P015B).
+import { registerInstanceResolvers } from '@active-instance/instance-resolvers';
 
 // Register the instance-layer project-registry seed at module load time, before
 // any caller invokes `ProjectRegistryService.loadProjects()`. The platform's
@@ -55,6 +86,11 @@ registerInstanceRegistrySeed(buildInstanceRegistrySeed);
 // per-project hints without the platform packages naming any vendor or channel.
 // See GENERIC_PLATFORM_BOUNDARY.md leaks L2 + L3.
 registerInstanceProjectMetadata(getInstanceProjectMetadata);
+
+// Register the instance-layer connector-type resolvers at module load time, so
+// portfolio-intelligence / revenue serve this company's connector types through
+// the generic registry rather than a hardcoded branch. See P015B.
+registerInstanceResolvers();
 
 export interface ExecutiveDescriptor {
   id: string;
@@ -117,6 +153,29 @@ export function getPlatform(): Platform {
   const coo = buildDefaultCoo();
   const vpSales = buildDefaultVpSales();
 
+  // Register each executive's DirectiveResponder so the queue worker can
+  // dispatch by id alone. The worker never branches on executive name — it
+  // just calls REGISTRY[executive_id].run(...). To add a new AI executive
+  // (e.g. for AI-Law-Firm), publish a package that exposes its own factory
+  // and register it here. No queue code change required.
+  registerDirectiveResponder(createChiefOfStaffDirectiveResponder(chiefOfStaff));
+  registerDirectiveResponder(createCtoDirectiveResponder(cto));
+  registerDirectiveResponder(createCooDirectiveResponder(coo));
+  registerDirectiveResponder(createCfoDirectiveResponder(cfo));
+  registerDirectiveResponder(createVpMarketingDirectiveResponder(vpMarketing));
+  registerDirectiveResponder(createVpSalesDirectiveResponder(vpSales));
+
+  // Phase 2A — Operational Validation Blocker Exception (D022).
+  // Register the instance research backend so VP Marketing's Anthropic
+  // client can dispatch its `research` tool calls through it. Skipped when
+  // no Anthropic key is present (fake LLM path doesn't research).
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (anthropicKey) {
+    const config: { apiKey: string; model?: string } = { apiKey: anthropicKey };
+    if (process.env.ANTHROPIC_MODEL) config.model = process.env.ANTHROPIC_MODEL;
+    registerResearchCapability(new AnthropicWebSearchResearchCapability(config));
+  }
+
   const executives: ExecutiveDescriptor[] = [
     {
       id: CHIEF_OF_STAFF_ID,
@@ -177,21 +236,7 @@ export function getPlatform(): Platform {
   return cached;
 }
 
-/**
- * First-load helper: if the demo has zero metrics, run a sync so the dashboard
- * never renders empty. Idempotent — subsequent calls are no-ops once we have data.
- */
-export async function ensureSeededMockData(): Promise<void> {
-  const platform = getPlatform();
-  const projects = await platform.repos.projects.list();
-  if (projects.length === 0) {
-    await platform.orchestrator.runAll();
-    return;
-  }
-  // Even if projects exist, check whether metrics are present.
-  const first = projects[0]!;
-  const metrics = await platform.repos.metrics.listLatestByProject(first.id, 1);
-  if (metrics.length === 0) {
-    await platform.orchestrator.runAll();
-  }
-}
+// P006B — `ensureSeededMockData` was removed 2026-06-06.
+// Runtime page renders are now pure reads. Seeding is an explicit operator
+// action — see `pnpm cli:seed-instance`. If this function returns by another
+// name, the audit-leaks gate fails (see scripts/audit-leaks.mjs).
