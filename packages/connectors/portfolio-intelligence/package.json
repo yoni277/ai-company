@@ -10,7 +10,7 @@
     "build": "tsc -b",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no-op'",
-    "test": "echo 'no-op'"
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@ai-company/project-registry": "workspace:*",
@@ -23,6 +23,7 @@
     "@ai-company/shared-types": "workspace:*"
   },
   "devDependencies": {
+    "tsx": "^4.19.1",
     "typescript": "^5.6.3"
   }
 }
