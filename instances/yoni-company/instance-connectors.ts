@@ -1,9 +1,6 @@
 import 'server-only';
 import type { DataConnector } from '@ai-company/connector-framework';
 import { FoodTruckIlConnector } from '@ai-company/connector-foodtruck-il';
-import { LabOsConnector } from '@ai-company/connector-lab-os';
-import { InventoryEngineConnector } from '@ai-company/connector-inventory-engine';
-import { WhatsAppEngineConnector } from '@ai-company/connector-whatsapp-engine';
 
 /**
  * Per-instance connector registration.
@@ -49,10 +46,5 @@ export function buildInstanceConnectors(env: NodeJS.ProcessEnv): DataConnector[]
     );
   }
 
-  return [
-    foodTruckConnector,
-    new LabOsConnector(),
-    new InventoryEngineConnector(),
-    new WhatsAppEngineConnector(),
-  ];
+  return [foodTruckConnector];
 }

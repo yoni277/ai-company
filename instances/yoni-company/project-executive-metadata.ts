@@ -24,25 +24,6 @@ const METADATA_BY_SLUG: Record<string, ProjectExecutiveMetadata> = {
     ],
     marketingChannels: ['whatsapp', 'push', 'social', 'partnership'],
   },
-  'lab-os': {
-    vendors: [
-      { name: 'Supabase (data)' },
-      { name: 'LIMS integrations' },
-    ],
-    marketingChannels: ['email', 'partnership', 'organic'],
-  },
-  'inventory-engine': {
-    vendors: [
-      { name: 'Connected consumer services', metricHint: 'connected_consumers' },
-    ],
-    marketingChannels: ['partnership', 'product', 'organic'],
-  },
-  'whatsapp-engine': {
-    vendors: [
-      { name: 'Meta WhatsApp Cloud API', metricHint: 'meta_quota|template' },
-    ],
-    marketingChannels: ['whatsapp', 'product', 'partnership'],
-  },
 };
 
 export function getInstanceProjectMetadata(
