@@ -1,5 +1,4 @@
 import type { Risk } from './risks';
-import type { FoodTruckBusinessMetrics } from './business';
 import type { FunnelSnapshot } from './funnel';
 import type { DecisionSupportResult } from './decision-support';
 import type { PortfolioIntelligenceSnapshot } from './project-intelligence';
@@ -31,9 +30,9 @@ export interface HealthScore {
 
 /**
  * Generic acquisition-funnel summary produced by an instance-layer adapter
- * (e.g. the FoodTruck-IL connector, or any other "register new producers"
- * pipeline). Passed into the Chief of Staff so it can render and explain
- * the numbers without knowing what the underlying business actually is.
+ * (any "register new producers" / onboarding pipeline). Passed into the Chief
+ * of Staff so it can render and explain the numbers without knowing what the
+ * underlying business actually is.
  *
  * Both fields are required when the field is present — `promptLine` is the
  * compact fact-packed line fed into the LLM, `fallbackSummary` is the
@@ -87,13 +86,6 @@ export interface DailyBriefMetricsInput {
    * funnel produced the strings.
    */
   acquisitionSummary?: AcquisitionSummary;
-  /**
-   * @deprecated Instance-specific FoodTruck shape — kept for backward compat
-   * during the generic-platform refactor (see docs/architecture/GENERIC_PLATFORM_BOUNDARY.md
-   * leak L1). New code should populate `acquisitionSummary` instead. The
-   * Chief of Staff no longer reads this field.
-   */
-  foodTruck?: FoodTruckBusinessMetrics;
   /** Phase 3B — pre-computed funnel snapshots (engine output). */
   funnels?: FunnelSnapshot[];
   /** Phase 3C — pre-computed decision support (engine + adapters). */

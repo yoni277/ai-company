@@ -103,7 +103,12 @@ export async function loadRegistryFromSupabase(
         projectSlug: d.slug,
         connectorType,
         enabled: conn?.enabled ?? true,
-        liveCapable: connectorType === 'foodtruck-business' && hasFoodTruckCredentials(),
+        // Generic, slug-agnostic capability flag. A connector is live-capable
+        // when the instance marks it so in its connector config
+        // (`config.liveCapable`), otherwise when it is an enabled, non-mock
+        // connector. The registry no longer knows any specific connector type
+        // or business credentials — that belongs to the connector/instance layer.
+        liveCapable: resolveLiveCapable(connectorType, conn?.enabled ?? true, conn?.config ?? null),
         config: (conn?.config as Record<string, unknown>) ?? {},
       },
     };
@@ -121,15 +126,12 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string): Map<string, T[]> {
   return map;
 }
 
-function hasFoodTruckCredentials(): boolean {
-  const url =
-    process.env.FOODTRUCK_SUPABASE_URL ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    process.env.SUPABASE_URL ||
-    '';
-  const key =
-    process.env.FOODTRUCK_SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    '';
-  return Boolean(url && key);
+function resolveLiveCapable(
+  connectorType: string,
+  enabled: boolean,
+  config: Record<string, unknown> | null,
+): boolean {
+  const flag = config?.liveCapable;
+  if (typeof flag === 'boolean') return flag;
+  return enabled && connectorType !== 'mock-funnel';
 }

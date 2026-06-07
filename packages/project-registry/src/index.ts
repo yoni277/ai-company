@@ -36,11 +36,19 @@ export class ProjectRegistryService {
           serviceRoleKey: this.env.supabaseServiceRoleKey,
           ...(this.env.supabaseSchema ? { schema: this.env.supabaseSchema } : {}),
         });
-        if (projects.length > 0) {
-          return { projects, source: 'database' };
-        }
+        // A successful read is authoritative — INCLUDING an empty result. Zero
+        // registered projects is a VALID state (a clean / freshly-cloned
+        // instance). Do NOT fall back to the instance seed just because the
+        // database is empty; that would make an empty registry impossible and
+        // resurrect the previous company's seed (the registry-layer analogue of
+        // the P006B boot-time auto-seed). The seed fallback below is reserved
+        // for the genuine failure case: the registry tables can't be read
+        // (not migrated / unreachable), which throws into the catch.
+        return { projects, source: 'database' };
       } catch {
-        // Fall back to in-memory seed when registry tables are not migrated yet.
+        // Fall back to in-memory seed only when the registry tables cannot be
+        // read at all (not migrated yet / connection error) — never for a
+        // successful-but-empty read.
       }
     }
     return { projects: buildInMemoryRegistrySeed(), source: 'in-memory' };

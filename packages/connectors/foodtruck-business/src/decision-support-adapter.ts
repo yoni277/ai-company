@@ -4,10 +4,10 @@ import {
 } from '@ai-company/decision-support-engine';
 import type {
   DecisionSupportResult,
-  FoodTruckBusinessMetrics,
   FunnelSnapshot,
   RecommendedAction,
 } from '@ai-company/shared-types';
+import type { FoodTruckBusinessMetrics } from './types';
 
 /** FoodTruck-specific counts for adapter wording (not used by generic engine). */
 export interface FoodTruckDecisionContext {

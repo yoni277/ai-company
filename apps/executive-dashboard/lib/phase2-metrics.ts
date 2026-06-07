@@ -13,7 +13,6 @@ import type {
 } from '@ai-company/shared-types';
 import type { Risk } from '@ai-company/shared-types';
 import { generateDailyBrief } from '@ai-company/ai-chief-of-staff';
-import { loadFoodTruckBusinessMetrics } from './owner-acquisition';
 import { loadPortfolioIntelligenceForDashboard } from './portfolio-intelligence';
 import { listActiveDirectives, listDecisions } from './ceo-operating-system';
 import type { Repositories } from '@ai-company/database';
@@ -55,9 +54,8 @@ export async function loadPhase2Snapshot(repos: Repositories): Promise<Phase2Sna
 }
 
 export async function loadDailyCeoBrief(repos: Repositories): Promise<DailyBrief> {
-  const [snapshot, foodTruck, portfolioLoad, ceoDirectives, ceoDecisions] = await Promise.all([
+  const [snapshot, portfolioLoad, ceoDirectives, ceoDecisions] = await Promise.all([
     loadPhase2Snapshot(repos),
-    loadFoodTruckBusinessMetrics(),
     loadPortfolioIntelligenceForDashboard(),
     listActiveDirectives(),
     listDecisions(),
@@ -70,11 +68,9 @@ export async function loadDailyCeoBrief(repos: Repositories): Promise<DailyBrief
     supabase: snapshot.supabase,
     health: snapshot.health,
     pendingApprovalCount: snapshot.pendingApprovals.length,
-    // Generic — the Chief of Staff reads only this. `foodTruck` is kept
-    // alongside for instance-layer consumers (panels, registry) while the
-    // deprecated field is migrated out per the L1 refactor.
-    acquisitionSummary: foodTruck.acquisitionSummary,
-    foodTruck: foodTruck.metrics,
+    // Generic brief input only. Instance-specific acquisition metrics are no
+    // longer injected here; an instance that needs them supplies them via an
+    // instance-declared brief augmentation.
     funnels: portfolioLoad.funnels,
     decisionSupport: portfolioLoad.decisionSupport,
     portfolio: portfolioLoad.portfolio,
@@ -124,19 +120,10 @@ async function collectPendingApprovals(
     }
   }
 
-  for (const p of projects) {
-    if (p.slug !== 'foodtruck-il') continue;
-    const metrics = await repos.metrics.listLatestByProject(p.id, 20);
-    const pending = metrics.find((m) => m.name === 'pending_trucks');
-    if (pending && pending.value > 0) {
-      items.push({
-        id: `pending-trucks-${p.id}`,
-        label: `${pending.value} truck(s) awaiting approval`,
-        source: 'connector:foodtruck-il',
-        projectName: p.name,
-      });
-    }
-  }
+  // Project-scoped pending-approval signals are derived generically from the
+  // risk/opportunity description patterns above. Any instance-specific metric
+  // (e.g. a "pending_<entity>" count) must be surfaced through an
+  // instance-declared pending-approval provider, not hardcoded here.
 
   return items;
 }

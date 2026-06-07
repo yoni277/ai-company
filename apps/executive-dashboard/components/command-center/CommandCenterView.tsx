@@ -59,7 +59,7 @@ export function HighlightsGrid({ h }: { h: CommandCenterHighlights }) {
         <HighlightCard
           label="Top risk"
           value={h.topRisk}
-          hint="Activation gap on approved trucks"
+          hint="Highest-priority action"
           accent="border-red-500/30"
         />
         <HighlightCard

@@ -41,7 +41,6 @@ export interface CommandCenterPayload {
   phase2: Phase2Snapshot;
   portfolio: PortfolioIntelligenceSnapshot;
   topP1Action: RecommendedAction | null;
-  inactiveApprovedTrucks: number;
   generatedAt: string;
 }
 
@@ -50,18 +49,19 @@ function firstP1Action(portfolio: PortfolioIntelligenceSnapshot): RecommendedAct
   return actions.find((a) => a.priority === 'P1') ?? actions[0] ?? null;
 }
 
-function inactiveTruckCount(portfolio: PortfolioIntelligenceSnapshot): number {
-  const p1 = portfolio.actionQueue?.actions?.find(
-    (a) => a.id === 'foodtruck-il-inactive-approved' || a.title.includes('not active'),
-  );
-  const match = p1?.reason?.match(/(\d+)\s+approved/);
-  return match ? Number(match[1]) : 6;
+// Generic, slug-agnostic top-risk label. Uses the highest-priority action's
+// reason/title as the headline risk; the platform no longer parses any
+// business-specific action id (e.g. an inactive-entity count).
+function topRiskLabel(
+  portfolio: PortfolioIntelligenceSnapshot,
+  topP1: RecommendedAction | null,
+): string {
+  return topP1?.reason ?? topP1?.title ?? 'No risks flagged';
 }
 
 function buildHighlights(
   portfolio: PortfolioIntelligenceSnapshot,
   topP1: RecommendedAction | null,
-  inactive: number,
 ): CommandCenterHighlights {
   const top = portfolio.priorities[0];
   const topProject = portfolio.projects.find((p) => p.projectId === top?.projectId);
@@ -69,7 +69,7 @@ function buildHighlights(
     topPriorityProject: top?.projectName ?? '—',
     topPriorityReason: top?.reason ?? 'No priorities configured',
     topBottleneck: topProject?.bottleneckLabel ?? '—',
-    topRisk: `${inactive} approved trucks inactive`,
+    topRisk: topRiskLabel(portfolio, topP1),
     topActionTitle: topP1?.title ?? 'No actions in queue',
     topActionProject: topP1?.projectName ?? '—',
   };
@@ -145,9 +145,8 @@ export async function loadCommandCenterData(
   ]);
 
   const topP1 = firstP1Action(portfolio);
-  const inactive = inactiveTruckCount(portfolio);
   const maturity = buildMaturity(portfolio);
-  const highlights = buildHighlights(portfolio, topP1, inactive);
+  const highlights = buildHighlights(portfolio, topP1);
   const scorecard = buildScorecard(
     phase2,
     portfolio,
@@ -163,7 +162,6 @@ export async function loadCommandCenterData(
     phase2,
     portfolio,
     topP1Action: topP1,
-    inactiveApprovedTrucks: inactive,
     generatedAt: new Date().toISOString(),
   };
 }

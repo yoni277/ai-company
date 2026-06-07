@@ -1,4 +1,5 @@
-import type { FunnelDefinition, TruckRegistryMetrics } from '@ai-company/shared-types';
+import type { FunnelDefinition } from '@ai-company/shared-types';
+import type { TruckRegistryMetrics } from './types';
 
 /** FoodTruck-IL owner funnel — configuration only; engine performs analysis. */
 export const FOODTRUCK_FUNNEL_DEFINITION: FunnelDefinition = {
