@@ -8,13 +8,21 @@ export interface RevenueConnector {
   getRevenueSnapshot(): Promise<RevenueSnapshot>;
 }
 
+/**
+ * Built-in generic revenue sources. Instance-registered sources (resolved via
+ * the revenue resolver registry) use arbitrary keys, so the type stays open
+ * with `(string & {})` — this preserves autocomplete for the known literals
+ * while accepting any instance-driven `revenueSource`. The generic layer names
+ * no specific business source. See P015B.
+ */
 export type RevenueSourceType =
-  | 'foodtruck-supabase-events'
   | 'supabase-ledger'
   | 'stripe'
   | 'erp'
   | 'csv-import'
-  | 'mock-revenue';
+  | 'mock-revenue'
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  | (string & {});
 
 export interface RevenueSourceConfig {
   revenueSource?: RevenueSourceType;

@@ -18,7 +18,6 @@
     "@ai-company/financial-intelligence-engine": "workspace:*",
     "@ai-company/revenue-intelligence-engine": "workspace:*",
     "@ai-company/business-funnel-engine": "workspace:*",
-    "@ai-company/connector-foodtruck-business": "workspace:*",
     "@ai-company/decision-support-engine": "workspace:*",
     "@ai-company/portfolio-intelligence-engine": "workspace:*",
     "@ai-company/shared-types": "workspace:*"

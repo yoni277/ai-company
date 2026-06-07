@@ -7,7 +7,6 @@ import type {
 import { registerProjectBundleResolver } from '@ai-company/connector-portfolio-intelligence';
 import {
   registerRevenueConnectorResolver,
-  createFoodTruckRevenueConnector,
   type RevenueConnector,
   type RevenueSourceConfig,
 } from '@ai-company/connector-revenue';
@@ -16,6 +15,7 @@ import {
   buildFoodTruckFunnelSnapshot,
   buildFoodTruckDecisionSupport,
   foodTruckDecisionContextFromMetrics,
+  createFoodTruckRevenueConnector,
 } from '@ai-company/connector-foodtruck-business';
 
 /**

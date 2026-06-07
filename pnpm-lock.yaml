@@ -403,6 +403,9 @@ importers:
       '@ai-company/business-funnel-engine':
         specifier: workspace:*
         version: link:../../business-funnel-engine
+      '@ai-company/connector-revenue':
+        specifier: workspace:*
+        version: link:../revenue
       '@ai-company/decision-support-engine':
         specifier: workspace:*
         version: link:../../decision-support-engine
@@ -432,9 +435,6 @@ importers:
       '@ai-company/business-funnel-engine':
         specifier: workspace:*
         version: link:../../business-funnel-engine
-      '@ai-company/connector-foodtruck-business':
-        specifier: workspace:*
-        version: link:../foodtruck-business
       '@ai-company/connector-revenue':
         specifier: workspace:*
         version: link:../revenue

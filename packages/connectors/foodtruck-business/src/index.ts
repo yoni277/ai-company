@@ -213,6 +213,10 @@ export function buildFoodTruckFunnelSnapshot(registry: TruckRegistryMetrics): Fu
 
 export { buildFoodTruckDecisionSupport, foodTruckDecisionContextFromMetrics } from './decision-support-adapter';
 
+// FoodTruck live-revenue connector (relocated from connector-revenue in P015B
+// Step 5 — the generic revenue package no longer carries FoodTruck logic).
+export { FoodTruckRevenueConnector, createFoodTruckRevenueConnector } from './revenue';
+
 export function buildOwnerAcquisitionSummary(metrics: FoodTruckBusinessMetrics): string {
   const r = metrics.registry;
   const a = metrics.acquisition;

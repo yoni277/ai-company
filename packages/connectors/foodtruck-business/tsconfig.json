@@ -9,6 +9,7 @@
   "references": [
     { "path": "../../shared-types" },
     { "path": "../../business-funnel-engine" },
-    { "path": "../../decision-support-engine" }
+    { "path": "../../decision-support-engine" },
+    { "path": "../revenue" }
   ]
 }

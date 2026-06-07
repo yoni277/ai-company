@@ -1,6 +1,5 @@
 import { loadRegisteredProjects } from '@ai-company/project-registry';
 import type { RegisteredProject, RevenueSnapshot } from '@ai-company/shared-types';
-import { createFoodTruckRevenueConnector } from './foodtruck';
 import { createSupabaseLedgerConnector } from './supabase-ledger';
 import { MockRevenueConnector } from './mock';
 import { getRevenueConnectorResolver } from './revenue-resolver-registry';
@@ -14,7 +13,6 @@ export {
   registerRevenueConnectorResolver,
   type RevenueConnectorResolver,
 } from './revenue-resolver-registry';
-export { FoodTruckRevenueConnector, createFoodTruckRevenueConnector } from './foodtruck';
 export { SupabaseLedgerRevenueConnector, createSupabaseLedgerConnector } from './supabase-ledger';
 export { MockRevenueConnector } from './mock';
 
@@ -32,11 +30,8 @@ export function createRevenueConnectorForProject(
     return resolver(project);
   }
 
-  // Fallback (P015B Step 2 — to be removed once the instance layer registers
-  // the FoodTruck revenue resolver): legacy hardcoded switch.
+  // Generic fallback when no instance resolver is registered for this source.
   switch (source) {
-    case 'foodtruck-supabase-events':
-      return createFoodTruckRevenueConnector({ projectId: slug, projectName: name, config });
     case 'supabase-ledger': {
       const ledger = createSupabaseLedgerConnector({
         projectId: slug,
