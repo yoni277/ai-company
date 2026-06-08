@@ -353,3 +353,84 @@ export async function loadInboxData(): Promise<InboxData> {
   const [queue, risks] = await Promise.all([loadDecisionQueue(), loadOpenRisks()]);
   return { queue, risks };
 }
+
+/* ===========================================================================
+ * P056-v2 — Businesses (registry-driven; retires legacy /projects)
+ * Source: project_definitions (+ funnel/connector configs) + health engine,
+ * per v2-DATA-MAPPING.md. NEVER the legacy `projects` table.
+ * ======================================================================== */
+
+export interface BusinessFunnelStage {
+  id: string;
+  label: string;
+  state: 'completed' | 'active' | 'upcoming';
+}
+
+export interface BusinessRow {
+  name: string;
+  slug: string;
+  description: string;
+  lifecycle: string;
+  health: HealthState;
+  bottleneck: string | null;
+  openRecommendations: number;
+  /** Per-business open-risk count (risks.projectId match). */
+  risks: number;
+  /** Per-business decision count (ceo_decisions.projectId match). */
+  decisions: number;
+  /** Funnel stages from project_funnel_stages, oldest→newest. */
+  stages: BusinessFunnelStage[];
+  activeStageLabel: string | null;
+}
+
+export async function loadBusinesses(): Promise<BusinessRow[]> {
+  const { repos } = getPlatform();
+  const { portfolio } = await loadPortfolioIntelligenceForDashboard();
+  const [registry, decisions, risks] = await Promise.all([
+    loadProjectRegistryView(portfolio),
+    listDecisions(),
+    repos.risks.listOpen(),
+  ]);
+
+  return registry.projects
+    // A "business" is an enabled registry entry. Disabled/archived defs are
+    // hidden from the portfolio view (still in the registry, not surfaced here).
+    .filter((row) => row.project.definition.enabled)
+    .map((row): BusinessRow => {
+      const def = row.project.definition;
+      const keys = new Set<string>([def.id, def.slug]);
+      const decisionCount = decisions.filter(
+        (d) => d.projectId != null && keys.has(d.projectId),
+      ).length;
+      const riskCount = risks.filter((r) => keys.has(r.projectId)).length;
+
+      const counts = row.project.funnel.mockStageCounts ?? {};
+      const ordered = [...row.project.funnel.stages].sort((a, b) => a.order - b.order);
+      // The furthest stage with recorded activity is "active"; earlier stages
+      // are completed, later are upcoming. With no counts (e.g. zero-state DB)
+      // every stage reads upcoming — empty-state-valid, never fabricated.
+      let activeIdx = -1;
+      ordered.forEach((s, i) => {
+        if ((counts[s.id] ?? 0) > 0) activeIdx = i;
+      });
+      const stages: BusinessFunnelStage[] = ordered.map((s, i) => ({
+        id: s.id,
+        label: s.label,
+        state: i < activeIdx ? 'completed' : i === activeIdx ? 'active' : 'upcoming',
+      }));
+
+      return {
+        name: def.name,
+        slug: def.slug,
+        description: def.description,
+        lifecycle: def.status,
+        health: healthStateFromFunnel(row.funnelHealth),
+        bottleneck: row.bottleneck,
+        openRecommendations: row.openRecommendations,
+        risks: riskCount,
+        decisions: decisionCount,
+        stages,
+        activeStageLabel: activeIdx >= 0 ? (ordered[activeIdx]?.label ?? null) : null,
+      };
+    });
+}

@@ -19,5 +19,7 @@ export { RiskCard } from './RiskCard';
 export type { RiskCardProps } from './RiskCard';
 export { ProjectCard } from './ProjectCard';
 export type { ProjectCardProps } from './ProjectCard';
+export { BusinessCard } from './BusinessCard';
+export type { BusinessCardProps, BusinessFunnelStageView } from './BusinessCard';
 export { AIChiefOfStaffPanel } from './AIChiefOfStaffPanel';
 export type { BriefingSignal, BriefingMetric } from './AIChiefOfStaffPanel';
