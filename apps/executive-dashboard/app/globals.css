@@ -1,5 +1,185 @@
 @import 'tailwindcss';
 
+/* The /design-preview gate renders every token via data-driven loops
+ * (bg-<token>, p-<scale>), so those utility names never appear as static
+ * literals for Tailwind's scanner. Safelist exactly the token set it iterates. */
+@source inline("bg-{background,surface-container-lowest,surface-container-low,surface-container,surface-container-high,surface-container-highest,surface-variant,primary,primary-container,on-primary-container,primary-fixed,secondary,secondary-container,on-secondary-container,tertiary,tertiary-container,on-tertiary-container,error,error-container,on-error-container,on-surface,on-surface-variant,outline,outline-variant}");
+@source inline("p-{xs,sm,md,lg,xl}");
+
+/* =============================================================================
+ * D061 / P056 — Executive Operating System · Design System foundation (Wave 1A)
+ * Source of truth: docs/design/d061-ui-redesign/.../executive_intelligence_v4.0/
+ *   DESIGN.md (frontmatter token set — the exact names the Stitch prototypes
+ *   reference: bg-background, text-on-surface, bg-primary, font-body-md, px-md…).
+ *
+ * Reimplemented off the Tailwind Play CDN onto the app's real Tailwind v4 build
+ * (carry-forward #3). Tokens are exposed as Tailwind utilities via @theme and as
+ * CSS custom properties (dark-mode-ready: a future [data-theme="dark"] block can
+ * override the --color-* values without touching component markup).
+ * ========================================================================== */
+
+@theme {
+  /* --- Typography families ----------------------------------------------- *
+   * Inter for all UI/content; JetBrains Mono for metadata / data annotations
+   * (DATA: HAVE) and technical identifiers. Webfont variables are injected by
+   * next/font in layout.tsx (--font-inter, --font-jetbrains-mono). */
+  --font-sans: var(--font-inter), 'Inter', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace,
+    SFMono-Regular, Menlo, monospace;
+
+  /* Family aliases matching the prototype's font-<token> classes. All map to
+   * Inter except label-sm (mono), per DESIGN.md. */
+  --font-display: var(--font-sans);
+  --font-headline-lg: var(--font-sans);
+  --font-headline-md: var(--font-sans);
+  --font-headline-lg-mobile: var(--font-sans);
+  --font-title-lg: var(--font-sans);
+  --font-body-lg: var(--font-sans);
+  --font-body-md: var(--font-sans);
+  --font-label-md: var(--font-sans);
+  --font-label-sm: var(--font-mono);
+
+  /* --- Type scale (size + line-height + weight + tracking) ---------------- */
+  --text-display: 40px;
+  --text-display--line-height: 1.1;
+  --text-display--font-weight: 600;
+  --text-display--letter-spacing: -0.02em;
+
+  --text-headline-lg: 30px;
+  --text-headline-lg--line-height: 1.2;
+  --text-headline-lg--font-weight: 600;
+  --text-headline-lg--letter-spacing: -0.02em;
+
+  --text-headline-lg-mobile: 24px;
+  --text-headline-lg-mobile--line-height: 1.2;
+  --text-headline-lg-mobile--font-weight: 600;
+
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 1.3;
+  --text-headline-md--font-weight: 600;
+
+  --text-title-lg: 20px;
+  --text-title-lg--line-height: 1.4;
+  --text-title-lg--font-weight: 500;
+
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 1.6;
+  --text-body-lg--font-weight: 400;
+
+  --text-body-md: 14px;
+  --text-body-md--line-height: 1.5;
+  --text-body-md--font-weight: 400;
+
+  --text-label-md: 13px;
+  --text-label-md--line-height: 1.4;
+  --text-label-md--font-weight: 500;
+
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 1.4;
+  --text-label-sm--font-weight: 500;
+  --text-label-sm--letter-spacing: 0.05em;
+
+  /* --- Color tokens (DESIGN.md frontmatter — Material tonal system) ------- */
+  --color-surface: #f7f9fb;
+  --color-surface-dim: #d8dadc;
+  --color-surface-bright: #f7f9fb;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f6;
+  --color-surface-container: #eceef0;
+  --color-surface-container-high: #e6e8ea;
+  --color-surface-container-highest: #e0e3e5;
+  --color-surface-variant: #e0e3e5;
+  --color-on-surface: #191c1e;
+  --color-on-surface-variant: #434655;
+  --color-inverse-surface: #2d3133;
+  --color-inverse-on-surface: #eff1f3;
+  --color-outline: #737686;
+  --color-outline-variant: #c3c6d7;
+  --color-surface-tint: #0053db;
+
+  --color-background: #f7f9fb;
+  --color-on-background: #191c1e;
+
+  --color-primary: #004ac6;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #2563eb;
+  --color-on-primary-container: #eeefff;
+  --color-inverse-primary: #b4c5ff;
+  --color-primary-fixed: #dbe1ff;
+  --color-primary-fixed-dim: #b4c5ff;
+  --color-on-primary-fixed: #00174b;
+  --color-on-primary-fixed-variant: #003ea8;
+
+  --color-secondary: #505f76;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #d0e1fb;
+  --color-on-secondary-container: #54647a;
+  --color-secondary-fixed: #d3e4fe;
+  --color-secondary-fixed-dim: #b7c8e1;
+  --color-on-secondary-fixed: #0b1c30;
+  --color-on-secondary-fixed-variant: #38485d;
+
+  --color-tertiary: #943700;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #bc4800;
+  --color-on-tertiary-container: #ffede6;
+  --color-tertiary-fixed: #ffdbcd;
+  --color-tertiary-fixed-dim: #ffb596;
+  --color-on-tertiary-fixed: #360f00;
+  --color-on-tertiary-fixed-variant: #7d2d00;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* Health-state triad (DESIGN.md §Components — mandatory semantic colors for
+   * executive reporting: Healthy / Needs-Attention / Action-Required). */
+  --color-healthy: #059669; /* emerald-600 */
+  --color-attention: #f59e0b; /* amber-500  */
+  --color-action: #dc2626; /* red-600    */
+
+  /* --- Spacing (4px base unit; named scale from DESIGN.md) ---------------- */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+  --spacing-gutter: 24px;
+  --spacing-margin-mobile: 16px;
+  --spacing-margin-desktop: 48px;
+
+  /* --- Radius (DESIGN.md §Shapes: buttons 4px · cards 8px · modals 12px) -- */
+  --radius-sm: 0.125rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  /* --- Elevation (single diffused ambient shadow; depth via tonal layers) - */
+  --shadow-ambient: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+/* =============================================================================
+ * Base layer
+ * ========================================================================== */
+
+/* Global focus ring — 2px primary-container with 2px offset (DESIGN.md
+ * §Elevation & Depth · Focus States). Keyboard-only via :focus-visible. */
+@layer base {
+  :where(:focus-visible) {
+    outline: 2px solid var(--color-primary-container);
+    outline-offset: 2px;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+ * LEGACY default surface (dark). Un-migrated screens (overview, ceo, cfo, …)
+ * still use text-slate-* utilities designed against this dark body. Keep it as
+ * the page default until each screen is migrated to the light design system in
+ * P3–P8. New design-system screens opt into the canonical light surface
+ * explicitly with `bg-background text-on-surface` (as the Stitch prototypes do).
+ * -------------------------------------------------------------------------- */
 :root {
   color-scheme: dark;
 }
@@ -7,5 +187,16 @@
 body {
   background: #0b0d10;
   color: #e6e7e8;
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* Design-system surface wrapper: any subtree that opts into the new light theme.
+ * Sets the canvas, default text, font, and a light color-scheme for form
+ * controls. RTL is driven by the document `dir` attribute (ThemeProvider),
+ * consumed through CSS logical properties in components. */
+.ds-surface {
+  color-scheme: light;
+  background: var(--color-background);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
 }
