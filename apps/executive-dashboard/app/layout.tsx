@@ -35,8 +35,8 @@ export const metadata = {
 export const maxDuration = 60;
 
 const nav = [
-  // D061/P056 Executive OS UI (Wave 1B — CEO-review routes; non-destructive)
-  { href: '/home', label: 'Home' },
+  // D061/P056 Executive OS UI (Wave 1 — Home is the root route after cutover)
+  { href: '/', label: 'Home' },
   { href: '/inbox', label: 'Inbox' },
   { href: '/ceo', label: 'Command Center' },
   { href: '/overview', label: 'Overview' },
