@@ -28,8 +28,10 @@ The deployment unit is `apps/executive-dashboard`. The rest of the monorepo
    you want PR previews behind the same gate).
 5. In **Project Settings → General**, **disable** "Vercel Authentication"
    for deployments unless you also pay for the Pro plan's password
-   protection. The basic-auth middleware in this repo handles gating; do
-   not stack a second layer or you'll lock yourself out.
+   protection. The cookie-backed auth gate in this repo (`proxy.ts`) handles
+   gating; do not stack a second layer or you'll lock yourself out. See
+   `docs/deployment/AUTH_GATE.md` for why the gate is cookie-backed and not
+   Basic-Auth-only.
 6. Set the production branch to `main`.
 
 ---
