@@ -85,3 +85,29 @@ Pick the path for closing P055:
    until P055 closes (read-only; reverted immediately after).
 3. Note: each merge to `main` was performed by the operator after a green build
    + live Cowork verification, consistent with the P051 gate model.
+
+---
+
+## Ruling execution report (Option A) — 2026-06-08
+
+Ruling received: **Option A — mitigate now, profile/fix after.** Executed on
+branch `fix/ceo-mitigation-landing` (`32308f6` code, `4e84956` docs), typecheck
+clean. Mapped to each directive:
+
+| Ruling item | Status | Evidence |
+|-------------|--------|----------|
+| 1. Default landing off `/ceo` → `/projects` | **Done (in code)** | `app/page.tsx` now `redirect('/projects')`. `/projects` confirmed lightweight (258-node class, renders clean) and navigable (soft-nav from it verified live earlier). Overview preserved at `/overview` (page moved, nav + back-links repointed). |
+| 2. Revert diagnostic `fb29416` | **Done (in code)** | `window.__DIAG__` script removed from `app/layout.tsx`. ⚠️ **Still live on prod until this mitigation deploys** — `fb29416` is currently in production `main`. The revert goes live with the mitigation merge. |
+| 3. Deploy + verify (4 checks) | **Pending** | Awaiting operator merge to `main`. Cowork will verify live: landing ≠ `/ceo`; nav works from `/projects`; hard nav to `/ceo` renders; `/ceo`→nav still broken. |
+| 4. Keep P055 open, reclassify | **Done** | Tracker P055 → **Active** with `[MITIGATED]` note; not marked Pass. |
+| Next: P055B work order | **Done** | `docs/P055B_LOCAL_PROFILING_WORK_ORDER.md`; tracker row **P055B** (Pending, Builder-owned). |
+
+**"Not approved" items — complied:** no best-guess refactor of
+`CeoOperatingSystemPanels`; P055 not declared passed; diagnostic reverted in code
+(goes live on deploy).
+
+**Single open risk to flag:** the diagnostic is still running in production until
+the mitigation merge lands — recommend the operator merge promptly to clear it.
+
+**Awaiting:** operator merge of `fix/ceo-mitigation-landing` → `main`, then Cowork
+runs the four-point live verification and reports back.
