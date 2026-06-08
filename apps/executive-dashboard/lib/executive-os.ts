@@ -679,6 +679,86 @@ export interface BriefingView {
   body: unknown;
 }
 
+/* ===========================================================================
+ * P056-v2 step 5 — Evidence (/evidence)
+ * Source: evidence_tokens (v2-DATA-MAPPING.md). The repo exposes per-task reads
+ * only (listByTask); there is no global list method, so we aggregate server-side
+ * across tasks (the same approach Business Detail uses) rather than fake a query.
+ * Bounded with an honest "showing X of Y" disclosure — no silent truncation.
+ * ======================================================================== */
+
+const EVIDENCE_TASK_SCAN_CAP = 300;
+
+export interface EvidenceRow {
+  id: string;
+  tier: string;
+  /** Factual evidence category (locked vocabulary). */
+  evidenceKind: string;
+  /** Legacy free-text descriptor. */
+  description: string;
+  taskId: string;
+  taskTitle: string;
+  producer: string;
+  createdAt: string;
+  verified: boolean;
+  sourceKind: string;
+  link: string | null;
+}
+
+export interface EvidenceList {
+  rows: EvidenceRow[];
+  total: number;
+  shown: number;
+  truncated: boolean;
+}
+
+function extractEvidenceLink(
+  payload: Record<string, unknown> | null,
+  sourceRef: string | null,
+): string | null {
+  const isUrl = (v: unknown): v is string => typeof v === 'string' && /^https?:\/\//.test(v);
+  if (payload) {
+    for (const k of ['url', 'link', 'href', 'permalink']) {
+      if (isUrl(payload[k])) return payload[k] as string;
+    }
+  }
+  return isUrl(sourceRef) ? sourceRef : null;
+}
+
+export async function loadEvidence(limit = 100): Promise<EvidenceList> {
+  const { repos } = getPlatform();
+  const tasks = await repos.tasks.list();
+  const scanned = tasks.slice(0, EVIDENCE_TASK_SCAN_CAP);
+  const titleById = new Map(scanned.map((t) => [t.id, t.title]));
+
+  const perTask = await Promise.all(scanned.map((t) => repos.evidenceTokens.listByTask(t.id)));
+  const rows: EvidenceRow[] = perTask
+    .flat()
+    .map((e) => ({
+      id: e.id,
+      tier: e.tier,
+      evidenceKind: e.evidenceKind,
+      description: e.kind,
+      taskId: e.taskId,
+      taskTitle: titleById.get(e.taskId) ?? 'Task',
+      producer: e.createdBy,
+      createdAt: e.createdAt,
+      verified: e.verifiedAt != null,
+      sourceKind: e.sourceKind,
+      link: extractEvidenceLink(e.payload, e.sourceRef),
+    }))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  const total = rows.length;
+  const shown = Math.min(limit, total);
+  return {
+    rows: rows.slice(0, limit),
+    total,
+    shown,
+    truncated: total > limit || tasks.length > EVIDENCE_TASK_SCAN_CAP,
+  };
+}
+
 export async function loadBriefings(limit = 50): Promise<BriefingView[]> {
   const { repos, executives } = getPlatform();
   const reports = await repos.reports.list({ limit });

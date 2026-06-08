@@ -52,7 +52,7 @@ const NAV: Record<Zone, NavItem[]> = {
     { href: '/businesses', label: 'Businesses', labelHe: 'עסקים', Icon: BusinessIcon, ready: true },
     { href: '/inbox', label: 'Decisions', labelHe: 'החלטות', Icon: GavelIcon, ready: true },
     { href: '/briefings', label: 'Briefings', labelHe: 'תדריכים', Icon: DocumentIcon, ready: true },
-    { href: '/evidence', label: 'Evidence', labelHe: 'ראיות', Icon: ShieldCheckIcon, ready: false },
+    { href: '/evidence', label: 'Evidence', labelHe: 'ראיות', Icon: ShieldCheckIcon, ready: true },
     { href: '/results', label: 'Results', labelHe: 'תוצאות', Icon: ChartIcon, ready: false },
   ],
   build: [
