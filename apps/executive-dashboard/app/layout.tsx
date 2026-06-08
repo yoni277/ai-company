@@ -7,6 +7,15 @@ export const metadata = {
   description: 'Executive dashboard for the AI-Native company.',
 };
 
+// Route segment default for every page under this layout. The first hit to a
+// cold route runs the heavy getPlatform() assembly + first Supabase round trip;
+// at the platform default timeout that cold start returned 503 and the
+// navigation aborted ("click does nothing, works on retry"). Give cold starts
+// room to finish so they return 200 instead of timing out. Warm requests are
+// unaffected. Deeper fix (lighter cold start / lazy executive init) tracked
+// separately.
+export const maxDuration = 60;
+
 const nav = [
   { href: '/ceo', label: 'Command Center' },
   { href: '/', label: 'Overview' },
