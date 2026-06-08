@@ -71,7 +71,8 @@ export default async function BusinessesPage() {
                 risks={b.risks}
                 stages={b.stages}
                 activeStageLabel={b.activeStageLabel}
-                detailReady={false}
+                detailReady
+                detailHref={`/businesses/${b.slug}`}
               />
             ))}
           </div>
