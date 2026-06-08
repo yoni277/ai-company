@@ -35,3 +35,6 @@ supabase/.temp/
 # Trackers (Cowork-owned, kept out of git)
 AI-Company_Master_Status_Tracker*.xlsx
 ~$*.xlsx
+
+# Local Cowork/Claude agent settings (machine-local, never committed)
+.claude/
