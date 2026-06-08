@@ -44,7 +44,7 @@ export default function RouteError({
           Try again
         </button>
         <Link
-          href="/"
+          href={'/overview' as never}
           className="px-4 py-2 text-sm rounded-md border border-slate-700 text-slate-300 hover:text-slate-100 hover:bg-slate-800/60 transition"
         >
           Back to overview
