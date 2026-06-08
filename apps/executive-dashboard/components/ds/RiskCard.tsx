@@ -30,7 +30,7 @@ export interface RiskCardProps {
   /** Provenance — actor/connector that recorded the risk (risks.recordedBy). */
   recordedBy?: string;
   /** Optional project/source context. */
-  context?: string;
+  context?: string | undefined;
   /** Times re-detected (risks.generation); shown only when > 1. */
   generation?: number;
   provenance?: DataProvenance;

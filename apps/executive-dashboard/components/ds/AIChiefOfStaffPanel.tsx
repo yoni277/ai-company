@@ -46,7 +46,7 @@ export function AIChiefOfStaffPanel({
   summary: string;
   signals?: BriefingSignal[];
   metrics?: BriefingMetric[];
-  generatedAt?: string;
+  generatedAt?: string | undefined;
   primaryActionLabel?: string;
   onPrimaryAction?: () => void;
   children?: ReactNode;
