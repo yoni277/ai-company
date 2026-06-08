@@ -680,6 +680,140 @@ export interface BriefingView {
 }
 
 /* ===========================================================================
+ * P056-v2 step 6 — Results (/results)
+ * Source: task_outcomes (outcome cards) + objective_outcomes (objectives →
+ * measured outcomes), per v2-DATA-MAPPING.md. Repos expose per-task /
+ * per-objective reads only, so we aggregate server-side. Business attribution
+ * runs through the task → directive(targetProjectId) → project chain. All
+ * HAVE / DERIVED.
+ * ======================================================================== */
+
+const RESULTS_TASK_SCAN_CAP = 300;
+
+export interface OutcomeCardView {
+  id: string;
+  metricName: string;
+  metricUnit: string | null;
+  business: string | null;
+  baselineValue: number;
+  observedValue: number;
+  delta: number;
+  direction: string;
+  owner: string;
+  observedAt: string;
+  taskTitle: string;
+}
+
+export interface ObjectiveOutcomeView {
+  id: string;
+  name: string;
+  metricUnit: string | null;
+  baselineValue: number | null;
+  targetValue: number | null;
+  currentValue: number | null;
+  status: string;
+  lastMeasuredAt: string | null;
+}
+
+export interface ObjectiveWithOutcomes {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  targetOutcomeSummary: string | null;
+  outcomes: ObjectiveOutcomeView[];
+}
+
+export interface ResultsData {
+  cards: OutcomeCardView[];
+  objectives: ObjectiveWithOutcomes[];
+  highlights: { totalOutcomes: number; improved: number; objectivesMeasured: number };
+  totalCards: number;
+  shownCards: number;
+  truncated: boolean;
+}
+
+export async function loadResults(cardLimit = 60): Promise<ResultsData> {
+  const { repos } = getPlatform();
+  const [tasks, directives, projects, objectives] = await Promise.all([
+    repos.tasks.list(),
+    listActiveDirectives(),
+    repos.projects.list(),
+    repos.objectives.list(),
+  ]);
+
+  const namer = buildProjectNamer(projects);
+  const dirTarget = new Map(directives.map((d) => [d.id, d.targetProjectId]));
+  const scanned = tasks.slice(0, RESULTS_TASK_SCAN_CAP);
+  const businessOf = (directiveId: string | null): string | null => {
+    if (!directiveId) return null;
+    const pid = dirTarget.get(directiveId);
+    return pid ? namer(pid) : null;
+  };
+
+  // Outcome cards from task_outcomes.
+  const perTask = await Promise.all(
+    scanned.map(async (t) => {
+      const outcomes = await repos.taskOutcomes.listByTask(t.id);
+      return outcomes.map((o): OutcomeCardView => ({
+        id: o.id,
+        metricName: o.metricName,
+        metricUnit: o.metricUnit,
+        business: businessOf(t.directiveId),
+        baselineValue: o.baselineValue,
+        observedValue: o.observedValue,
+        delta: o.delta,
+        direction: o.direction,
+        owner: o.recordedBy,
+        observedAt: o.observedAt,
+        taskTitle: t.title,
+      }));
+    }),
+  );
+  const allCards = perTask
+    .flat()
+    .sort((a, b) => b.observedAt.localeCompare(a.observedAt));
+
+  // Objectives → measured outcomes.
+  const objectiveViews: ObjectiveWithOutcomes[] = await Promise.all(
+    objectives.map(async (obj) => {
+      const outcomes = await repos.objectiveOutcomes.listByObjective(obj.id);
+      return {
+        id: obj.id,
+        title: obj.title,
+        description: obj.description,
+        status: obj.status,
+        targetOutcomeSummary: obj.targetOutcomeSummary,
+        outcomes: outcomes.map((o): ObjectiveOutcomeView => ({
+          id: o.id,
+          name: o.name,
+          metricUnit: o.metricUnit,
+          baselineValue: o.baselineValue,
+          targetValue: o.targetValue,
+          currentValue: o.currentValue,
+          status: o.status,
+          lastMeasuredAt: o.lastMeasuredAt,
+        })),
+      };
+    }),
+  );
+
+  const totalCards = allCards.length;
+  return {
+    cards: allCards.slice(0, cardLimit),
+    objectives: objectiveViews,
+    highlights: {
+      totalOutcomes: totalCards,
+      improved: allCards.filter((c) => c.delta > 0).length,
+      objectivesMeasured: objectiveViews.filter((o) => o.outcomes.length > 0).length,
+    },
+    totalCards,
+    shownCards: Math.min(cardLimit, totalCards),
+    truncated: totalCards > cardLimit || tasks.length > RESULTS_TASK_SCAN_CAP,
+  };
+}
+
+/* ===========================================================================
  * P056-v2 step 5 — Evidence (/evidence)
  * Source: evidence_tokens (v2-DATA-MAPPING.md). The repo exposes per-task reads
  * only (listByTask); there is no global list method, so we aggregate server-side
