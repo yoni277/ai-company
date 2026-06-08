@@ -36,6 +36,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href as never}
+                  // prefetch disabled on the global nav: Next otherwise fires an
+                  // RSC fetch for every visible link at once, and each route opens
+                  // cross-region Supabase connections. That burst overwhelmed the
+                  // backend and produced waves of 503s, which silently aborted the
+                  // very navigation the user clicked. One fetch per click instead.
+                  prefetch={false}
                   className="px-3 py-1.5 text-sm text-slate-300 hover:text-slate-100 hover:bg-slate-800/60 rounded-md transition"
                 >
                   {item.label}
