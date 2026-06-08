@@ -35,6 +35,24 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
+        {/* TEMPORARY DIAGNOSTIC (diag/ceo-nav) — captures hydration/render
+            errors into window.__DIAG__ before React hydrates, so they can be
+            read remotely. REMOVE once the /ceo navigation bug is root-caused. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function(){
+  try {
+    window.__DIAG__ = window.__DIAG__ || [];
+    var push = function(){ try { window.__DIAG__.push(Array.prototype.slice.call(arguments).map(String).join(' | ')); } catch(e){} };
+    var oe = console.error; console.error = function(){ push.apply(null, ['[console.error]'].concat(Array.prototype.slice.call(arguments))); return oe.apply(console, arguments); };
+    var ow = console.warn; console.warn = function(){ push.apply(null, ['[console.warn]'].concat(Array.prototype.slice.call(arguments))); return ow.apply(console, arguments); };
+    window.addEventListener('error', function(e){ push('[onerror]', e.message, (e.filename||'')+':'+(e.lineno||'')); });
+    window.addEventListener('unhandledrejection', function(e){ push('[rejection]', (e.reason && (e.reason.stack||e.reason.message)) || e.reason); });
+  } catch(e){}
+})();`,
+          }}
+        />
         <div className="min-h-screen flex flex-col">
           <header className="border-b border-slate-800 px-6 py-4 flex items-center gap-8">
             <div className="font-semibold tracking-tight text-slate-100">
