@@ -1,6 +1,24 @@
 import './globals.css';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { Inter, JetBrains_Mono } from 'next/font/google';
+import { ThemeProvider } from '../components/theme-provider';
+
+// Self-hosted webfonts via next/font — replaces the Stitch prototype's Tailwind
+// Play CDN + Google Fonts <link> (D061 carry-forward #3). Exposed as CSS
+// variables that globals.css feeds into --font-sans / --font-mono.
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
+});
 
 export const metadata = {
   title: 'AI-Company',
@@ -17,6 +35,9 @@ export const metadata = {
 export const maxDuration = 60;
 
 const nav = [
+  // D061/P056 Executive OS UI (Wave 1 — Home is the root route after cutover)
+  { href: '/', label: 'Home' },
+  { href: '/inbox', label: 'Inbox' },
   { href: '/ceo', label: 'Command Center' },
   { href: '/overview', label: 'Overview' },
   { href: '/projects', label: 'Projects' },
@@ -33,8 +54,9 @@ const nav = [
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" dir="ltr" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body>
+        <ThemeProvider>
         <div className="min-h-screen flex flex-col">
           <header className="border-b border-slate-800 px-6 py-4 flex items-center gap-8">
             <div className="font-semibold tracking-tight text-slate-100">
@@ -61,6 +83,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </header>
           <main className="flex-1 px-6 py-8 max-w-7xl w-full mx-auto">{children}</main>
         </div>
+        </ThemeProvider>
       </body>
     </html>
   );
