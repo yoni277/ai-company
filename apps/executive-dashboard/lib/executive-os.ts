@@ -21,6 +21,7 @@ import 'server-only';
 
 import type {
   CEODecision,
+  ReportType,
   Risk,
   RiskSeverity,
   Task,
@@ -656,4 +657,47 @@ function activeStageLabelOf(funnel: {
     if ((counts[s.id] ?? 0) > 0) label = s.label;
   });
   return label;
+}
+
+/* ===========================================================================
+ * P056-v2 step 4 — Briefings (/briefings)
+ * Source: executive_reports (summary + body jsonb) via repos.reports.list
+ * (v2-DATA-MAPPING.md). Summary-first; body revealed on expand. Confidence is
+ * NEW-FIELD — omitted (not fabricated), to be back-filled in Wave-2E.
+ * ======================================================================== */
+
+export interface BriefingView {
+  id: string;
+  executiveId: string;
+  executiveName: string;
+  reportType: ReportType;
+  summary: string;
+  /** body.headline when present (e.g. ChiefOfStaffOutput); else null. */
+  headline: string | null;
+  createdAt: string;
+  /** Raw report body (jsonb) — rendered defensively on expand. */
+  body: unknown;
+}
+
+export async function loadBriefings(limit = 50): Promise<BriefingView[]> {
+  const { repos, executives } = getPlatform();
+  const reports = await repos.reports.list({ limit });
+  const nameById = new Map(executives.map((e) => [e.id, e.displayName]));
+  return reports
+    .map((r): BriefingView => {
+      const body = r.body as { headline?: unknown } | null;
+      const headline =
+        body && typeof body.headline === 'string' ? body.headline : null;
+      return {
+        id: r.id,
+        executiveId: r.executiveId,
+        executiveName: nameById.get(r.executiveId) ?? r.executiveId,
+        reportType: r.reportType,
+        summary: r.summary,
+        headline,
+        createdAt: r.createdAt,
+        body: r.body,
+      };
+    })
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
