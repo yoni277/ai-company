@@ -33,3 +33,18 @@ cd ~ && tar -czf "$ICLOUD/ai-company-backup-$(date +%F).tar.gz" \
   --exclude='*/.turbo' --exclude='*/dist' \
   ai-company
 ```
+
+## Golden Restore Point — generic-clean-baseline-20260607
+Known-good "generic / reusable / clean" baseline: D052 + D053 locked, before any customer instance (Automation App) is activated.
+- Git tag:        generic-clean-baseline-20260607  (at main 0a40532)
+- Backup branch:  backup/generic-clean-baseline-20260607
+- DB snapshot:    schema ai_company_generic_clean_baseline_20260607 (full copy of ai_company; 15 runtime tables empty; registry = foodtruck-il disabled, 3 funnel stages, 1 connector config)
+
+Restore:
+  # Code (+ @active-instance binding → yoni-company, which lives in committed config):
+  git fetch origin && git checkout generic-clean-baseline-20260607
+  #   hard-reset a polluted main (deliberate, destructive):
+  #   git checkout main && git reset --hard generic-clean-baseline-20260607 && git push --force-with-lease
+  # Data: restore the ai_company schema from ai_company_generic_clean_baseline_20260607 (parent-before-child INSERTs).
+Result: D052+D053 locked · main clean · @active-instance → yoni-company · runtime DB zero · foodtruck-il disabled · no Automation App.
+Does NOT restore: tracker history (.xlsx, forward-only audit log), .env.local / secrets, notes outside git.
