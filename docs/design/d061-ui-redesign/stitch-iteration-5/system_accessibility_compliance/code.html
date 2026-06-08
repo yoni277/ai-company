@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Accessibility Compliance Audit | Executive OS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#0053db",
+                    "inverse-primary": "#b4c5ff",
+                    "background": "#f7f9fb",
+                    "tertiary": "#943700",
+                    "tertiary-fixed": "#ffdbcd",
+                    "on-tertiary-fixed-variant": "#7d2d00",
+                    "on-primary-container": "#eeefff",
+                    "secondary": "#505f76",
+                    "secondary-container": "#d0e1fb",
+                    "tertiary-container": "#bc4800",
+                    "surface-container": "#eceef0",
+                    "on-background": "#191c1e",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#f7f9fb",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "primary-container": "#2563eb",
+                    "on-primary-container": "#eeefff",
+                    "on-secondary-container": "#54647a",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-primary-fixed": "#00174b",
+                    "surface-variant": "#e0e3e5",
+                    "surface": "#f7f9fb",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "primary-fixed": "#dbe1ff",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#d8dadc",
+                    "on-secondary-fixed": "#0b1c30",
+                    "tertiary-fixed-dim": "#ffb596",
+                    "outline-variant": "#c3c6d7",
+                    "surface-container-low": "#f2f4f6",
+                    "primary-fixed-dim": "#b4c5ff",
+                    "on-surface-variant": "#434655",
+                    "surface-container-high": "#e6e8ea",
+                    "secondary-fixed": "#d3e4fe",
+                    "on-primary-fixed-variant": "#003ea8",
+                    "inverse-surface": "#2d3133",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "primary": "#004ac6",
+                    "on-tertiary-container": "#ffede6",
+                    "on-primary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed": "#360f00",
+                    "on-surface": "#191c1e",
+                    "inverse-on-surface": "#eff1f3",
+                    "outline": "#737686"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "48px",
+                    "sm": "8px",
+                    "md": "16px",
+                    "xl": "40px",
+                    "unit": "4px",
+                    "gutter": "24px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "display": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["JetBrains Mono"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "headline-lg": ["30px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                    "display": ["40px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .micro-tag { font-family: 'JetBrains Mono', monospace; }
+        .focus-ring:focus { outline: 2px solid #2563EB; outline-offset: 2px; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- TopNavBar -->
+<header class="w-full h-16 fixed top-0 z-40 bg-surface border-b border-outline-variant flex justify-between items-center px-margin-desktop shadow-sm">
+<div class="flex items-center gap-md">
+<span class="font-headline-md text-headline-md font-extrabold text-primary">Executive OS</span>
+<nav class="hidden md:flex gap-lg ml-xl">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-md text-label-md" href="#">Operate</a>
+<a class="text-primary border-b-2 border-primary pb-1 font-bold font-label-md text-label-md" href="#">Build</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative hidden md:block">
+<input class="bg-surface-container-low border border-outline-variant px-md py-xs rounded-xl w-64 text-body-md focus:ring-2 focus:ring-primary outline-none" placeholder="Search audit..." type="text"/>
+<span class="material-symbols-outlined absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container rounded-full p-xs">notifications</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden">
+<img alt="Executive Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a corporate executive with a neutral expression, set against a blurred, high-end office interior with soft natural lighting. The style is clean and minimalist, using a bright and airy light-mode aesthetic that emphasizes clarity and professional reliability." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCd4-K7HjbQi4W_rNx0Vs16oZ8OKfA9zyQmkxZH5ZDqtUWsf6sgxYuMu3H33fKFZC0AqfZSfKja6nA4MBEUY_ZNh2bCr18nLz2YbF2ydM1FnsOeUoCxSJEtBPRybdnQGuJ79pJIg8MV7Lvz8nxNSbsyb54ZeFjv6mZr3oAkbai3F-asxnYJvYXP8TutgGYHhz7DCDsfNKRCNYBNsrI2KPzMqlvl03bThcU1TiolbY43q2-1s82GLWizueIl06TXtG66D76W3E5ujNU"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-screen py-lg w-[240px] fixed left-0 top-0 bg-surface border-r border-outline-variant shadow-sm z-30 pt-20">
+<div class="px-md mb-lg">
+<div class="flex items-center gap-sm px-sm py-xs">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">AI Chief of Staff Active</span>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-xs overflow-y-auto">
+<a class="flex items-center gap-md text-on-surface-variant hover:bg-surface-container-high transition-colors px-md py-sm" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md text-body-md">Home</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant hover:bg-surface-container-high transition-colors px-md py-sm" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-body-md text-body-md">Projects</span>
+</a>
+<a class="flex items-center gap-md bg-secondary-container text-on-secondary-container font-bold border-l-4 border-primary px-md py-sm" href="#">
+<span class="material-symbols-outlined">gavel</span>
+<span class="font-body-md text-body-md">Governance</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant hover:bg-surface-container-high transition-colors px-md py-sm" href="#">
+<span class="material-symbols-outlined">layers_clear</span>
+<span class="font-body-md text-body-md">Technical Debt</span>
+</a>
+</nav>
+<div class="px-md pt-lg border-t border-outline-variant mt-auto">
+<a class="flex items-center gap-md text-on-surface-variant hover:bg-surface-container-high transition-colors px-md py-sm" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="md:pl-[240px] pt-16 min-h-screen">
+<div class="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-xl">
+<!-- Page Header -->
+<div class="mb-xl">
+<h1 class="font-display text-display text-on-background mb-sm">Accessibility Compliance</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+                    Formal audit results for implementation planning. This report highlights key components within the Executive OS ecosystem and their current compliance status against WCAG 2.1 AA standards.
+                </p>
+</div>
+<!-- Visual Key Section -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-lg mb-xl">
+<div class="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl flex items-center gap-md shadow-sm">
+<div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div>
+<div class="font-title-lg text-title-lg text-on-background">PASS</div>
+<div class="text-body-md text-on-surface-variant">Fully compliant with standard.</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl flex items-center gap-md shadow-sm">
+<div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div>
+<div class="font-title-lg text-title-lg text-on-background">PARTIAL</div>
+<div class="text-body-md text-on-surface-variant">Functional but requires polish.</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl flex items-center gap-md shadow-sm">
+<div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<div>
+<div class="font-title-lg text-title-lg text-on-background">REQUIRES WORK</div>
+<div class="text-body-md text-on-surface-variant">Implementation planned.</div>
+</div>
+</div>
+</section>
+<!-- Audit Table / Grid -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container">
+<tr>
+<th class="p-lg font-label-md text-label-md text-on-surface uppercase tracking-wider">Component Name</th>
+<th class="p-lg font-label-md text-label-md text-on-surface uppercase tracking-wider text-center">WCAG-AA</th>
+<th class="p-lg font-label-md text-label-md text-on-surface uppercase tracking-wider text-center">Keyboard Nav</th>
+<th class="p-lg font-label-md text-label-md text-on-surface uppercase tracking-wider text-center">Screen Reader</th>
+<th class="p-lg font-label-md text-label-md text-on-surface uppercase tracking-wider text-center">Focus States</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- AIChiefOfStaffPanel -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-lg">
+<div class="font-title-lg text-title-lg text-on-background">AIChiefOfStaffPanel</div>
+<div class="micro-tag text-label-sm text-primary">DATA: DERIVED</div>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-yellow-600" style="font-variation-settings: 'FILL' 1;">warning</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+</tr>
+<!-- DecisionCard -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-lg">
+<div class="font-title-lg text-title-lg text-on-background">DecisionCard</div>
+<div class="micro-tag text-label-sm text-blue-600">DATA: HAVE</div>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+</tr>
+<!-- RiskCard -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-lg">
+<div class="font-title-lg text-title-lg text-on-background">RiskCard</div>
+<div class="micro-tag text-label-sm text-red-600">DATA: NEEDS NEW SERVICE</div>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-yellow-600" style="font-variation-settings: 'FILL' 1;">warning</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-gray-400" style="font-variation-settings: 'FILL' 1;">error</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-yellow-600" style="font-variation-settings: 'FILL' 1;">warning</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-gray-400" style="font-variation-settings: 'FILL' 1;">error</span>
+</td>
+</tr>
+<!-- ActivityFeed -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-lg">
+<div class="font-title-lg text-title-lg text-on-background">ActivityFeed</div>
+<div class="micro-tag text-label-sm text-primary">DATA: DERIVED</div>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+</tr>
+<!-- ProjectCard -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-lg">
+<div class="font-title-lg text-title-lg text-on-background">ProjectCard</div>
+<div class="micro-tag text-label-sm text-orange-600">DATA: NEEDS NEW FIELD</div>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-yellow-600" style="font-variation-settings: 'FILL' 1;">warning</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-yellow-600" style="font-variation-settings: 'FILL' 1;">warning</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+</tr>
+<!-- StatusBadge -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-lg">
+<div class="font-title-lg text-title-lg text-on-background">StatusBadge</div>
+<div class="micro-tag text-label-sm text-blue-600">DATA: HAVE</div>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+<td class="p-lg text-center">
+<span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Technical Summary Section -->
+<section class="mt-xl grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm">
+<h3 class="font-headline-md text-headline-md text-on-background mb-md">Audit Methodology</h3>
+<div class="space-y-md">
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-primary mt-1">analytics</span>
+<p class="text-body-md text-on-surface-variant">Automated scans performed using axe-core 4.8 and Lighthouse CI on standard viewport configurations.</p>
+</div>
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-primary mt-1">keyboard</span>
+<p class="text-body-md text-on-surface-variant">Manual keyboard navigation testing to verify logical focus flow and trapping within modals/overlays.</p>
+</div>
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-primary mt-1">settings_accessibility</span>
+<p class="text-body-md text-on-surface-variant">VoiceOver (macOS/iOS) and NVDA (Windows) validation for ARIA label clarity and semantic hierarchy.</p>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm">
+<h3 class="font-headline-md text-headline-md text-on-background mb-md">Implementation Pipeline</h3>
+<ul class="space-y-sm">
+<li class="flex justify-between items-center py-xs border-b border-outline-variant last:border-0">
+<span class="text-body-md font-medium">RiskCard Keyboard Trapping</span>
+<span class="text-label-sm font-label-sm px-sm py-xs bg-red-100 text-red-700 rounded uppercase">P0 Urgent</span>
+</li>
+<li class="flex justify-between items-center py-xs border-b border-outline-variant last:border-0">
+<span class="text-body-md font-medium">AI Panel ARIA Announcements</span>
+<span class="text-label-sm font-label-sm px-sm py-xs bg-yellow-100 text-yellow-700 rounded uppercase">P1 High</span>
+</li>
+<li class="flex justify-between items-center py-xs border-b border-outline-variant last:border-0">
+<span class="text-body-md font-medium">Contrast Optimization (Dark)</span>
+<span class="text-label-sm font-label-sm px-sm py-xs bg-blue-100 text-blue-700 rounded uppercase">P2 Med</span>
+</li>
+<li class="flex justify-between items-center py-xs border-b border-outline-variant last:border-0">
+<span class="text-body-md font-medium">Focus Ring Refinement</span>
+<span class="text-label-sm font-label-sm px-sm py-xs bg-surface-container-highest text-on-surface-variant rounded uppercase">P3 Low</span>
+</li>
+</ul>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full h-20 bg-surface-container-lowest border-t border-outline-variant flex justify-around items-center px-4 pb-safe z-50 rounded-t-xl shadow-lg">
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1">
+<span class="material-symbols-outlined">play_circle</span>
+<span class="font-label-sm text-label-sm">Operate</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">build</span>
+<span class="font-label-sm text-label-sm">Build</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1">
+<span class="material-symbols-outlined">mail</span>
+<span class="font-label-sm text-label-sm">Inbox</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1">
+<span class="material-symbols-outlined">notifications_active</span>
+<span class="font-label-sm text-label-sm">Alerts</span>
+</button>
+</nav>
+<script>
+        // Subtle hover effects and interactive states
+        document.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('click', () => {
+                row.classList.toggle('bg-surface-container-high');
+            });
+        });
+
+        // Search highlight simulation
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            document.querySelectorAll('tbody tr').forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.opacity = text.includes(val) ? '1' : '0.3';
+                row.style.transform = text.includes(val) ? 'scale(1)' : 'scale(0.98)';
+                row.style.transition = 'all 0.2s ease';
+            });
+        });
+    </script>
+</body></html>

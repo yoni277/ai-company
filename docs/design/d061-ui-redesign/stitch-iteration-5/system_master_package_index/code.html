@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+
+<html dir="ltr" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Executive OS | Master Index</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-tint": "#0053db",
+                      "inverse-primary": "#b4c5ff",
+                      "background": "#f7f9fb",
+                      "tertiary": "#943700",
+                      "tertiary-fixed": "#ffdbcd",
+                      "on-tertiary-fixed-variant": "#7d2d00",
+                      "on-primary-container": "#eeefff",
+                      "secondary": "#505f76",
+                      "secondary-container": "#d0e1fb",
+                      "tertiary-container": "#bc4800",
+                      "surface-container": "#eceef0",
+                      "on-background": "#191c1e",
+                      "error-container": "#ffdad6",
+                      "surface-bright": "#f7f9fb",
+                      "secondary-fixed-dim": "#b7c8e1",
+                      "primary-container": "#2563eb",
+                      "on-primary-fixed": "#00174b",
+                      "surface-variant": "#e0e3e5",
+                      "surface": "#f7f9fb",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "primary-fixed": "#dbe1ff",
+                      "error": "#ba1a1a",
+                      "surface-dim": "#d8dadc",
+                      "on-secondary-fixed": "#0b1c30",
+                      "tertiary-fixed-dim": "#ffb596",
+                      "outline-variant": "#c3c6d7",
+                      "surface-container-low": "#f2f4f6",
+                      "primary-fixed-dim": "#b4c5ff",
+                      "on-surface-variant": "#434655",
+                      "surface-container-high": "#e6e8ea",
+                      "secondary-fixed": "#d3e4fe",
+                      "on-primary-fixed-variant": "#003ea8",
+                      "inverse-surface": "#2d3133",
+                      "on-secondary-fixed-variant": "#38485d",
+                      "primary": "#004ac6",
+                      "on-tertiary-container": "#ffede6",
+                      "on-primary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-fixed": "#360f00",
+                      "on-surface": "#191c1e",
+                      "inverse-on-surface": "#eff1f3",
+                      "outline": "#737686"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "xs": "4px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "48px",
+                      "sm": "8px",
+                      "md": "16px",
+                      "xl": "40px",
+                      "unit": "4px",
+                      "gutter": "24px",
+                      "lg": "24px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "title-lg": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "display": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "label-sm": ["JetBrains Mono"],
+                      "body-md": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                      "headline-lg": ["30px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "title-lg": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                      "display": ["40px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                      "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+        .micro-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+<!-- TopNavBar -->
+<header class="w-full h-16 fixed top-0 z-40 bg-surface border-b border-outline-variant flex justify-between items-center px-margin-desktop shadow-sm">
+<div class="flex items-center gap-xl">
+<span class="font-headline-md text-headline-md font-extrabold text-primary">Executive OS</span>
+<nav class="hidden md:flex gap-lg">
+<a class="text-primary border-b-2 border-primary pb-1 font-bold cursor-pointer active:opacity-70 transition-colors" href="#">Operate</a>
+<a class="text-on-surface-variant hover:text-primary cursor-pointer active:opacity-70 transition-colors" href="#">Build</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="bg-surface-container-low border border-outline-variant rounded-lg pl-10 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-primary/20 text-body-md" placeholder="Search system assets..." type="text"/>
+</div>
+<button class="bg-primary text-on-primary px-lg py-2 rounded font-bold hover:opacity-90 active:scale-95 transition-all">Execute Decision</button>
+<div class="flex items-center gap-sm ml-sm">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container rounded-full p-2">notifications</span>
+<img alt="Executive Avatar" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="A professional studio portrait of a high-level technology executive with a neutral expression, wearing a minimalist dark blazer, soft cinematic lighting, clean grey background, hyper-realistic, 8k" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAchla_zFmkIQcAHAeEIGpDz-cM9eivUFMtm-4hhBL3QzEz_t4CbQZBm7OpSvznot3VN8RoxFZoX9-SsZxOYRHR6GCbaHGq9d6rfD7jwYk4q5coNLprdzFeUAvk3O76gd1AhmyjwtCszRnDRRHpBECQ9TZWvsnIb3AT_j0SmLT0ZidlWW4056roUO9l-IGA6cZWeobVaFYIofkgURcOpVMqVrfDJGcc5wNocxRjmIjKAxbtElxn9bgqoYlv8LWIcbHVDgMX-x_4fq0"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-screen py-lg w-[240px] fixed left-0 top-0 border-r border-outline-variant bg-surface shadow-sm z-30 pt-20">
+<div class="px-md mb-lg">
+<div class="flex items-center gap-sm mb-xs">
+<div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">AI Chief of Staff Active</span>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-md bg-secondary-container text-on-secondary-container font-bold border-l-4 border-primary px-md py-sm hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">inbox</span>
+<span class="font-label-md text-label-md">Inbox</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-label-md text-label-md">Projects</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-label-md text-label-md">History</span>
+</a>
+<div class="pt-4 pb-2 px-md">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-widest">Platform</span>
+</div>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">health_and_safety</span>
+<span class="font-label-md text-label-md">Platform Health</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">architecture</span>
+<span class="font-label-md text-label-md">Architecture Backlog</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">gavel</span>
+<span class="font-label-md text-label-md">Governance</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">layers_clear</span>
+<span class="font-label-md text-label-md">Technical Debt</span>
+</a>
+</nav>
+<div class="mt-auto px-md space-y-1">
+<button class="w-full flex items-center justify-center gap-sm bg-surface-container-highest border border-outline-variant py-2 rounded mb-4 font-bold text-on-surface active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-sm">sync_alt</span>
+                Switch Mode
+            </button>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="md:pl-[240px] pt-24 pb-24 md:pb-12 px-margin-mobile md:px-margin-desktop max-w-[1600px] mx-auto">
+<!-- Header Section -->
+<header class="mb-xl">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Master Package Index</h1>
+<p class="text-body-lg text-on-surface-variant max-w-2xl">Executive OS centralized delivery manifest. Review system status, deployment readiness, and operational modules.</p>
+</div>
+<div class="flex gap-sm">
+<span class="micro-tag bg-blue-100 text-blue-700">DATA: HAVE</span>
+<span class="micro-tag bg-purple-100 text-purple-700">DATA: DERIVED</span>
+</div>
+</div>
+</header>
+<!-- Bento Grid Index -->
+<div class="bento-grid">
+<!-- Operate Category -->
+<section class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl p-lg shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
+<div class="flex items-center justify-between mb-lg">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">play_circle</span>
+<h2 class="font-title-lg text-title-lg">Operate Modules</h2>
+</div>
+<span class="status-pill bg-green-100 text-green-700">
+<span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                        Healthy: System Core
+                    </span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="group p-md border border-outline-variant rounded-lg hover:border-primary hover:bg-primary/5 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-bold text-on-surface">Main Dashboard</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary">arrow_forward_ios</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-md">Real-time KPIs, executive summaries, and active alerts.</p>
+<div class="flex gap-xs">
+<span class="label-sm text-[10px] bg-surface-container px-2 py-0.5 rounded text-outline-variant">v2.4.0</span>
+<span class="label-sm text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">PRODUCTION</span>
+</div>
+</div>
+<div class="group p-md border border-outline-variant rounded-lg hover:border-primary hover:bg-primary/5 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-bold text-on-surface">Inbox Terminal</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary">arrow_forward_ios</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-md">Consolidated decision requests and prioritized comms.</p>
+<div class="flex gap-xs">
+<span class="label-sm text-[10px] bg-surface-container px-2 py-0.5 rounded text-outline-variant">v2.1.2</span>
+<span class="label-sm text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">STABLE</span>
+</div>
+</div>
+<div class="group p-md border border-outline-variant rounded-lg hover:border-primary hover:bg-primary/5 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-bold text-on-surface">Project Architect</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary">arrow_forward_ios</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-md">Strategic roadmap tracking and resource allocation.</p>
+<div class="flex gap-xs">
+<span class="label-sm text-[10px] bg-surface-container px-2 py-0.5 rounded text-outline-variant">v1.9.0</span>
+<span class="label-sm text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">BETA</span>
+</div>
+</div>
+<div class="group p-md border border-outline-variant rounded-lg hover:border-primary hover:bg-primary/5 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-bold text-on-surface">Risk Management</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary">arrow_forward_ios</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-md">Platform health monitoring and mitigation strategies.</p>
+<div class="flex gap-xs">
+<span class="label-sm text-[10px] bg-surface-container px-2 py-0.5 rounded text-outline-variant">v3.0.1</span>
+<span class="label-sm text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">ALPHA</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Build Category -->
+<section class="col-span-12 lg:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-xl p-lg shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-tertiary">build</span>
+<h2 class="font-title-lg text-title-lg">Build Suite</h2>
+</div>
+<div class="space-y-md">
+<div class="flex items-center justify-between p-sm hover:bg-surface-container-low rounded cursor-pointer transition-colors">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant">settings_suggest</span>
+<span class="font-bold">System Configurator</span>
+</div>
+<span class="material-symbols-outlined text-sm text-outline">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-sm hover:bg-surface-container-low rounded cursor-pointer transition-colors">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant">schema</span>
+<span class="font-bold">Logic Modeler</span>
+</div>
+<span class="material-symbols-outlined text-sm text-outline">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-sm hover:bg-surface-container-low rounded cursor-pointer transition-colors">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant">api</span>
+<span class="font-bold">API Integrations</span>
+</div>
+<span class="material-symbols-outlined text-sm text-outline">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-sm hover:bg-surface-container-low rounded cursor-pointer transition-colors">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant">palette</span>
+<span class="font-bold">Design System Sync</span>
+</div>
+<span class="material-symbols-outlined text-sm text-outline">chevron_right</span>
+</div>
+</div>
+<div class="mt-lg pt-lg border-t border-outline-variant">
+<p class="font-label-sm text-label-sm text-outline uppercase mb-md">Last Deployments</p>
+<div class="space-y-sm">
+<div class="flex items-center justify-between text-xs">
+<span class="text-on-surface-variant">Core Engine 8.0</span>
+<span class="text-on-surface font-mono">14:20 UTC</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-on-surface-variant">Security Patch Alpha</span>
+<span class="text-on-surface font-mono">Yesterday</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Mobile Viewports -->
+<section class="col-span-12 lg:col-span-7 bg-surface-container-lowest border border-outline-variant rounded-xl p-lg shadow-[0_4px_12px_rgba(0,0,0,0.03)] overflow-hidden">
+<div class="flex items-center justify-between mb-lg">
+<h2 class="font-title-lg text-title-lg">Mobile Experiences</h2>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-surface-variant text-[10px] font-bold rounded">iOS</span>
+<span class="px-2 py-1 bg-surface-variant text-[10px] font-bold rounded">Android</span>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-lg">
+<div class="space-y-md">
+<div class="aspect-[9/16] bg-surface-container border border-outline-variant rounded-xl overflow-hidden relative group">
+<img alt="Mobile EN" class="w-full h-full object-cover" data-alt="A clean mobile app UI showing a dark-themed executive dashboard with glassmorphism elements, vibrant neon accents, English text, professional and high-end aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZYUk2Sy574FxEI9x398bsUDuZ2ZdvN5LAj3NtMMzpFJy8gBW4FC9dGxoDZE_6KMkQfypj10Hur8yEg1mhP5aejp61yKSPUCD-lPt7K8aLSf7Xjzvd1MfYRDthY1KesDV0GFPrl6M8K6eXwh_KLbemaqYq_Y1hPPUy5QsDvAWCuNWsTOO9E4nnxmNI9GKgHYGQIAuOMTb1cqeGuiR4QYI8emxhb6mimdt7D3bcxAkambiMomFPgaBSp2S0yHl_Bvmt8RQXVQpBc6I"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<button class="bg-white text-primary px-md py-sm rounded-full font-bold shadow-lg">Preview EN</button>
+</div>
+</div>
+<p class="text-center font-bold text-sm">Operate (EN)</p>
+</div>
+<div class="space-y-md">
+<div class="aspect-[9/16] bg-surface-container border border-outline-variant rounded-xl overflow-hidden relative group">
+<img alt="Mobile HE" class="w-full h-full object-cover" data-alt="A clean mobile app UI showing a dark-themed executive dashboard with glassmorphism elements, Hebrew text (RTL), professional and high-end aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEm9B0P0i51d6dG26KblYsdFG8xZQwu1MyaBnqgW-qxPrD9C8-Y8N0P9THuMQznCEGMPecJQhj7Z_QToSHIXHBZOiqtXFvTEbtPeMOMT3xNPneSsKvjzF_EbwNYd480aN81s8WbN_eyDc48gmIeblfRPBryjQ0yqjCiS3IfgUiklj1nbq3MKNuJCVhIcL4Njq6Hstae5q_rZJMmB2yl-1aG2ZhD7oUWMVFpVklcsWTRID4Fcf1bHTp0FXKmW8j_Uy2Q_TJCnRACJQ"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<button class="bg-white text-primary px-md py-sm rounded-full font-bold shadow-lg">Preview HE</button>
+</div>
+</div>
+<p class="text-center font-bold text-sm">Operate (HE)</p>
+</div>
+<div class="space-y-md">
+<div class="aspect-[9/16] bg-surface-container border border-outline-variant rounded-xl overflow-hidden relative group">
+<img alt="Mobile Build" class="w-full h-full object-cover" data-alt="A mobile interface for app configuration, showing sliders, toggles, and code snippets in a clean, minimalist white and grey layout" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1vEqjz2hxTrp2skWfhCe8nu2jCL5fGq4BU0WRp4tHASH3UTNOopPRP94WG0rFgIk9DjAsIp5OJ7AfnrffG18GJETPnGMSjdXIZjxIZuoDMl3OKDRYXN_lP8ySIrnDLqwt9zSyhP7L3zfE60d2quG1r84w1C5l50aH48fkWCBadLq8kKG5ibqJq5sJJLDNRykUUy6Q3is1Wzm2tplKZS9VgPAOFiZusG12ZQqlbSyDb3lWuksHFv5550GsMpv9E_jnbbdWQNGJ8Yk"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<button class="bg-white text-primary px-md py-sm rounded-full font-bold shadow-lg">Preview Build</button>
+</div>
+</div>
+<p class="text-center font-bold text-sm">Build Terminal</p>
+</div>
+</div>
+</section>
+<!-- Validation & Quality -->
+<section class="col-span-12 lg:col-span-5 bg-surface-container-lowest border border-outline-variant rounded-xl p-lg shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex flex-col">
+<h2 class="font-title-lg text-title-lg mb-lg">Validation &amp; Compliance</h2>
+<div class="flex-1 space-y-md">
+<div class="p-md bg-green-50 border border-green-100 rounded-lg flex items-start gap-md">
+<span class="material-symbols-outlined text-green-600">verified</span>
+<div>
+<p class="font-bold text-green-800">WCAG 2.1 AA Compliant</p>
+<p class="text-sm text-green-700">Contrast ratios and touch targets verified for accessibility.</p>
+</div>
+</div>
+<div class="p-md bg-blue-50 border border-blue-100 rounded-lg flex items-start gap-md">
+<span class="material-symbols-outlined text-blue-600">translate</span>
+<div>
+<p class="font-bold text-blue-800">LQA: RTL Ready</p>
+<p class="text-sm text-blue-700">Logical properties implemented for seamless HE support.</p>
+</div>
+</div>
+<div class="p-md bg-tertiary-fixed border border-outline-variant rounded-lg flex items-start gap-md">
+<span class="material-symbols-outlined text-tertiary">monitor_heart</span>
+<div>
+<p class="font-bold text-on-tertiary-fixed">Platform Integrity</p>
+<p class="text-sm text-on-tertiary-fixed-variant">Uptime 99.98% - Architecture backlog cleared for Q3.</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-xl py-lg border-2 border-dashed border-outline-variant rounded-xl text-outline-variant font-bold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined">add_circle</span>
+                    Request New Service Module
+                </button>
+</section>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.05)] flex justify-around items-center h-20 px-4 pb-safe">
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 active:scale-95 transition-transform duration-150 cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+<span class="font-label-md text-label-md">Operate</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:scale-95 transition-transform duration-150 cursor-pointer">
+<span class="material-symbols-outlined">build</span>
+<span class="font-label-md text-label-md">Build</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:scale-95 transition-transform duration-150 cursor-pointer">
+<span class="material-symbols-outlined">mail</span>
+<span class="font-label-md text-label-md">Inbox</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:scale-95 transition-transform duration-150 cursor-pointer relative">
+<span class="material-symbols-outlined">notifications_active</span>
+<span class="font-label-md text-label-md">Alerts</span>
+<span class="absolute top-0 right-3 w-2 h-2 bg-error rounded-full"></span>
+</div>
+</nav>
+<script>
+        // Simple micro-interaction for active states
+        document.querySelectorAll('nav a, aside nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                // In a real app, this would handle routing
+                console.log('Navigating to:', link.innerText.trim());
+            });
+        });
+
+        // Hover tilt effect on cards
+        const cards = document.querySelectorAll('.bento-grid section, .group');
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = (y - centerY) / 20;
+                const rotateY = (centerX - x) / 20;
+                
+                // Only subtle tilt
+                card.style.transform = `perspective(1000px) rotateX(${rotateX * 0.1}deg) rotateY(${rotateY * 0.1}deg) translateY(-2px)`;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+            });
+        });
+    </script>
+</body></html>

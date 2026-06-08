@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#0053db",
+                        "inverse-primary": "#b4c5ff",
+                        "background": "#f7f9fb",
+                        "tertiary": "#943700",
+                        "tertiary-fixed": "#ffdbcd",
+                        "on-tertiary-fixed-variant": "#7d2d00",
+                        "on-primary-container": "#eeefff",
+                        "secondary": "#505f76",
+                        "secondary-container": "#d0e1fb",
+                        "tertiary-container": "#bc4800",
+                        "surface-container": "#eceef0",
+                        "on-background": "#191c1e",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#f7f9fb",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "primary-container": "#2563eb",
+                        "on-secondary-container": "#54647a",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-primary-fixed": "#00174b",
+                        "surface-variant": "#e0e3e5",
+                        "surface": "#f7f9fb",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#dbe1ff",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#d8dadc",
+                        "on-secondary-fixed": "#0b1c30",
+                        "tertiary-fixed-dim": "#ffb596",
+                        "outline-variant": "#c3c6d7",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "on-surface-variant": "#434655",
+                        "surface-container-high": "#e6e8ea",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "inverse-surface": "#2d3133",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "primary": "#004ac6",
+                        "on-tertiary-container": "#ffede6",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#360f00",
+                        "on-surface": "#191c1e",
+                        "inverse-on-surface": "#eff1f3",
+                        "outline": "#737686"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "xl": "40px",
+                        "unit": "4px",
+                        "gutter": "24px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["JetBrains Mono"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "headline-lg": ["30px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                        "display": ["40px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #f7f9fb;
+            -webkit-font-smoothing: antialiased;
+        }
+        .micro-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 2px;
+            text-transform: uppercase;
+        }
+        .tag-have { background-color: #dbeafe; color: #1e40af; }
+        .tag-derived { background-color: #f3e8ff; color: #6b21a8; }
+        .decision-card {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .decision-card:active {
+            transform: scale(0.98);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface">
+<!-- Top Navigation Bar -->
+<header class="w-full h-16 fixed top-0 z-40 bg-surface border-b border-outline-variant flex justify-between items-center px-margin-mobile">
+<div class="flex items-center gap-sm">
+<span class="font-headline-md text-headline-md font-extrabold text-primary">Executive OS</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-70" data-icon="search">search</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-70" data-icon="notifications">notifications</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant">
+<img alt="Executive Avatar" data-alt="A professional headshot of a high-level executive with a confident and serene expression. The lighting is soft and cinematic, highlighting a modern corporate office background with clean architectural lines. The color palette is composed of muted grays and crisp whites, reflecting a premium and authoritative professional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqbW9akdp1AlLNqfnLCNjx8AHtMCuLwtV1X1QM9kMxlN3S_WJc2RrhP3e_kSGs4UrGb1xexotreQdF2O8vwtyBCfWoP-XsCDWGQL1k4fBgXUjsl5pO0_e0TR8S2K8XbY9v8tnJ6m50VyAyZoFkDfj0AjdUGzIP7QUUEFa_1-tjWZfW1ZLvT-98dfkU066OLZmUJ0lRXwDs5J-Sn5FKc9ruzy62JbTKuybOuv24gILi7g_Q_jd6kkTBzPOfaSCSwnbab4MmbEJVGN8"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-20 pb-24 px-margin-mobile max-w-lg mx-auto">
+<!-- Search & Filter -->
+<div class="mb-lg">
+<div class="flex items-center justify-between mb-sm">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Inbox</h1>
+<span class="font-label-sm text-label-sm text-primary uppercase">3 Pending Decisions</span>
+</div>
+</div>
+<!-- Section: Critical Alerts (Risks) -->
+<section class="mb-xl">
+<div class="flex items-center gap-sm mb-md">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<h2 class="font-title-lg text-title-lg text-on-background">Critical Alerts</h2>
+</div>
+<div class="space-y-md">
+<div class="bg-surface-container-lowest border border-error-container p-md rounded-xl shadow-sm">
+<div class="flex justify-between items-start mb-sm">
+<span class="micro-tag tag-have">DATA: HAVE</span>
+<span class="font-label-sm text-label-sm text-error">High Risk</span>
+</div>
+<p class="font-body-md text-on-surface mb-xs">Infrastructure Latency Spike: Region US-East-1</p>
+<p class="text-[12px] text-on-surface-variant">System performance degraded by 24% in the last 15 minutes.</p>
+</div>
+</div>
+</section>
+<!-- Section: Waiting For Your Decision (Decisions) -->
+<section class="mb-xl">
+<div class="flex items-center gap-sm mb-md">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<h2 class="font-title-lg text-title-lg text-on-background">Waiting For Your Decision</h2>
+</div>
+<div class="space-y-md">
+<!-- Decision Card 1 -->
+<div class="decision-card bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="p-md">
+<div class="flex justify-between items-center mb-sm">
+<div class="flex gap-xs">
+<span class="micro-tag tag-have">DATA: HAVE</span>
+<span class="micro-tag tag-derived">DATA: DERIVED</span>
+</div>
+<span class="text-[11px] font-medium text-on-surface-variant">Due in 2h</span>
+</div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface mb-xs">Q3 Cloud Infrastructure Budget</h3>
+<p class="text-[13px] text-on-surface-variant mb-md leading-relaxed">Proposed 15% increase to support AI model training cycles. Analysis suggests 4.2x ROI based on current velocity.</p>
+<!-- Action Row -->
+<div class="grid grid-cols-2 gap-sm">
+<button class="h-10 bg-primary text-on-primary rounded-lg font-medium active:scale-[0.97] transition-transform flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="check_circle">check_circle</span>
+                                Approve
+                            </button>
+<button class="h-10 bg-surface-container text-on-surface rounded-lg font-medium active:scale-[0.97] transition-transform flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="cancel">cancel</span>
+                                Reject
+                            </button>
+<button class="col-span-2 h-10 border border-outline-variant text-on-surface-variant rounded-lg font-medium active:scale-[0.97] transition-transform flex items-center justify-center gap-xs mt-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="chat_bubble">chat_bubble</span>
+                                Request Clarification
+                            </button>
+</div>
+</div>
+</div>
+<!-- Decision Card 2 -->
+<div class="decision-card bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="p-md">
+<div class="flex justify-between items-center mb-sm">
+<span class="micro-tag tag-have">DATA: HAVE</span>
+<span class="text-[11px] font-medium text-on-surface-variant">New</span>
+</div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface mb-xs">New Security Protocol Rollout</h3>
+<p class="text-[13px] text-on-surface-variant mb-md leading-relaxed">Mandatory zero-trust architecture adoption for the Engineering pod.</p>
+<div class="grid grid-cols-2 gap-sm">
+<button class="h-10 bg-primary text-on-primary rounded-lg font-medium active:scale-[0.97] flex items-center justify-center gap-xs">
+                                Approve
+                            </button>
+<button class="h-10 bg-surface-container text-on-surface rounded-lg font-medium active:scale-[0.97] flex items-center justify-center gap-xs">
+                                Reject
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Reviews -->
+<section>
+<div class="flex items-center justify-between mb-md">
+<div class="flex items-center gap-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<h2 class="font-title-lg text-title-lg text-on-background">Reviews</h2>
+</div>
+<button class="text-primary text-[13px] font-semibold">View All</button>
+</div>
+<div class="bg-surface-container-low rounded-xl p-md border border-outline-variant border-dashed">
+<div class="flex items-center gap-md py-sm">
+<div class="w-10 h-10 rounded bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+</div>
+<div>
+<p class="font-body-md font-medium text-on-surface">Annual Compliance Audit</p>
+<p class="text-[12px] text-on-surface-variant">Document awaiting final signature</p>
+</div>
+<span class="material-symbols-outlined ms-auto text-on-surface-variant" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="h-[1px] bg-outline-variant w-full my-xs"></div>
+<div class="flex items-center gap-md py-sm">
+<div class="w-10 h-10 rounded bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+</div>
+<div>
+<p class="font-body-md font-medium text-on-surface">Weekly Executive Summary</p>
+<p class="text-[12px] text-on-surface-variant">Generated 40m ago</p>
+</div>
+<span class="material-symbols-outlined ms-auto text-on-surface-variant" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 bg-surface-container-lowest border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl flex justify-around items-center h-20 px-4 pb-safe">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:bg-surface-variant transition-transform scale-95 duration-150" href="#">
+<span class="material-symbols-outlined mb-xs" data-icon="play_circle">play_circle</span>
+<span class="font-label-sm text-label-sm">Operate</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:bg-surface-variant transition-transform scale-95 duration-150" href="#">
+<span class="material-symbols-outlined mb-xs" data-icon="build">build</span>
+<span class="font-label-sm text-label-sm">Build</span>
+</a>
+<!-- ACTIVE TAB: Inbox -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 transition-transform scale-95 duration-150" href="#">
+<span class="material-symbols-outlined mb-xs" data-icon="mail" data-weight="fill" style="font-variation-settings: 'FILL' 1;">mail</span>
+<span class="font-label-sm text-label-sm">Inbox</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:bg-surface-variant transition-transform scale-95 duration-150" href="#">
+<span class="material-symbols-outlined mb-xs" data-icon="notifications_active">notifications_active</span>
+<span class="font-label-sm text-label-sm">Alerts</span>
+</a>
+</nav>
+<!-- Micro-interaction Script -->
+<script>
+        // Subtle background animation for decision center context
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.decision-card');
+            cards.forEach(card => {
+                card.addEventListener('touchstart', () => {
+                    card.style.borderColor = 'var(--primary)';
+                });
+                card.addEventListener('touchend', () => {
+                    card.style.borderColor = 'var(--outline-variant)';
+                });
+            });
+        });
+    </script>
+</body></html>

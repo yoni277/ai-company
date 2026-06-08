@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html dir="ltr" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&amp;family=JetBrains+Mono:wght@500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#0053db",
+                    "inverse-primary": "#b4c5ff",
+                    "background": "#f7f9fb",
+                    "tertiary": "#943700",
+                    "tertiary-fixed": "#ffdbcd",
+                    "on-tertiary-fixed-variant": "#7d2d00",
+                    "on-primary-container": "#eeefff",
+                    "secondary": "#505f76",
+                    "secondary-container": "#d0e1fb",
+                    "tertiary-container": "#bc4800",
+                    "surface-container": "#eceef0",
+                    "on-background": "#191c1e",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#f7f9fb",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "primary-container": "#2563eb",
+                    "on-primary-container": "#eeefff",
+                    "on-secondary-container": "#54647a",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-primary-fixed": "#00174b",
+                    "surface-variant": "#e0e3e5",
+                    "surface": "#f7f9fb",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "primary-fixed": "#dbe1ff",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#d8dadc",
+                    "on-secondary-fixed": "#0b1c30",
+                    "tertiary-fixed-dim": "#ffb596",
+                    "outline-variant": "#c3c6d7",
+                    "surface-container-low": "#f2f4f6",
+                    "primary-fixed-dim": "#b4c5ff",
+                    "on-surface-variant": "#434655",
+                    "surface-container-high": "#e6e8ea",
+                    "secondary-fixed": "#d3e4fe",
+                    "on-primary-fixed-variant": "#003ea8",
+                    "inverse-surface": "#2d3133",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "primary": "#004ac6",
+                    "on-tertiary-container": "#ffede6",
+                    "on-primary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed": "#360f00",
+                    "on-surface": "#191c1e",
+                    "inverse-on-surface": "#eff1f3",
+                    "outline": "#737686"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "48px",
+                    "sm": "8px",
+                    "md": "16px",
+                    "xl": "40px",
+                    "unit": "4px",
+                    "gutter": "24px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "display": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["JetBrains Mono"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "headline-lg": ["30px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                    "display": ["40px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .micro-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 2px;
+            text-transform: uppercase;
+        }
+        .data-derived { background-color: rgba(148, 55, 255, 0.1); color: #7d2dff; }
+        .data-needs-service { background-color: rgba(186, 26, 26, 0.1); color: #ba1a1a; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid #E2E8F0;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md text-body-md min-h-screen pb-24">
+<!-- TopNavBar -->
+<header class="w-full h-16 fixed top-0 z-40 bg-surface border-b border-outline-variant shadow-sm flex justify-between items-center px-margin-mobile">
+<div class="flex items-center gap-sm">
+<span class="font-headline-md text-headline-md font-extrabold text-primary">Executive OS</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-70">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-70">search</span>
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant">
+<img alt="Executive Avatar" data-alt="A professional close-up portrait of a corporate executive in a modern, high-tech office setting. The lighting is crisp and cool, emphasizing a minimalist and authoritative aesthetic. The background features soft-focus architectural glass and steel structures. The overall mood is focused and premium, utilizing a clean color palette of whites and deep blues." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQdAEMxwAIgPFpWPEvxuSi1YV3DFsYA4LHDdnP6eUuuC-DEIRYjItdec7p7-lVKjJpjJjF9KlG1daz4ydl_38nic2HXmXfDZNGWN_YeWuJvW47Ph9-2ounSSyJxE-Ikn0lrHXG7-NsmuUqhnK05CcEFZbtJmqR0d7IHB3W93sN-DVX1sKJetcmzIU2_5NFvAMh8P2fwVgxfBImkuGWkt9uZFYoNyJyR27FtRPusRi3Xi9C2DnVJ8Vg0_ztQsm6fJBIg_CwNeKZ7z0"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-20 px-4 space-y-6 max-w-lg mx-auto">
+<!-- Header Mode Indicator -->
+<div class="flex justify-between items-end">
+<div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Platform Governance</h1>
+<p class="text-on-surface-variant font-body-md">Build Mode Active</p>
+</div>
+<div class="bg-surface-container-high rounded-full p-1 flex">
+<div class="px-4 py-1 text-on-surface-variant font-label-md text-label-sm">Operate</div>
+<div class="px-4 py-1 bg-surface-lowest text-primary font-bold shadow-sm rounded-full text-label-sm">Build</div>
+</div>
+</div>
+<!-- Platform Health Bento Item -->
+<section class="glass-panel rounded-xl p-md">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-[#22c55e]"></div>
+<span class="font-label-md text-label-sm uppercase tracking-wider text-on-surface-variant">Platform Health</span>
+</div>
+<span class="text-on-surface-variant material-symbols-outlined text-sm">more_vert</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-display font-display text-on-background">99.8%</span>
+<span class="text-[#22c55e] font-label-md text-label-sm">+0.02%</span>
+</div>
+<div class="mt-4 h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[99.8%]"></div>
+</div>
+<div class="mt-4 flex gap-4">
+<span class="micro-tag data-derived">DATA: DERIVED</span>
+<span class="text-xs text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">schedule</span>
+                    Last 24h
+                </span>
+</div>
+</section>
+<!-- Secondary Grid -->
+<div class="grid grid-cols-2 gap-4">
+<!-- Architecture Backlog -->
+<div class="glass-panel rounded-xl p-md flex flex-col justify-between aspect-square">
+<div>
+<span class="material-symbols-outlined text-primary mb-2">account_tree</span>
+<h3 class="font-label-md text-label-sm text-on-surface-variant uppercase">Backlog</h3>
+</div>
+<div>
+<div class="text-headline-md font-headline-md text-on-background">L17-L26</div>
+<p class="text-xs text-on-surface-variant mt-1">12 Priority Items</p>
+</div>
+</div>
+<!-- Cloneability Status -->
+<div class="glass-panel rounded-xl p-md flex flex-col justify-between aspect-square">
+<div>
+<span class="material-symbols-outlined text-primary mb-2">content_copy</span>
+<h3 class="font-label-md text-label-sm text-on-surface-variant uppercase">Cloneability</h3>
+</div>
+<div>
+<div class="text-headline-md font-headline-md text-[#22c55e]">Ready</div>
+<p class="text-xs text-on-surface-variant mt-1">Node: Edge-Primary</p>
+</div>
+</div>
+</div>
+<!-- Technical Debt Alert -->
+<section class="bg-error-container border border-error/20 rounded-xl p-md">
+<div class="flex items-start gap-md">
+<div class="p-2 bg-on-error-container/10 rounded-lg">
+<span class="material-symbols-outlined text-on-error-container">layers_clear</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center">
+<h3 class="font-title-lg text-on-error-container">Technical Debt Alert</h3>
+<span class="micro-tag bg-error text-white">Critical</span>
+</div>
+<p class="text-on-error-container/80 text-body-md mt-1">Legacy Auth-Module exceeds latency threshold in Zone 4.</p>
+<div class="mt-3 flex gap-2">
+<span class="micro-tag data-needs-service">DATA: NEEDS NEW SERVICE</span>
+</div>
+</div>
+</div>
+</section>
+<!-- System Risks -->
+<section class="glass-panel rounded-xl overflow-hidden">
+<div class="px-md py-sm bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
+<h3 class="font-label-md text-label-sm text-on-surface-variant uppercase tracking-wider">System Risks</h3>
+<span class="material-symbols-outlined text-on-surface-variant">warning</span>
+</div>
+<div class="divide-y divide-outline-variant">
+<div class="p-md flex justify-between items-center">
+<div>
+<div class="font-body-lg text-on-background">Dependency drift</div>
+<div class="text-xs text-on-surface-variant">8 instances detected</div>
+</div>
+<div class="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</div>
+</div>
+<div class="p-md flex justify-between items-center">
+<div>
+<div class="font-body-lg text-on-background">Schema fragmentation</div>
+<div class="text-xs text-on-surface-variant">Core.User_Table L12</div>
+</div>
+<div class="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 bg-surface-container rounded-t-xl border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.05)] flex justify-around items-center h-20 px-4 pb-safe">
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:bg-surface-variant transition-transform scale-95 duration-150">
+<span class="material-symbols-outlined">play_circle</span>
+<span class="font-label-md text-label-sm">Operate</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 transition-transform scale-95 duration-150">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">build</span>
+<span class="font-label-md text-label-sm">Build</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:bg-surface-variant transition-transform scale-95 duration-150">
+<span class="material-symbols-outlined">mail</span>
+<span class="font-label-md text-label-sm">Inbox</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:bg-surface-variant transition-transform scale-95 duration-150">
+<span class="material-symbols-outlined">notifications_active</span>
+<span class="font-label-md text-label-sm">Alerts</span>
+</div>
+</nav>
+<!-- Micro-interaction script -->
+<script>
+        document.querySelectorAll('nav div, header span').forEach(el => {
+            el.addEventListener('click', () => {
+                el.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    el.style.transform = '';
+                }, 150);
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="he"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#0053db",
+                        "inverse-primary": "#b4c5ff",
+                        "background": "#f7f9fb",
+                        "tertiary": "#943700",
+                        "tertiary-fixed": "#ffdbcd",
+                        "on-tertiary-fixed-variant": "#7d2d00",
+                        "on-primary-container": "#eeefff",
+                        "secondary": "#505f76",
+                        "secondary-container": "#d0e1fb",
+                        "tertiary-container": "#bc4800",
+                        "surface-container": "#eceef0",
+                        "on-background": "#191c1e",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#f7f9fb",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "primary-container": "#2563eb",
+                        "on-primary-container": "#eeefff",
+                        "on-secondary-container": "#54647a",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-primary-fixed": "#00174b",
+                        "surface-variant": "#e0e3e5",
+                        "surface": "#f7f9fb",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#dbe1ff",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#d8dadc",
+                        "on-secondary-fixed": "#0b1c30",
+                        "tertiary-fixed-dim": "#ffb596",
+                        "outline-variant": "#c3c6d7",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "on-surface-variant": "#434655",
+                        "surface-container-high": "#e6e8ea",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "inverse-surface": "#2d3133",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "primary": "#004ac6",
+                        "on-tertiary-container": "#ffede6",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#360f00",
+                        "on-surface": "#191c1e",
+                        "inverse-on-surface": "#eff1f3",
+                        "outline": "#737686"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "xl": "40px",
+                        "unit": "4px",
+                        "gutter": "24px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["JetBrains Mono"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "headline-lg": ["30px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                        "display": ["40px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .rtl-flip { transform: scaleX(-1); }
+        .micro-tag-have { background-color: rgba(37, 99, 235, 0.1); color: #2563eb; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased overflow-x-hidden">
+<!-- TopNavBar -->
+<header class="w-full h-16 fixed top-0 z-40 bg-surface border-b border-outline-variant shadow-sm flex justify-between items-center px-margin-mobile">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="account_circle">account_circle</span>
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-lg-mobile font-extrabold text-primary">Executive OS</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined cursor-pointer text-on-surface-variant active:opacity-70" data-icon="search">search</span>
+<div class="relative">
+<span class="material-symbols-outlined cursor-pointer text-on-surface-variant active:opacity-70" data-icon="notifications">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="pt-20 pb-24 px-margin-mobile max-w-lg mx-auto">
+<!-- Tab Switcher (Operate/Build) -->
+<div class="flex bg-surface-container rounded-lg p-1 mb-lg">
+<button class="flex-1 py-sm text-center font-label-md text-label-md bg-white shadow-sm rounded-lg text-primary font-bold transition-all">Operate</button>
+<button class="flex-1 py-sm text-center font-label-md text-label-md text-on-surface-variant hover:text-primary transition-all">Build</button>
+</div>
+<!-- Section Title: Decisions -->
+<div class="mb-md flex justify-between items-center">
+<h2 class="font-headline-md text-headline-md text-on-surface">החלטות ממתינות</h2>
+<span class="font-label-sm text-label-sm micro-tag-have px-2 py-0.5 rounded uppercase">DATA: HAVE</span>
+</div>
+<!-- Decision Card 1 -->
+<div class="bg-surface border border-outline-variant rounded-xl p-md mb-md shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start gap-md mb-sm">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-white" data-icon="account_tree">account_tree</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface leading-tight">אישור ארכיטקטורת ענן Q3</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">נדרשת הכרעה לגבי ספק התשתית הראשי עבור פרויקט "ציר זמן".</p>
+</div>
+</div>
+<div class="flex items-center gap-xs mb-md">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-sm text-label-sm text-primary">🟢 Healthy: System Core</span>
+</div>
+<div class="flex gap-sm">
+<button class="flex-1 bg-primary text-white py-sm rounded-lg font-bold active:scale-[0.98] transition-transform">אשר</button>
+<button class="flex-1 border border-outline-variant text-on-surface py-sm rounded-lg font-bold active:scale-[0.98] transition-transform">דחה</button>
+</div>
+</div>
+<!-- Section Title: Risks -->
+<div class="mb-md mt-xl">
+<h2 class="font-headline-md text-headline-md text-on-surface">סיכונים (High Stakes)</h2>
+</div>
+<!-- Risk Card -->
+<div class="bg-surface border border-outline-variant rounded-xl p-md mb-md relative overflow-hidden">
+<div class="absolute inset-y-0 right-0 w-1 bg-error"></div>
+<div class="flex items-start gap-md">
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h3 class="font-title-lg text-title-lg text-on-surface">חוב טכני קריטי: Legacy API</h3>
+<span class="font-label-sm text-label-sm text-error bg-error-container px-2 py-0.5 rounded">High Priority</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-sm">המערכת הישנה צפויה להגיע לקצה גבול היכולת בעוד 14 ימים.</p>
+</div>
+</div>
+<div class="mt-md pt-md border-t border-outline-variant flex justify-end gap-sm">
+<button class="text-primary font-bold text-label-md px-md py-sm hover:bg-surface-container-high rounded transition-colors">סקירת דוח</button>
+<button class="bg-inverse-surface text-inverse-on-surface px-md py-sm rounded-lg font-bold text-label-md">טפל עכשיו</button>
+</div>
+</div>
+<!-- Section Title: Reviews -->
+<div class="mb-md mt-xl flex justify-between items-center">
+<h2 class="font-headline-md text-headline-md text-on-surface">ביקורות פתוחות</h2>
+<div class="flex items-center gap-xs">
+<span class="font-label-sm text-label-sm text-outline">Sorted by Relevance</span>
+<span class="material-symbols-outlined text-outline text-sm" data-icon="sort">sort</span>
+</div>
+</div>
+<!-- Bento Style Review Item -->
+<div class="grid grid-cols-2 gap-md mb-xl">
+<div class="bg-white border border-outline-variant rounded-xl p-md flex flex-col justify-between h-32">
+<span class="material-symbols-outlined text-secondary" data-icon="gavel">gavel</span>
+<span class="font-label-md text-label-md font-bold">רגולציה פיננסית</span>
+</div>
+<div class="bg-secondary-container border border-outline-variant rounded-xl p-md flex flex-col justify-between h-32">
+<span class="material-symbols-outlined text-on-secondary-container" data-icon="history">history</span>
+<span class="font-label-md text-label-md font-bold text-on-secondary-container">היסטוריית החלטות</span>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 bg-surface-container rounded-t-xl border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.05)] flex justify-around items-center h-20 px-4 pb-safe">
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:bg-surface-variant transition-transform cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+<span class="material-symbols-outlined" data-icon="play_circle">play_circle</span>
+<span class="font-label-md text-label-md mt-1">Operate</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:bg-surface-variant transition-transform cursor-pointer">
+<span class="material-symbols-outlined" data-icon="build">build</span>
+<span class="font-label-md text-label-md mt-1">Build</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 scale-95 transition-transform duration-150 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="mail" data-weight="fill" style="font-variation-settings: 'FILL' 1;">mail</span>
+<span class="font-label-md text-label-md mt-1 font-bold">Inbox</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:bg-surface-variant transition-transform cursor-pointer">
+<span class="material-symbols-outlined" data-icon="notifications_active">notifications_active</span>
+<span class="font-label-md text-label-md mt-1">Alerts</span>
+</div>
+</nav>
+<!-- Visual Polish: Background Elements -->
+<div class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none opacity-40">
+<div class="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-primary-fixed blur-[100px] rounded-full"></div>
+<div class="absolute bottom-[10%] left-[-10%] w-[300px] h-[300px] bg-secondary-fixed blur-[80px] rounded-full"></div>
+</div>
+<script>
+        // Micro-interaction for buttons
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('touchstart', function() {
+                this.classList.add('scale-[0.97]');
+            });
+            button.addEventListener('touchend', function() {
+                this.classList.remove('scale-[0.97]');
+            });
+        });
+    </script>
+</body></html>
