@@ -15,17 +15,17 @@ const nextConfig = {
     // Instance files live outside apps/executive-dashboard. Turbopack requires
     // repo-relative paths here (absolute paths break with "server relative imports").
     resolveAlias: {
-      '@active-instance/instance-seed': '../../instances/yoni-company/instance-seed.ts',
+      '@active-instance/instance-seed': '../../instances/automation-app/instance-seed.ts',
       '@active-instance/instance-connectors':
-        '../../instances/yoni-company/instance-connectors.ts',
+        '../../instances/automation-app/instance-connectors.ts',
       '@active-instance/project-registry-seed':
-        '../../instances/yoni-company/project-registry-seed.ts',
+        '../../instances/automation-app/project-registry-seed.ts',
       '@active-instance/project-executive-metadata':
-        '../../instances/yoni-company/project-executive-metadata.ts',
+        '../../instances/automation-app/project-executive-metadata.ts',
       '@active-instance/governance-policy':
-        '../../instances/yoni-company/governance-policy.ts',
+        '../../instances/automation-app/governance-policy.ts',
       '@active-instance/research-capability':
-        '../../instances/yoni-company/research-capability.ts',
+        '../../instances/automation-app/research-capability.ts',
     },
   },
   transpilePackages: [

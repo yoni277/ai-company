@@ -1,0 +1,14 @@
+{
+  "name": "@ai-company/instance-automation-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ai-company/database": "workspace:*",
+    "@ai-company/shared-types": "workspace:*",
+    "@ai-company/connector-framework": "workspace:*",
+    "@ai-company/connector-portfolio-intelligence": "workspace:*",
+    "@ai-company/connector-revenue": "workspace:*",
+    "@anthropic-ai/sdk": "^0.39.0"
+  }
+}

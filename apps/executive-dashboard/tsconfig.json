@@ -12,24 +12,24 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@active-instance/instance-seed": ["../../instances/yoni-company/instance-seed.ts"],
+      "@active-instance/instance-seed": ["../../instances/automation-app/instance-seed.ts"],
       "@active-instance/instance-connectors": [
-        "../../instances/yoni-company/instance-connectors.ts"
+        "../../instances/automation-app/instance-connectors.ts"
       ],
       "@active-instance/project-registry-seed": [
-        "../../instances/yoni-company/project-registry-seed.ts"
+        "../../instances/automation-app/project-registry-seed.ts"
       ],
       "@active-instance/project-executive-metadata": [
-        "../../instances/yoni-company/project-executive-metadata.ts"
+        "../../instances/automation-app/project-executive-metadata.ts"
       ],
       "@active-instance/instance-resolvers": [
-        "../../instances/yoni-company/instance-resolvers.ts"
+        "../../instances/automation-app/instance-resolvers.ts"
       ],
       "@active-instance/governance-policy": [
-        "../../instances/yoni-company/governance-policy.ts"
+        "../../instances/automation-app/governance-policy.ts"
       ],
       "@active-instance/research-capability": [
-        "../../instances/yoni-company/research-capability.ts"
+        "../../instances/automation-app/research-capability.ts"
       ],
       "@ai-company/shared-types": ["../../packages/shared-types/src"],
       "@ai-company/database": ["../../packages/database/src"],
@@ -53,7 +53,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "../../instances/yoni-company/**/*.ts"
+    "../../instances/automation-app/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }
