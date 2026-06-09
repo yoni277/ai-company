@@ -122,9 +122,11 @@ async function main() {
         .eq('id', id);
       if (error) throw new Error(`finalize failed: ${error.message}`);
     },
-    async insertAssignedWork(rows: AssignedWorkProposal[]) {
-      const { error } = await supa.from('assigned_work').insert(rows);
+    async insertAssignedWork(rows: AssignedWorkProposal[]): Promise<string[]> {
+      const payload = rows.map(({ decisionIndex: _drop, ...rest }) => rest);
+      const { data, error } = await supa.from('assigned_work').insert(payload).select('id');
       if (error) throw new Error(`insert assigned_work failed: ${error.message}`);
+      return (data ?? []).map((r) => r.id as string);
     },
   };
 

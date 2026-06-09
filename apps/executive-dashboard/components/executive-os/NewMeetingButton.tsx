@@ -39,18 +39,29 @@ export function NewMeetingButton({
   types,
   businesses,
   executives,
+  defaultSlug,
+  defaultParticipant,
+  label = 'New Meeting',
+  variant = 'secondary',
 }: {
   types: MeetingTypeOption[];
   businesses: BusinessOption[];
   executives: ExecutiveOption[];
+  defaultSlug?: string;
+  defaultParticipant?: string;
+  label?: string;
+  variant?: 'primary' | 'secondary' | 'ghost';
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [typeKey, setTypeKey] = useState(types[0]?.type ?? '');
-  const [slug, setSlug] = useState(businesses[0]?.slug ?? '');
+  const [slug, setSlug] = useState(defaultSlug ?? businesses[0]?.slug ?? '');
   const [topic, setTopic] = useState('');
-  const [participants, setParticipants] = useState<string[]>(types[0]?.defaultParticipants ?? []);
+  const [participants, setParticipants] = useState<string[]>(() => {
+    const base = types[0]?.defaultParticipants ?? [];
+    return defaultParticipant && !base.includes(defaultParticipant) ? [...base, defaultParticipant] : base;
+  });
   const [evidence, setEvidence] = useState<EvidenceOption[]>([]);
   const [selectedEvidence, setSelectedEvidence] = useState<number[]>([]);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -144,8 +155,8 @@ export function NewMeetingButton({
 
   return (
     <>
-      <ActionButton variant="secondary" startIcon={<PlusIcon className="h-4 w-4" />} onClick={() => setOpen(true)}>
-        New Meeting
+      <ActionButton variant={variant} startIcon={<PlusIcon className="h-4 w-4" />} onClick={() => setOpen(true)}>
+        {label}
       </ActionButton>
 
       {open && mounted

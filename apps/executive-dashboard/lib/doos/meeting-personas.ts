@@ -161,6 +161,8 @@ export interface SynthesisDecision {
   work_title: string;
   work_detail: string;
   due_in_days: number | null;
+  /** Stamped after the work row is inserted — the stable decision↔work link. */
+  assignedWorkId?: string | null;
 }
 
 export interface SynthesisResult {
