@@ -18,6 +18,7 @@ import {
   rejectWork,
   setWorkExecutionStatus,
   assembleAttentionQueue,
+  assembleWorkList,
   type WorkSpineStore,
   type ApprovableWork,
   type DecisionRequest,
@@ -25,11 +26,13 @@ import {
   type ApproveResult,
   type AttentionItem,
   type AttentionSourceRow,
+  type WorkListItem,
+  type WorkListDerivedFilter,
 } from './work-control-core';
 
 // Re-export the gate + error so existing importers (e.g. meetings.ts) are stable.
 export { assertApprovable, NeedsCeoCompletionError } from './work-control-core';
-export type { ApproveResult, AttentionItem } from './work-control-core';
+export type { ApproveResult, AttentionItem, WorkListItem } from './work-control-core';
 
 /** Now, as an ISO timestamptz — single source for every status stamp. */
 function nowISO(): string {
@@ -180,21 +183,13 @@ export async function loadCeoAttentionQueue(projectSlug?: string): Promise<Atten
   if (error) throw new Error(error.message);
   // WORK_COLUMNS is a runtime string, so PostgREST can't infer the row shape.
   const rows = (work ?? []) as unknown as AssignedWorkRow[];
+  const awaitingWorkIds = await fetchAwaitingWorkIds(supa, projectSlug);
+  return assembleAttentionQueue(rows.map(toSourceRow), awaitingWorkIds, nowISO());
+}
 
-  // L34: which instruction-sourced work is awaiting a CEO answer.
-  let instrQ = supa
-    .from('direct_instructions')
-    .select('linked_assigned_work_id')
-    .eq('awaiting_ceo_input', true);
-  if (projectSlug) instrQ = instrQ.eq('project_slug', projectSlug);
-  const { data: awaiting } = await instrQ;
-  const awaitingWorkIds = new Set(
-    (awaiting ?? [])
-      .map((a: { linked_assigned_work_id: string | null }) => a.linked_assigned_work_id)
-      .filter((x: string | null): x is string => Boolean(x)),
-  );
-
-  const source: AttentionSourceRow[] = rows.map((r) => ({
+/** Map a raw assigned_work row to the core's source-row shape. */
+function toSourceRow(r: AssignedWorkRow): AttentionSourceRow {
+  return {
     id: r.id,
     projectSlug: r.project_slug,
     sourceType: r.source_type,
@@ -208,9 +203,79 @@ export async function loadCeoAttentionQueue(projectSlug?: string): Promise<Atten
     reviewDate: r.review_date,
     createdAt: r.created_at,
     statusChangedAt: r.status_changed_at,
-  }));
+    detail: r.detail,
+    linkedTaskId: r.linked_task_id,
+    linkedDecisionId: r.linked_decision_id,
+  };
+}
 
-  return assembleAttentionQueue(source, awaitingWorkIds, nowISO());
+/** Fetch the set of assigned_work ids whose linked instruction is awaiting a CEO answer (L34). */
+async function fetchAwaitingWorkIds(
+  supa: ReturnType<typeof getSupabaseAdmin>,
+  projectSlug?: string,
+): Promise<Set<string>> {
+  let q = supa
+    .from('direct_instructions')
+    .select('linked_assigned_work_id')
+    .eq('awaiting_ceo_input', true);
+  if (projectSlug) q = q.eq('project_slug', projectSlug);
+  const { data } = await q;
+  return new Set(
+    (data ?? [])
+      .map((a: { linked_assigned_work_id: string | null }) => a.linked_assigned_work_id)
+      .filter((x: string | null): x is string => Boolean(x)),
+  );
+}
+
+/** Raw-column filters applied at the DB; derived filters applied post-classify. */
+export interface WorkListFilters {
+  projectSlug?: string;
+  ownerExecutiveId?: string;
+  sourceType?: string;
+  priority?: string;
+  approvalStatus?: string;
+  executionStatus?: string;
+  /** ISO date (YYYY-MM-DD) — keep rows with due_date <= / >= these. */
+  dueBefore?: string;
+  dueAfter?: string;
+  /** Derived (post-classify). */
+  states?: readonly WorkStateName[];
+  waitingOnCeo?: boolean;
+  blocked?: boolean;
+}
+
+type WorkStateName = WorkListItem['state'];
+
+/**
+ * AC7 — the master work list: every assigned_work row (all three source types),
+ * classified, aged, filtered. Raw-column filters narrow at the DB; derived-state
+ * filters (waiting-on-CEO, blocked, specific states) apply after classification.
+ * project_slug-scoped; empty business → []. Grouping is the UI's job.
+ */
+export async function loadWorkMasterList(filters: WorkListFilters = {}): Promise<WorkListItem[]> {
+  const supa = getSupabaseAdmin();
+  let q = supa.from('assigned_work').select(WORK_COLUMNS);
+  if (filters.projectSlug) q = q.eq('project_slug', filters.projectSlug);
+  if (filters.ownerExecutiveId) q = q.eq('owner_executive_id', filters.ownerExecutiveId);
+  if (filters.sourceType) q = q.eq('source_type', filters.sourceType);
+  if (filters.priority) q = q.eq('priority', filters.priority);
+  if (filters.approvalStatus) q = q.eq('approval_status', filters.approvalStatus);
+  if (filters.executionStatus) q = q.eq('execution_status', filters.executionStatus);
+  if (filters.dueBefore) q = q.lte('due_date', filters.dueBefore);
+  if (filters.dueAfter) q = q.gte('due_date', filters.dueAfter);
+
+  const { data: work, error } = await q;
+  if (error) throw new Error(error.message);
+  const rows = (work ?? []) as unknown as AssignedWorkRow[];
+
+  const awaitingWorkIds = await fetchAwaitingWorkIds(supa, filters.projectSlug);
+
+  const derived: WorkListDerivedFilter = {
+    ...(filters.states ? { states: filters.states } : {}),
+    ...(filters.waitingOnCeo ? { waitingOnCeo: true } : {}),
+    ...(filters.blocked ? { blocked: true } : {}),
+  };
+  return assembleWorkList(rows.map(toSourceRow), awaitingWorkIds, nowISO(), derived);
 }
 
 export interface NoOrphanAudit {
