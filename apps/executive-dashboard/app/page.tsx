@@ -27,24 +27,30 @@ import {
 } from '../components/ds';
 import { AIChiefOfStaffPanel } from '../components/ds/AIChiefOfStaffPanel';
 import { DecisionQueueItem } from '../components/executive-os/DecisionQueueItem';
-import { loadHomeData } from '../lib/executive-os';
+import { WorkInitiationBar } from '../components/executive-os/WorkInitiationBar';
+import { loadHomeData, loadExecutives } from '../lib/executive-os';
 
 export const dynamic = 'force-dynamic';
 
 export default async function RootHomePage() {
   const { briefing, queue, criticalRisks, wins, activity, projects, counts } =
     await loadHomeData();
+  const executives = loadExecutives();
 
   const [lead, ...rest] = queue;
 
   return (
     <div className="ds-surface min-h-screen rounded-lg px-md py-lg sm:px-lg">
       <div className="mx-auto max-w-5xl">
-        <header className="mb-xl">
-          <h1 className="font-display text-display text-on-surface">Home</h1>
-          <p className="mt-xs font-body-lg text-body-lg text-on-surface-variant">
-            Your company at a glance — decisions first.
-          </p>
+        <header className="mb-xl flex flex-wrap items-start justify-between gap-md">
+          <div>
+            <h1 className="font-display text-display text-on-surface">Home</h1>
+            <p className="mt-xs font-body-lg text-body-lg text-on-surface-variant">
+              Your company at a glance — decisions first.
+            </p>
+          </div>
+          {/* L29 — primary CEO input: assign work to the executive team */}
+          <WorkInitiationBar executives={executives} />
         </header>
 
         {/* Executive briefing — embeds the single most-urgent decision */}
