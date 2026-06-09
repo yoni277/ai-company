@@ -50,6 +50,7 @@ interface NavItem {
 const NAV: Record<Zone, NavItem[]> = {
   operate: [
     { href: '/', label: 'Dashboard', labelHe: 'לוח בקרה', Icon: DashboardIcon, ready: true },
+    { href: '/situation', label: 'Situation Room', labelHe: 'חדר מצב', Icon: ChartIcon, ready: true },
     { href: '/work', label: 'Work', labelHe: 'עבודה', Icon: LayersIcon, ready: true },
     { href: '/businesses', label: 'Businesses', labelHe: 'עסקים', Icon: BusinessIcon, ready: true },
     { href: '/executives', label: 'Executives', labelHe: 'הנהלה', Icon: BadgeIcon, ready: true },
