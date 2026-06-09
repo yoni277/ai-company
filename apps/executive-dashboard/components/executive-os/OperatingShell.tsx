@@ -51,6 +51,7 @@ const NAV: Record<Zone, NavItem[]> = {
   operate: [
     { href: '/', label: 'Dashboard', labelHe: 'לוח בקרה', Icon: DashboardIcon, ready: true },
     { href: '/businesses', label: 'Businesses', labelHe: 'עסקים', Icon: BusinessIcon, ready: true },
+    { href: '/executives', label: 'Executives', labelHe: 'הנהלה', Icon: BadgeIcon, ready: true },
     { href: '/inbox', label: 'Decisions', labelHe: 'החלטות', Icon: GavelIcon, ready: true },
     { href: '/meetings', label: 'Meetings', labelHe: 'ישיבות', Icon: UsersIcon, ready: true },
     { href: '/briefings', label: 'Briefings', labelHe: 'תדריכים', Icon: DocumentIcon, ready: true },

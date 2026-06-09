@@ -209,6 +209,35 @@ export async function loadExecutiveWorkspace(
   };
 }
 
+/** L31 §3 — CEO-curated memory. Composite-PK upsert (no dupes); scoped + audited. */
+export async function upsertExecutiveMemory(
+  executiveId: string,
+  projectSlug: string,
+  input: { currentStrategy: string | null; knownAssumptions: unknown[] },
+): Promise<void> {
+  if (!isExecId(executiveId)) throw new Error(`Unknown executive '${executiveId}'`);
+  const supa = getSupabaseAdmin();
+  const { data: biz } = await supa
+    .from('project_definitions')
+    .select('slug')
+    .eq('slug', projectSlug)
+    .eq('enabled', true)
+    .maybeSingle();
+  if (!biz) throw new Error(`Unknown or disabled business '${projectSlug}'`);
+  const { error } = await supa.from('executive_memory').upsert(
+    {
+      executive_id: executiveId,
+      project_slug: projectSlug,
+      current_strategy: input.currentStrategy,
+      known_assumptions: input.knownAssumptions,
+      updated_by: 'ceo',
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'executive_id,project_slug' },
+  );
+  if (error) throw new Error(error.message);
+}
+
 export interface ExecutiveDirectoryCard {
   executiveId: ExecId;
   executiveName: string;
