@@ -101,23 +101,28 @@ export async function listBusinessSlugs(): Promise<Array<{ slug: string; name: s
   return (data ?? []).map((r) => ({ slug: r.slug, name: r.name }));
 }
 
-/* ---- evidence picker options for a business ---- */
+/* ---- evidence picker options for a business (SERVER-scoped) ----
+ * Cross-tenant safety: scope strictly to this business. risks.project_id is a
+ * uuid → legacy projects(id), so resolve slug→id and filter. executive_reports
+ * carry no project column (company-wide), so they are NOT surfaced in a
+ * per-business picker — never rely on the client to scope evidence. */
 export async function listEvidenceOptions(projectSlug: string): Promise<EvidenceItem[]> {
   const supa = getSupabaseAdmin();
   const out: EvidenceItem[] = [];
-  const { data: risks } = await supa.from('risks').select('id, description, severity, status').limit(8);
+  const { data: proj } = await supa
+    .from('projects')
+    .select('id')
+    .eq('slug', projectSlug)
+    .maybeSingle();
+  if (!proj?.id) return out;
+  const { data: risks } = await supa
+    .from('risks')
+    .select('id, description, severity, status')
+    .eq('project_id', proj.id)
+    .limit(8);
   for (const r of risks ?? []) {
     out.push({ kind: 'risk', text: `[${r.severity}/${r.status}] ${r.description}`, ref: r.id });
   }
-  const { data: reports } = await supa
-    .from('executive_reports')
-    .select('id, executive_id, summary')
-    .order('created_at', { ascending: false })
-    .limit(5);
-  for (const rep of reports ?? []) {
-    out.push({ kind: 'report', text: `${rep.executive_id}: ${rep.summary}`, ref: rep.id });
-  }
-  void projectSlug;
   return out;
 }
 
@@ -134,6 +139,17 @@ export interface CreateMeetingInput {
 
 export async function createMeeting(input: CreateMeetingInput): Promise<{ id: string }> {
   const supa = getSupabaseAdmin();
+  // Server-side scope check: the meeting must target a registered, enabled
+  // business — never trust the wizard. (The FK already blocks unknown slugs;
+  // this also blocks disabled ones and gives a clean error.)
+  const { data: biz } = await supa
+    .from('project_definitions')
+    .select('slug')
+    .eq('slug', input.projectSlug)
+    .eq('enabled', true)
+    .maybeSingle();
+  if (!biz) throw new Error(`Unknown or disabled business '${input.projectSlug}'`);
+
   const { data: cfg, error: cfgErr } = await supa
     .from('meeting_type_configs')
     .select('default_participants, default_agenda')
@@ -310,17 +326,48 @@ export async function approveMeeting(
   const supa = getSupabaseAdmin();
   const { data: m, error } = await supa.from('meetings').select('*').eq('id', id).single();
   if (error || !m) throw new Error('meeting not found');
+  // State gate: only a summarized meeting (or one mid-approval) accepts verdicts.
+  // Blocks approving a meeting that hasn't deliberated, and a cancelled one.
+  if (m.status !== 'summarized' && m.status !== 'approved') {
+    throw new Error(`meeting is '${m.status}', not awaiting approval`);
+  }
   const decisions = (m.decisions ?? []) as SynthesisDecision[];
+
+  // Dedupe verdicts by decision index (last wins); drop out-of-range indexes.
+  const byIndex = new Map<number, 'approve' | 'reject'>();
+  for (const v of verdicts) {
+    if (Number.isInteger(v.index) && v.index >= 0 && v.index < decisions.length) {
+      byIndex.set(v.index, v.verdict);
+    }
+  }
+
+  // Stable per-decision → assigned_work row mapping by id (NOT by title, which
+  // can collide). Actionable+owned decisions, in order, line up with their
+  // still-proposed work rows, in created order.
+  const { data: workRows } = await supa
+    .from('assigned_work')
+    .select('id, created_at')
+    .eq('source_id', id)
+    .eq('source_type', 'meeting')
+    .eq('approval_status', 'proposed')
+    .order('created_at', { ascending: true });
+  const actionableOrder = decisions
+    .map((d, i) => (d.actionable && d.owner_executive_id ? i : -1))
+    .filter((i) => i >= 0);
 
   let approved = 0;
   let rejected = 0;
-  for (const v of verdicts) {
-    const d = decisions[v.index];
+  for (const [index, verdict] of byIndex) {
+    const d = decisions[index];
     if (!d) continue;
-    const workTitle = d.work_title || d.decision;
-    if (v.verdict === 'approve') {
+    const k = actionableOrder.indexOf(index);
+    const workId = k >= 0 ? (workRows?.[k]?.id as string | undefined) : undefined;
+    // Only act when there is still a proposed work row to gate — keeps the
+    // operation idempotent (a re-click on an already-decided item is a no-op).
+    if (!workId) continue;
+
+    if (verdict === 'approve') {
       approved += 1;
-      // Approval record — reuses the verified ceo_decisions writer.
       const decision = await createDecision({
         sourceActionId: null,
         projectId: m.project_slug,
@@ -332,30 +379,26 @@ export async function approveMeeting(
         priority: 'P2',
         notes: `Approved from meeting ${id}`,
       });
-      if (d.actionable && d.owner_executive_id) {
-        await supa
-          .from('assigned_work')
-          .update({ approval_status: 'approved', linked_decision_id: decision.id })
-          .eq('source_id', id)
-          .eq('source_type', 'meeting')
-          .eq('title', workTitle)
-          .eq('approval_status', 'proposed');
-      }
+      await supa
+        .from('assigned_work')
+        .update({ approval_status: 'approved', linked_decision_id: decision.id })
+        .eq('id', workId)
+        .eq('approval_status', 'proposed');
     } else {
       rejected += 1;
-      if (d.actionable && d.owner_executive_id) {
-        await supa
-          .from('assigned_work')
-          .update({ approval_status: 'rejected' })
-          .eq('source_id', id)
-          .eq('source_type', 'meeting')
-          .eq('title', workTitle)
-          .eq('approval_status', 'proposed');
-      }
+      await supa
+        .from('assigned_work')
+        .update({ approval_status: 'rejected' })
+        .eq('id', workId)
+        .eq('approval_status', 'proposed');
     }
   }
 
-  const status = approved > 0 ? 'approved' : rejected > 0 ? 'cancelled' : m.status;
+  // Skip the meeting write entirely when nothing changed state.
+  if (approved === 0 && rejected === 0) {
+    return { status: m.status, approved, rejected };
+  }
+  const status = approved > 0 ? 'approved' : 'cancelled';
   await supa
     .from('meetings')
     .update({ approved_by: 'ceo', approved_at: new Date().toISOString(), status })

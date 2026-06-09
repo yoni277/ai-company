@@ -47,7 +47,17 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
   if (!m) notFound();
 
   const rounds = Array.from(new Set(m.discussion.map((u) => u.round))).sort((a, b) => a - b);
-  const awaitingApproval = m.status === 'summarized';
+  // Per-decision work status — actionable+owned decisions line up (in order) with
+  // their proposed-work rows (created order), mirroring the approve route's
+  // stable mapping. Controls show only while a decision's work is still proposed.
+  const actionableIdxs = m.decisions
+    .map((d, i) => (d.actionable && d.owner_executive_id ? i : -1))
+    .filter((i) => i >= 0);
+  const workStatusFor = (i: number): string | null => {
+    const k = actionableIdxs.indexOf(i);
+    return k >= 0 ? m.proposedWork[k]?.approvalStatus ?? null : null;
+  };
+  const canApprove = m.status === 'summarized' || m.status === 'approved';
 
   return (
     <div className="ds-surface min-h-screen px-md py-lg sm:px-lg">
@@ -141,7 +151,20 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
                       → work for {nm(d.owner_executive_id)}: {d.work_title || d.decision}
                     </p>
                   ) : null}
-                  {awaitingApproval ? <MeetingApprovalControls meetingId={m.id} decisionIndex={i} /> : null}
+                  {(() => {
+                    const ws = workStatusFor(i);
+                    if (canApprove && ws === 'proposed') {
+                      return <MeetingApprovalControls meetingId={m.id} decisionIndex={i} />;
+                    }
+                    if (ws && ws !== 'proposed') {
+                      return (
+                        <p className="mt-sm font-label-md text-label-md text-on-surface-variant">
+                          Decision {ws === 'approved' ? 'approved ✓' : 'rejected'}
+                        </p>
+                      );
+                    }
+                    return null;
+                  })()}
                 </article>
               ))}
             </div>
