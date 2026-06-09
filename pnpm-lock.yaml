@@ -92,6 +92,9 @@ importers:
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
+      '@anthropic-ai/sdk':
+        specifier: ^0.39.0
+        version: 0.39.0
       '@supabase/supabase-js':
         specifier: ^2.45.4
         version: 2.107.0

@@ -34,6 +34,7 @@ import {
   BadgeIcon,
   LogoutIcon,
   PlusIcon,
+  UsersIcon,
 } from '../ds/icons';
 
 type Zone = 'operate' | 'build';
@@ -51,6 +52,7 @@ const NAV: Record<Zone, NavItem[]> = {
     { href: '/', label: 'Dashboard', labelHe: 'לוח בקרה', Icon: DashboardIcon, ready: true },
     { href: '/businesses', label: 'Businesses', labelHe: 'עסקים', Icon: BusinessIcon, ready: true },
     { href: '/inbox', label: 'Decisions', labelHe: 'החלטות', Icon: GavelIcon, ready: true },
+    { href: '/meetings', label: 'Meetings', labelHe: 'ישיבות', Icon: UsersIcon, ready: true },
     { href: '/briefings', label: 'Briefings', labelHe: 'תדריכים', Icon: DocumentIcon, ready: true },
     { href: '/evidence', label: 'Evidence', labelHe: 'ראיות', Icon: ShieldCheckIcon, ready: true },
     { href: '/results', label: 'Results', labelHe: 'תוצאות', Icon: ChartIcon, ready: true },

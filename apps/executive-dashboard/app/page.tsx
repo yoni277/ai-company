@@ -28,7 +28,9 @@ import {
 import { AIChiefOfStaffPanel } from '../components/ds/AIChiefOfStaffPanel';
 import { DecisionQueueItem } from '../components/executive-os/DecisionQueueItem';
 import { WorkInitiationBar } from '../components/executive-os/WorkInitiationBar';
+import { NewMeetingButton } from '../components/executive-os/NewMeetingButton';
 import { loadHomeData, loadExecutives } from '../lib/executive-os';
+import { listMeetingTypes, listBusinessSlugs } from '../lib/executive-os/meetings';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +38,7 @@ export default async function RootHomePage() {
   const { briefing, queue, criticalRisks, wins, activity, projects, counts } =
     await loadHomeData();
   const executives = loadExecutives();
+  const [meetingTypes, businesses] = await Promise.all([listMeetingTypes(), listBusinessSlugs()]);
 
   const [lead, ...rest] = queue;
 
@@ -49,8 +52,11 @@ export default async function RootHomePage() {
               Your company at a glance — decisions first.
             </p>
           </div>
-          {/* L29 — primary CEO input: assign work to the executive team */}
-          <WorkInitiationBar executives={executives} />
+          {/* L29 + L30 — the CEO's input controls: assign work, or convene a meeting */}
+          <div className="flex flex-wrap items-center gap-sm">
+            <WorkInitiationBar executives={executives} />
+            <NewMeetingButton types={meetingTypes} businesses={businesses} executives={executives} />
+          </div>
         </header>
 
         {/* Executive briefing — embeds the single most-urgent decision */}
