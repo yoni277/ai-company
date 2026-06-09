@@ -55,5 +55,5 @@
     ".next/types/**/*.ts",
     "../../instances/automation-app/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "scripts"]
 }
