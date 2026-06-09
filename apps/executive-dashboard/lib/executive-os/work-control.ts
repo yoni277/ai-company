@@ -3,17 +3,10 @@ import 'server-only';
 /**
  * EPIC-004A — Work Model Convergence (D079). Spec §4 Phase 2 / §5.
  *
- * The control layer over the assigned_work spine. Owns the three invariants the
- * data model must never violate, plus the headless selectors EPIC-004's screens
- * will read:
- *
- *   (1) No work reaches `approved` without a ceo_decisions row (the gate).
- *   (2) No work ACTIVATES (→approved) without an owner AND a date present
- *       (due_date or review_date). Dateless proposed work is the derived
- *       "Needs CEO Completion" state — surfaced, never silently approved (AC2).
- *   (3) Every approval_status / execution_status transition stamps
- *       status_changed_at = now() in the SAME write, so AC13 "days in current
- *       state" aging is accurate.
+ * The Supabase ADAPTER over the assigned_work spine. All pure control logic and
+ * the three invariants live in work-control-core.ts (unit-tested); this module
+ * binds them to the real service-role client + ceo_decisions writer, and hosts
+ * the headless read selectors (attention queue, no-orphan audit).
  *
  * Cloneable: zero business specifics, project_slug-scoped, generic entities.
  */
@@ -21,20 +14,22 @@ import 'server-only';
 import { getSupabaseAdmin } from '../doos/supabase-admin';
 import { createDecision } from '../ceo-operating-system';
 import {
-  classifyWork,
-  isAttentionState,
-  type WorkRowForState,
-  type WorkState,
-} from './work-state';
+  approveWork,
+  rejectWork,
+  setWorkExecutionStatus,
+  assembleAttentionQueue,
+  type WorkSpineStore,
+  type ApprovableWork,
+  type DecisionRequest,
+  type ExecutionStatus,
+  type ApproveResult,
+  type AttentionItem,
+  type AttentionSourceRow,
+} from './work-control-core';
 
-/** Thrown when an approval is attempted on work that is missing an owner or a date. */
-export class NeedsCeoCompletionError extends Error {
-  readonly code = 'NEEDS_CEO_COMPLETION';
-  constructor(message: string) {
-    super(message);
-    this.name = 'NeedsCeoCompletionError';
-  }
-}
+// Re-export the gate + error so existing importers (e.g. meetings.ts) are stable.
+export { assertApprovable, NeedsCeoCompletionError } from './work-control-core';
+export type { ApproveResult, AttentionItem } from './work-control-core';
 
 /** Now, as an ISO timestamptz — single source for every status stamp. */
 function nowISO(): string {
@@ -67,155 +62,115 @@ interface AssignedWorkRow {
   status_changed_at: string;
 }
 
-function toStateRow(r: AssignedWorkRow, awaitingCeoInput: boolean): WorkRowForState {
+/**
+ * Bind the pure orchestration to the real Supabase + ceo_decisions writer. Each
+ * mutating method always passes the injected `at` so status_changed_at is
+ * stamped on every transition (AC13).
+ */
+function supabaseStore(): WorkSpineStore {
+  const supa = getSupabaseAdmin();
   return {
-    approvalStatus: r.approval_status,
-    executionStatus: r.execution_status,
-    dueDate: r.due_date,
-    reviewDate: r.review_date,
-    createdAt: r.created_at,
-    statusChangedAt: r.status_changed_at,
-    awaitingCeoInput,
+    now: nowISO,
+    async getApprovable(workId: string): Promise<ApprovableWork | null> {
+      const { data, error } = await supa
+        .from('assigned_work')
+        .select(
+          'id, project_slug, title, detail, owner_executive_id, approval_status, due_date, review_date',
+        )
+        .eq('id', workId)
+        .single();
+      if (error || !data) return null;
+      return {
+        id: data.id,
+        projectSlug: data.project_slug,
+        title: data.title,
+        detail: data.detail ?? null,
+        ownerExecutiveId: data.owner_executive_id ?? null,
+        approvalStatus: data.approval_status,
+        dueDate: data.due_date ?? null,
+        reviewDate: data.review_date ?? null,
+      };
+    },
+    async createDecision(input: DecisionRequest): Promise<{ id: string }> {
+      const decision = await createDecision({
+        sourceActionId: null,
+        projectId: input.projectId,
+        decisionTitle: input.decisionTitle,
+        decisionDescription: input.decisionDescription,
+        decisionStatus: 'approved',
+        owner: input.owner,
+        dueDate: input.dueDate,
+        priority: 'P2',
+        ...(input.notes ? { notes: input.notes } : {}),
+      });
+      return { id: decision.id };
+    },
+    async markApproved(workId: string, decisionId: string, at: string): Promise<void> {
+      const { error } = await supa
+        .from('assigned_work')
+        .update({ approval_status: 'approved', linked_decision_id: decisionId, status_changed_at: at })
+        .eq('id', workId)
+        .eq('approval_status', 'proposed');
+      if (error) throw new Error(error.message);
+    },
+    async markRejected(workId: string, at: string): Promise<void> {
+      const { error } = await supa
+        .from('assigned_work')
+        .update({ approval_status: 'rejected', status_changed_at: at })
+        .eq('id', workId)
+        .eq('approval_status', 'proposed');
+      if (error) throw new Error(error.message);
+    },
+    async setExecution(
+      workId: string,
+      to: ExecutionStatus,
+      at: string,
+      expectFrom?: string,
+    ): Promise<void> {
+      let q = supa
+        .from('assigned_work')
+        .update({ execution_status: to, status_changed_at: at })
+        .eq('id', workId);
+      if (expectFrom) q = q.eq('execution_status', expectFrom);
+      const { error } = await q;
+      if (error) throw new Error(error.message);
+    },
   };
 }
 
-/**
- * The gate that protects activation (AC1/AC2). Throws NeedsCeoCompletionError
- * when the row cannot honestly be approved. Callers approving in a batch (e.g.
- * meeting approval) catch this per-row and skip, rather than failing the batch.
- */
-export function assertApprovable(row: {
-  owner_executive_id: string | null;
-  due_date: string | null;
-  review_date: string | null;
-}): void {
-  const missingOwner = !row.owner_executive_id;
-  const missingDate = !row.due_date && !row.review_date;
-  if (missingOwner || missingDate) {
-    const missing = [missingOwner ? 'an owner' : null, missingDate ? 'a date or review checkpoint' : null]
-      .filter(Boolean)
-      .join(' and ');
-    throw new NeedsCeoCompletionError(
-      `Needs CEO completion: set ${missing} before this work can be approved.`,
-    );
-  }
-}
-
-export interface ApproveResult {
-  workId: string;
-  decisionId: string;
-}
-
-/**
- * Approve a single assigned_work row through the ceo_decisions gate. Generic
- * across source_type (directive / meeting / instruction). Enforces the gate,
- * writes the decision audit row, flips proposed→approved, and stamps
- * status_changed_at. Idempotent: only acts while the row is still `proposed`.
- */
+/** Approve a single assigned_work row through the ceo_decisions gate (AC1/AC2/AC13). */
 export async function approveAssignedWork(
   workId: string,
   opts?: { notes?: string },
 ): Promise<ApproveResult> {
-  const supa = getSupabaseAdmin();
-  const { data: row, error } = await supa
-    .from('assigned_work')
-    .select('id, project_slug, title, detail, owner_executive_id, approval_status, due_date, review_date')
-    .eq('id', workId)
-    .single();
-  if (error || !row) throw new Error('assigned_work not found');
-  if (row.approval_status !== 'proposed') {
-    throw new Error(`work is '${row.approval_status}', not awaiting approval`);
-  }
-
-  assertApprovable(row);
-
-  const decision = await createDecision({
-    sourceActionId: null,
-    projectId: row.project_slug,
-    decisionTitle: row.title,
-    decisionDescription: row.detail ?? null,
-    decisionStatus: 'approved',
-    owner: row.owner_executive_id ?? null,
-    dueDate: row.due_date ?? null,
-    priority: 'P2',
-    ...(opts?.notes ? { notes: opts.notes } : {}),
-  });
-
-  const { error: uErr } = await supa
-    .from('assigned_work')
-    .update({
-      approval_status: 'approved',
-      linked_decision_id: decision.id,
-      status_changed_at: nowISO(),
-    })
-    .eq('id', workId)
-    .eq('approval_status', 'proposed');
-  if (uErr) throw new Error(uErr.message);
-
-  return { workId, decisionId: decision.id };
+  return approveWork(supabaseStore(), workId, opts);
 }
 
 /** Reject a proposed work row. Stamps status_changed_at. */
 export async function rejectAssignedWork(workId: string): Promise<void> {
-  const supa = getSupabaseAdmin();
-  const { error } = await supa
-    .from('assigned_work')
-    .update({ approval_status: 'rejected', status_changed_at: nowISO() })
-    .eq('id', workId)
-    .eq('approval_status', 'proposed');
-  if (error) throw new Error(error.message);
+  await rejectWork(supabaseStore(), workId);
 }
 
 /**
  * Transition execution_status (open → in_progress → blocked/done/cancelled).
- * The ONLY supported way to move execution_status — always stamps
- * status_changed_at so aging stays correct. `expectFrom` makes the write a
- * no-op when the row already moved (idempotent re-clicks / races).
+ * Always stamps status_changed_at. `expectFrom` guards races / idempotent re-clicks.
  */
 export async function setExecutionStatus(
   workId: string,
-  to: 'open' | 'in_progress' | 'blocked' | 'done' | 'cancelled',
+  to: ExecutionStatus,
   opts?: { expectFrom?: string },
 ): Promise<void> {
-  const supa = getSupabaseAdmin();
-  let q = supa
-    .from('assigned_work')
-    .update({ execution_status: to, status_changed_at: nowISO() })
-    .eq('id', workId);
-  if (opts?.expectFrom) q = q.eq('execution_status', opts.expectFrom);
-  const { error } = await q;
-  if (error) throw new Error(error.message);
+  await setWorkExecutionStatus(supabaseStore(), workId, to, opts);
 }
 
 /* ----------------------------------------------------------------------------
- * Phase 4 — headless selectors (AC9/AC11/AC12). Read-only over the spine.
+ * Phase 4 — headless read selectors (AC9/AC11/AC12).
  * -------------------------------------------------------------------------- */
 
-export interface AttentionItem {
-  id: string;
-  projectSlug: string;
-  sourceType: string;
-  sourceId: string;
-  ownerExecutiveId: string | null;
-  title: string;
-  priority: string;
-  state: WorkState;
-  ageDays: number;
-  daysInCurrentState: number;
-  dueDate: string | null;
-  reviewDate: string | null;
-}
-
-function priorityRank(p: string): number {
-  const m = /^P(\d+)$/.exec(p);
-  return m && m[1] ? Number(m[1]) : 99;
-}
-
 /**
- * AC12 — the unified CEO Attention Queue: one query returning every work row in
- * an attention state (needs-completion · awaiting-approval · awaiting-CEO-input
- * · blocked · overdue), project_slug-scoped, ordered by priority then by how
- * long it has been stuck. Empty-state-valid: a fresh business yields [].
+ * AC12 — the unified CEO Attention Queue. Fetches the spine (project_slug-scoped)
+ * + the L34 awaiting-CEO-input set, then delegates classification/sort to the
+ * pure assembler. Empty-state-valid: a fresh business yields [].
  */
 export async function loadCeoAttentionQueue(projectSlug?: string): Promise<AttentionItem[]> {
   const supa = getSupabaseAdmin();
@@ -239,33 +194,23 @@ export async function loadCeoAttentionQueue(projectSlug?: string): Promise<Atten
       .filter((x: string | null): x is string => Boolean(x)),
   );
 
-  const now = nowISO();
-  const items: AttentionItem[] = [];
-  for (const r of rows) {
-    const { state, aging } = classifyWork(toStateRow(r, awaitingWorkIds.has(r.id)), now);
-    if (!isAttentionState(state)) continue;
-    items.push({
-      id: r.id,
-      projectSlug: r.project_slug,
-      sourceType: r.source_type,
-      sourceId: r.source_id,
-      ownerExecutiveId: r.owner_executive_id,
-      title: r.title,
-      priority: r.priority,
-      state,
-      ageDays: aging.ageDays,
-      daysInCurrentState: aging.daysInCurrentState,
-      dueDate: r.due_date,
-      reviewDate: r.review_date,
-    });
-  }
+  const source: AttentionSourceRow[] = rows.map((r) => ({
+    id: r.id,
+    projectSlug: r.project_slug,
+    sourceType: r.source_type,
+    sourceId: r.source_id,
+    ownerExecutiveId: r.owner_executive_id,
+    title: r.title,
+    priority: r.priority,
+    approvalStatus: r.approval_status,
+    executionStatus: r.execution_status,
+    dueDate: r.due_date,
+    reviewDate: r.review_date,
+    createdAt: r.created_at,
+    statusChangedAt: r.status_changed_at,
+  }));
 
-  items.sort(
-    (a, b) =>
-      priorityRank(a.priority) - priorityRank(b.priority) ||
-      b.daysInCurrentState - a.daysInCurrentState,
-  );
-  return items;
+  return assembleAttentionQueue(source, awaitingWorkIds, nowISO());
 }
 
 export interface NoOrphanAudit {
