@@ -93,3 +93,106 @@ export function SparkIcon(props: IconProps) {
     </svg>
   );
 }
+
+/* --- v2 sidebar / chrome glyphs (P056-v2) --------------------------------- */
+
+export function DashboardIcon(props: IconProps) {
+  return (
+    <svg {...BASE} {...props}>
+      <rect x="3" y="3" width="7" height="9" rx="1" />
+      <rect x="14" y="3" width="7" height="5" rx="1" />
+      <rect x="14" y="12" width="7" height="9" rx="1" />
+      <rect x="3" y="16" width="7" height="5" rx="1" />
+    </svg>
+  );
+}
+
+export function BusinessIcon(props: IconProps) {
+  return (
+    <svg {...BASE} {...props}>
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <path d="M3 12h18" />
+    </svg>
+  );
+}
+
+export function GavelIcon(props: IconProps) {
+  return (
+    <svg {...BASE} {...props}>
+      <path d="m14 4 6 6M16 2l6 6-3 3-6-6 3-3Z" />
+      <path d="m11 7-7 7M2 22h8M4.5 14.5l5 5" />
+    </svg>
+  );
+}
+
+export function DocumentIcon(props: IconProps) {
+  return (
+    <svg {...BASE} {...props}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 3v5h5M9 13h6M9 17h6" />
+    </svg>
+  );
+}
+
+export function ShieldCheckIcon(props: IconProps) {
+  return (
+    <svg {...BASE} {...props}>
+      <path d="M12 3 5 6v5c0 4.4 3 7.8 7 9 4-1.2 7-4.6 7-9V6Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
+export function ChartIcon(props: IconProps) {
+  return (
+    <svg {...BASE} {...props}>
+      <path d="M3 3v18h18" />
+      <path d="M7 15l3-4 3 3 4-6" />
+    </svg>
+  );
+}
+
+export function LayersIcon(props: IconProps) {
+  return (
+    <svg {...BASE} {...props}>
+      <path d="m12 3 9 5-9 5-9-5 9-5Z" />
+      <path d="m3 13 9 5 9-5M3 18l9 5 9-5" />
+    </svg>
+  );
+}
+
+export function BadgeIcon(props: IconProps) {
+  return (
+    <svg {...BASE} {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="2" />
+      <path d="M14 9h4M14 13h4M6 15c.7-1.3 1.8-2 3-2s2.3.7 3 2" />
+    </svg>
+  );
+}
+
+export function LogoutIcon(props: IconProps) {
+  return (
+    <svg {...BASE} {...props}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="M16 17l5-5-5-5M21 12H9" />
+    </svg>
+  );
+}
+
+export function ChevronEndIcon(props: IconProps) {
+  return (
+    <svg {...BASE} {...props}>
+      <path d="m9 6 6 6-6 6" />
+    </svg>
+  );
+}
+
+export function PlusIcon(props: IconProps) {
+  return (
+    <svg {...BASE} {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}

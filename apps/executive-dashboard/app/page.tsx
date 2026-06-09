@@ -27,7 +27,6 @@ import {
 } from '../components/ds';
 import { AIChiefOfStaffPanel } from '../components/ds/AIChiefOfStaffPanel';
 import { DecisionQueueItem } from '../components/executive-os/DecisionQueueItem';
-import { LocaleToggle } from '../components/executive-os/LocaleToggle';
 import { loadHomeData } from '../lib/executive-os';
 
 export const dynamic = 'force-dynamic';
@@ -41,14 +40,11 @@ export default async function RootHomePage() {
   return (
     <div className="ds-surface min-h-screen rounded-lg px-md py-lg sm:px-lg">
       <div className="mx-auto max-w-5xl">
-        <header className="mb-xl flex flex-wrap items-end justify-between gap-md">
-          <div>
-            <h1 className="font-display text-display text-on-surface">Home</h1>
-            <p className="mt-xs font-body-lg text-body-lg text-on-surface-variant">
-              Your company at a glance — decisions first.
-            </p>
-          </div>
-          <LocaleToggle />
+        <header className="mb-xl">
+          <h1 className="font-display text-display text-on-surface">Home</h1>
+          <p className="mt-xs font-body-lg text-body-lg text-on-surface-variant">
+            Your company at a glance — decisions first.
+          </p>
         </header>
 
         {/* Executive briefing — embeds the single most-urgent decision */}

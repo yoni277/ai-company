@@ -15,7 +15,6 @@ import type { ReactNode } from 'react';
 import { StatusBadge, Surface } from '../../components/ds';
 import { DecisionQueueItem } from '../../components/executive-os/DecisionQueueItem';
 import { ExpandableDetail } from '../../components/executive-os/ExpandableDetail';
-import { LocaleToggle } from '../../components/executive-os/LocaleToggle';
 import { loadInboxData } from '../../lib/executive-os';
 
 export const dynamic = 'force-dynamic';
@@ -26,14 +25,11 @@ export default async function InboxPage() {
   return (
     <div className="ds-surface min-h-screen rounded-lg px-md py-lg sm:px-lg">
       <div className="mx-auto max-w-4xl">
-        <header className="mb-xl flex flex-wrap items-end justify-between gap-md">
-          <div>
-            <h1 className="font-display text-display text-on-surface">Inbox</h1>
-            <p className="mt-xs font-body-lg text-body-lg text-on-surface-variant">
-              Every decision waiting on you — approve, reject, or ask for more.
-            </p>
-          </div>
-          <LocaleToggle />
+        <header className="mb-xl">
+          <h1 className="font-display text-display text-on-surface">Inbox</h1>
+          <p className="mt-xs font-body-lg text-body-lg text-on-surface-variant">
+            Every decision waiting on you — approve, reject, or ask for more.
+          </p>
         </header>
 
         {/* Decision queue */}

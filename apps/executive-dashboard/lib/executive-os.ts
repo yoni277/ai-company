@@ -21,13 +21,14 @@ import 'server-only';
 
 import type {
   CEODecision,
+  ReportType,
   Risk,
   RiskSeverity,
   Task,
   TaskProposalRecord,
 } from '@ai-company/shared-types';
 import { getPlatform } from './platform';
-import { listDecisions } from './ceo-operating-system';
+import { listDecisions, listActiveDirectives } from './ceo-operating-system';
 import { loadProjectRegistryView } from './project-registry';
 import { loadPortfolioIntelligenceForDashboard } from './portfolio-intelligence';
 import {
@@ -352,4 +353,565 @@ export interface InboxData {
 export async function loadInboxData(): Promise<InboxData> {
   const [queue, risks] = await Promise.all([loadDecisionQueue(), loadOpenRisks()]);
   return { queue, risks };
+}
+
+/* ===========================================================================
+ * P056-v2 — Businesses (registry-driven; retires legacy /projects)
+ * Source: project_definitions (+ funnel/connector configs) + health engine,
+ * per v2-DATA-MAPPING.md. NEVER the legacy `projects` table.
+ * ======================================================================== */
+
+export interface BusinessFunnelStage {
+  id: string;
+  label: string;
+  state: 'completed' | 'active' | 'upcoming';
+}
+
+export interface BusinessRow {
+  name: string;
+  slug: string;
+  description: string;
+  lifecycle: string;
+  health: HealthState;
+  bottleneck: string | null;
+  openRecommendations: number;
+  /** Per-business open-risk count (risks.projectId match). */
+  risks: number;
+  /** Per-business decision count (ceo_decisions.projectId match). */
+  decisions: number;
+  /** Funnel stages from project_funnel_stages, oldest→newest. */
+  stages: BusinessFunnelStage[];
+  activeStageLabel: string | null;
+}
+
+export async function loadBusinesses(): Promise<BusinessRow[]> {
+  const { repos } = getPlatform();
+  const { portfolio } = await loadPortfolioIntelligenceForDashboard();
+  const [registry, decisions, risks] = await Promise.all([
+    loadProjectRegistryView(portfolio),
+    listDecisions(),
+    repos.risks.listOpen(),
+  ]);
+
+  return registry.projects
+    // A "business" is an enabled registry entry. Disabled/archived defs are
+    // hidden from the portfolio view (still in the registry, not surfaced here).
+    .filter((row) => row.project.definition.enabled)
+    .map((row): BusinessRow => {
+      const def = row.project.definition;
+      const keys = new Set<string>([def.id, def.slug]);
+      const decisionCount = decisions.filter(
+        (d) => d.projectId != null && keys.has(d.projectId),
+      ).length;
+      const riskCount = risks.filter((r) => keys.has(r.projectId)).length;
+
+      const counts = row.project.funnel.mockStageCounts ?? {};
+      const ordered = [...row.project.funnel.stages].sort((a, b) => a.order - b.order);
+      // The furthest stage with recorded activity is "active"; earlier stages
+      // are completed, later are upcoming. With no counts (e.g. zero-state DB)
+      // every stage reads upcoming — empty-state-valid, never fabricated.
+      let activeIdx = -1;
+      ordered.forEach((s, i) => {
+        if ((counts[s.id] ?? 0) > 0) activeIdx = i;
+      });
+      const stages: BusinessFunnelStage[] = ordered.map((s, i) => ({
+        id: s.id,
+        label: s.label,
+        state: i < activeIdx ? 'completed' : i === activeIdx ? 'active' : 'upcoming',
+      }));
+
+      return {
+        name: def.name,
+        slug: def.slug,
+        description: def.description,
+        lifecycle: def.status,
+        health: healthStateFromFunnel(row.funnelHealth),
+        bottleneck: row.bottleneck,
+        openRecommendations: row.openRecommendations,
+        risks: riskCount,
+        decisions: decisionCount,
+        stages,
+        activeStageLabel: activeIdx >= 0 ? (ordered[activeIdx]?.label ?? null) : null,
+      };
+    });
+}
+
+/* ===========================================================================
+ * P056-v2 step 3 — Business Detail (/businesses/[slug])
+ * Per v2-DATA-MAPPING.md: funnel (registry) · decisions/risks (HAVE, by
+ * projectId) · evidence/results (HAVE, via the directive→task chain:
+ * directive.targetProjectId → tasks → evidence_tokens / task_outcomes) ·
+ * connectors (project_connector_configs) · timeline (union of created_at).
+ * All registry / HAVE / DERIVED — no new data model.
+ * ======================================================================== */
+
+const DETAIL_TASK_CAP = 40;
+const DETAIL_LIST_CAP = 24;
+
+export interface ConnectorView {
+  type: string;
+  enabled: boolean;
+  liveCapable: boolean;
+}
+
+export interface EvidenceView {
+  id: string;
+  taskTitle: string;
+  tier: string;
+  evidenceKind: string;
+  createdAt: string;
+  verified: boolean;
+}
+
+export interface ResultView {
+  id: string;
+  taskTitle: string;
+  metricName: string;
+  metricUnit: string | null;
+  baselineValue: number;
+  observedValue: number;
+  delta: number;
+  direction: string;
+  observedAt: string;
+}
+
+export interface BusinessDetail {
+  name: string;
+  slug: string;
+  description: string;
+  lifecycle: string;
+  health: HealthState;
+  bottleneck: string | null;
+  openRecommendations: number;
+  stages: BusinessFunnelStage[];
+  activeStageLabel: string | null;
+  connector: ConnectorView | null;
+  decisions: QueueItem[];
+  risks: RiskRow[];
+  evidence: EvidenceView[];
+  results: ResultView[];
+  timeline: ActivityItem[];
+  counts: { decisions: number; risks: number; evidence: number; results: number };
+}
+
+/** Returns null when no enabled business matches the slug (→ 404 at the page). */
+export async function loadBusinessDetail(slug: string): Promise<BusinessDetail | null> {
+  const { repos } = getPlatform();
+  const { portfolio } = await loadPortfolioIntelligenceForDashboard();
+  const registry = await loadProjectRegistryView(portfolio);
+
+  const row = registry.projects.find(
+    (r) => r.project.definition.slug === slug && r.project.definition.enabled,
+  );
+  if (!row) return null;
+
+  const def = row.project.definition;
+  const keys = new Set<string>([def.id, def.slug]);
+
+  const [allDecisions, openRisks, allDirectives, projects] = await Promise.all([
+    listDecisions(),
+    repos.risks.listOpen(),
+    listActiveDirectives(),
+    repos.projects.list(),
+  ]);
+
+  const namer = buildProjectNamer(projects);
+
+  // Decisions waiting on the CEO for this business (proposed only — the
+  // detail's "Pending Decisions"; full history lives on the Decisions screen).
+  const decisions = allDecisions
+    .filter((d) => d.projectId != null && keys.has(d.projectId) && d.decisionStatus === 'proposed')
+    .map(decisionToItem);
+
+  const risks = openRisks.filter((r) => keys.has(r.projectId)).map((r) => riskToRow(r, namer));
+
+  // Evidence + results: directive(targetProjectId) → tasks → evidence/outcomes.
+  const directives = allDirectives.filter(
+    (d) => d.targetProjectId != null && keys.has(d.targetProjectId),
+  );
+  const taskLists = await Promise.all(
+    directives.map((d) => repos.tasks.list({ directiveId: d.id })),
+  );
+  const tasks = taskLists.flat().slice(0, DETAIL_TASK_CAP);
+  const taskTitle = new Map(tasks.map((t) => [t.id, t.title]));
+
+  const [evidencePerTask, outcomesPerTask] = await Promise.all([
+    Promise.all(tasks.map((t) => repos.evidenceTokens.listByTask(t.id))),
+    Promise.all(tasks.map((t) => repos.taskOutcomes.listByTask(t.id))),
+  ]);
+
+  const evidence: EvidenceView[] = evidencePerTask
+    .flat()
+    .map((e) => ({
+      id: e.id,
+      taskTitle: taskTitle.get(e.taskId) ?? 'Task',
+      tier: e.tier,
+      evidenceKind: e.evidenceKind,
+      createdAt: e.createdAt,
+      verified: e.verifiedAt != null,
+    }))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, DETAIL_LIST_CAP);
+
+  const results: ResultView[] = outcomesPerTask
+    .flat()
+    .map((o) => ({
+      id: o.id,
+      taskTitle: taskTitle.get(o.taskId) ?? 'Task',
+      metricName: o.metricName,
+      metricUnit: o.metricUnit,
+      baselineValue: o.baselineValue,
+      observedValue: o.observedValue,
+      delta: o.delta,
+      direction: o.direction,
+      observedAt: o.observedAt,
+    }))
+    .sort((a, b) => b.observedAt.localeCompare(a.observedAt))
+    .slice(0, DETAIL_LIST_CAP);
+
+  // Timeline: union of created_at across this business's records. Built from the
+  // raw rows (QueueItem/RiskRow drop created_at) so the ordering is real.
+  const rawTimeline: ActivityItem[] = [];
+  for (const d of allDecisions) {
+    if (d.projectId != null && keys.has(d.projectId)) {
+      rawTimeline.push({ id: `dec-${d.id}`, kind: 'Decision', label: d.decisionTitle, at: d.createdAt });
+    }
+  }
+  for (const r of openRisks) {
+    if (keys.has(r.projectId)) {
+      rawTimeline.push({
+        id: `risk-${r.id}`,
+        kind: 'Risk',
+        label: r.description,
+        at: r.createdAt,
+        health: SEVERITY_STATE[r.severity],
+      });
+    }
+  }
+  for (const e of evidence) {
+    rawTimeline.push({ id: `ev-${e.id}`, kind: 'Evidence', label: `${e.evidenceKind} · ${e.taskTitle}`, at: e.createdAt });
+  }
+  for (const o of results) {
+    rawTimeline.push({ id: `res-${o.id}`, kind: 'Result', label: `${o.metricName} ${o.baselineValue}→${o.observedValue}`, at: o.observedAt, health: 'healthy' });
+  }
+  const orderedTimeline = rawTimeline
+    .sort((a, b) => b.at.localeCompare(a.at))
+    .slice(0, DETAIL_LIST_CAP);
+
+  const c = row.project.connector;
+  const connector: ConnectorView | null = c
+    ? { type: c.connectorType, enabled: c.enabled, liveCapable: c.liveCapable }
+    : null;
+
+  return {
+    name: def.name,
+    slug: def.slug,
+    description: def.description,
+    lifecycle: def.status,
+    health: healthStateFromFunnel(row.funnelHealth),
+    bottleneck: row.bottleneck,
+    openRecommendations: row.openRecommendations,
+    stages: buildStages(row.project.funnel),
+    activeStageLabel: activeStageLabelOf(row.project.funnel),
+    connector,
+    decisions,
+    risks,
+    evidence,
+    results,
+    timeline: orderedTimeline,
+    counts: {
+      decisions: decisions.length,
+      risks: risks.length,
+      evidence: evidence.length,
+      results: results.length,
+    },
+  };
+}
+
+/** Shared funnel-stage derivation (also used by loadBusinesses). */
+function buildStages(funnel: {
+  stages: { id: string; label: string; order: number }[];
+  mockStageCounts: Record<string, number>;
+}): BusinessFunnelStage[] {
+  const counts = funnel.mockStageCounts ?? {};
+  const ordered = [...funnel.stages].sort((a, b) => a.order - b.order);
+  let activeIdx = -1;
+  ordered.forEach((s, i) => {
+    if ((counts[s.id] ?? 0) > 0) activeIdx = i;
+  });
+  return ordered.map((s, i) => ({
+    id: s.id,
+    label: s.label,
+    state: i < activeIdx ? 'completed' : i === activeIdx ? 'active' : 'upcoming',
+  }));
+}
+
+function activeStageLabelOf(funnel: {
+  stages: { id: string; label: string; order: number }[];
+  mockStageCounts: Record<string, number>;
+}): string | null {
+  const counts = funnel.mockStageCounts ?? {};
+  const ordered = [...funnel.stages].sort((a, b) => a.order - b.order);
+  let label: string | null = null;
+  ordered.forEach((s) => {
+    if ((counts[s.id] ?? 0) > 0) label = s.label;
+  });
+  return label;
+}
+
+/* ===========================================================================
+ * P056-v2 step 4 — Briefings (/briefings)
+ * Source: executive_reports (summary + body jsonb) via repos.reports.list
+ * (v2-DATA-MAPPING.md). Summary-first; body revealed on expand. Confidence is
+ * NEW-FIELD — omitted (not fabricated), to be back-filled in Wave-2E.
+ * ======================================================================== */
+
+export interface BriefingView {
+  id: string;
+  executiveId: string;
+  executiveName: string;
+  reportType: ReportType;
+  summary: string;
+  /** body.headline when present (e.g. ChiefOfStaffOutput); else null. */
+  headline: string | null;
+  createdAt: string;
+  /** Raw report body (jsonb) — rendered defensively on expand. */
+  body: unknown;
+}
+
+/* ===========================================================================
+ * P056-v2 step 6 — Results (/results)
+ * Source: task_outcomes (outcome cards) + objective_outcomes (objectives →
+ * measured outcomes), per v2-DATA-MAPPING.md. Repos expose per-task /
+ * per-objective reads only, so we aggregate server-side. Business attribution
+ * runs through the task → directive(targetProjectId) → project chain. All
+ * HAVE / DERIVED.
+ * ======================================================================== */
+
+const RESULTS_TASK_SCAN_CAP = 300;
+
+export interface OutcomeCardView {
+  id: string;
+  metricName: string;
+  metricUnit: string | null;
+  business: string | null;
+  baselineValue: number;
+  observedValue: number;
+  delta: number;
+  direction: string;
+  owner: string;
+  observedAt: string;
+  taskTitle: string;
+}
+
+export interface ObjectiveOutcomeView {
+  id: string;
+  name: string;
+  metricUnit: string | null;
+  baselineValue: number | null;
+  targetValue: number | null;
+  currentValue: number | null;
+  status: string;
+  lastMeasuredAt: string | null;
+}
+
+export interface ObjectiveWithOutcomes {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  targetOutcomeSummary: string | null;
+  outcomes: ObjectiveOutcomeView[];
+}
+
+export interface ResultsData {
+  cards: OutcomeCardView[];
+  objectives: ObjectiveWithOutcomes[];
+  highlights: { totalOutcomes: number; improved: number; objectivesMeasured: number };
+  totalCards: number;
+  shownCards: number;
+  truncated: boolean;
+}
+
+export async function loadResults(cardLimit = 60): Promise<ResultsData> {
+  const { repos } = getPlatform();
+  const [tasks, directives, projects, objectives] = await Promise.all([
+    repos.tasks.list(),
+    listActiveDirectives(),
+    repos.projects.list(),
+    repos.objectives.list(),
+  ]);
+
+  const namer = buildProjectNamer(projects);
+  const dirTarget = new Map(directives.map((d) => [d.id, d.targetProjectId]));
+  const scanned = tasks.slice(0, RESULTS_TASK_SCAN_CAP);
+  const businessOf = (directiveId: string | null): string | null => {
+    if (!directiveId) return null;
+    const pid = dirTarget.get(directiveId);
+    return pid ? namer(pid) : null;
+  };
+
+  // Outcome cards from task_outcomes.
+  const perTask = await Promise.all(
+    scanned.map(async (t) => {
+      const outcomes = await repos.taskOutcomes.listByTask(t.id);
+      return outcomes.map((o): OutcomeCardView => ({
+        id: o.id,
+        metricName: o.metricName,
+        metricUnit: o.metricUnit,
+        business: businessOf(t.directiveId),
+        baselineValue: o.baselineValue,
+        observedValue: o.observedValue,
+        delta: o.delta,
+        direction: o.direction,
+        owner: o.recordedBy,
+        observedAt: o.observedAt,
+        taskTitle: t.title,
+      }));
+    }),
+  );
+  const allCards = perTask
+    .flat()
+    .sort((a, b) => b.observedAt.localeCompare(a.observedAt));
+
+  // Objectives → measured outcomes.
+  const objectiveViews: ObjectiveWithOutcomes[] = await Promise.all(
+    objectives.map(async (obj) => {
+      const outcomes = await repos.objectiveOutcomes.listByObjective(obj.id);
+      return {
+        id: obj.id,
+        title: obj.title,
+        description: obj.description,
+        status: obj.status,
+        targetOutcomeSummary: obj.targetOutcomeSummary,
+        outcomes: outcomes.map((o): ObjectiveOutcomeView => ({
+          id: o.id,
+          name: o.name,
+          metricUnit: o.metricUnit,
+          baselineValue: o.baselineValue,
+          targetValue: o.targetValue,
+          currentValue: o.currentValue,
+          status: o.status,
+          lastMeasuredAt: o.lastMeasuredAt,
+        })),
+      };
+    }),
+  );
+
+  const totalCards = allCards.length;
+  return {
+    cards: allCards.slice(0, cardLimit),
+    objectives: objectiveViews,
+    highlights: {
+      totalOutcomes: totalCards,
+      improved: allCards.filter((c) => c.delta > 0).length,
+      objectivesMeasured: objectiveViews.filter((o) => o.outcomes.length > 0).length,
+    },
+    totalCards,
+    shownCards: Math.min(cardLimit, totalCards),
+    truncated: totalCards > cardLimit || tasks.length > RESULTS_TASK_SCAN_CAP,
+  };
+}
+
+/* ===========================================================================
+ * P056-v2 step 5 — Evidence (/evidence)
+ * Source: evidence_tokens (v2-DATA-MAPPING.md). The repo exposes per-task reads
+ * only (listByTask); there is no global list method, so we aggregate server-side
+ * across tasks (the same approach Business Detail uses) rather than fake a query.
+ * Bounded with an honest "showing X of Y" disclosure — no silent truncation.
+ * ======================================================================== */
+
+const EVIDENCE_TASK_SCAN_CAP = 300;
+
+export interface EvidenceRow {
+  id: string;
+  tier: string;
+  /** Factual evidence category (locked vocabulary). */
+  evidenceKind: string;
+  /** Legacy free-text descriptor. */
+  description: string;
+  taskId: string;
+  taskTitle: string;
+  producer: string;
+  createdAt: string;
+  verified: boolean;
+  sourceKind: string;
+  link: string | null;
+}
+
+export interface EvidenceList {
+  rows: EvidenceRow[];
+  total: number;
+  shown: number;
+  truncated: boolean;
+}
+
+function extractEvidenceLink(
+  payload: Record<string, unknown> | null,
+  sourceRef: string | null,
+): string | null {
+  const isUrl = (v: unknown): v is string => typeof v === 'string' && /^https?:\/\//.test(v);
+  if (payload) {
+    for (const k of ['url', 'link', 'href', 'permalink']) {
+      if (isUrl(payload[k])) return payload[k] as string;
+    }
+  }
+  return isUrl(sourceRef) ? sourceRef : null;
+}
+
+export async function loadEvidence(limit = 100): Promise<EvidenceList> {
+  const { repos } = getPlatform();
+  const tasks = await repos.tasks.list();
+  const scanned = tasks.slice(0, EVIDENCE_TASK_SCAN_CAP);
+  const titleById = new Map(scanned.map((t) => [t.id, t.title]));
+
+  const perTask = await Promise.all(scanned.map((t) => repos.evidenceTokens.listByTask(t.id)));
+  const rows: EvidenceRow[] = perTask
+    .flat()
+    .map((e) => ({
+      id: e.id,
+      tier: e.tier,
+      evidenceKind: e.evidenceKind,
+      description: e.kind,
+      taskId: e.taskId,
+      taskTitle: titleById.get(e.taskId) ?? 'Task',
+      producer: e.createdBy,
+      createdAt: e.createdAt,
+      verified: e.verifiedAt != null,
+      sourceKind: e.sourceKind,
+      link: extractEvidenceLink(e.payload, e.sourceRef),
+    }))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  const total = rows.length;
+  const shown = Math.min(limit, total);
+  return {
+    rows: rows.slice(0, limit),
+    total,
+    shown,
+    truncated: total > limit || tasks.length > EVIDENCE_TASK_SCAN_CAP,
+  };
+}
+
+export async function loadBriefings(limit = 50): Promise<BriefingView[]> {
+  const { repos, executives } = getPlatform();
+  const reports = await repos.reports.list({ limit });
+  const nameById = new Map(executives.map((e) => [e.id, e.displayName]));
+  return reports
+    .map((r): BriefingView => {
+      const body = r.body as { headline?: unknown } | null;
+      const headline =
+        body && typeof body.headline === 'string' ? body.headline : null;
+      return {
+        id: r.id,
+        executiveId: r.executiveId,
+        executiveName: nameById.get(r.executiveId) ?? r.executiveId,
+        reportType: r.reportType,
+        summary: r.summary,
+        headline,
+        createdAt: r.createdAt,
+        body: r.body,
+      };
+    })
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
