@@ -5,6 +5,7 @@ import {
 } from '@ai-company/ai-chief-of-staff';
 import { getPlatform } from './platform';
 import { listActiveDirectives, getDirectiveById } from './ceo-operating-system';
+import { emitDirectiveSpine, type DirectiveSpineResult } from './executive-os/directive-spine';
 
 /**
  * Insert (or reset to pending) one directive_responses row per executive.
@@ -35,6 +36,12 @@ export interface DrainResult {
     executiveReportId?: string;
     errorMessage?: string;
   }>;
+  /**
+   * EPIC-004A — the spine emission for this directive (Phase 1). Present once
+   * fan-out has produced task_proposals; the CEO approves the proposed work
+   * through the ceo_decisions gate afterwards.
+   */
+  spine?: DirectiveSpineResult;
 }
 
 /**
@@ -117,6 +124,17 @@ export async function drainDirective(directiveId: string): Promise<DrainResult> 
     }),
   );
 
+  // EPIC-004A Phase 1 — converge the directive onto the work spine. The
+  // responders have now written their task_proposals; emit assigned_work
+  // (proposed) for each. Idempotent, so re-drains do not duplicate. Never let a
+  // spine hiccup mask the fan-out result — surface it, don't throw.
+  let spine: DirectiveSpineResult | undefined;
+  try {
+    spine = await emitDirectiveSpine(directiveId);
+  } catch {
+    spine = undefined;
+  }
+
   return {
     directiveId,
     attempted: pending.length,
@@ -124,5 +142,6 @@ export async function drainDirective(directiveId: string): Promise<DrainResult> 
     error: details.filter((d) => d.status === 'error').length,
     skipped: details.filter((d) => d.status === 'skipped').length,
     details,
+    ...(spine ? { spine } : {}),
   };
 }
