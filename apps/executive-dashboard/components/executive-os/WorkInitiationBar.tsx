@@ -20,6 +20,7 @@
  */
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { ActionButton } from '../ds';
 import { PlusIcon } from '../ds/icons';
@@ -52,9 +53,14 @@ export function WorkInitiationBar({ executives }: { executives: ExecutiveOption[
   const [participants, setParticipants] = useState<string[]>(CATEGORY_DEFAULTS.strategy ?? []);
   const [phase, setPhase] = useState<Phase>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
 
   const busy = phase !== 'idle';
+
+  // Portal target is only available after mount (client). Guard so the modal
+  // never tries to read document.body during SSR/first render.
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;
@@ -161,19 +167,20 @@ export function WorkInitiationBar({ executives }: { executives: ExecutiveOption[
         </span>
       </div>
 
-      {open ? (
-        <div
-          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/40 p-md sm:p-lg"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget && !busy) close();
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="new-directive-title"
-            className="ds-surface mt-[5vh] w-full max-w-xl rounded-xl border border-outline-variant bg-surface-container-lowest p-lg shadow-ambient"
-          >
+      {open && mounted
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/40 p-md sm:p-lg"
+              onMouseDown={(e) => {
+                if (e.target === e.currentTarget && !busy) close();
+              }}
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="new-directive-title"
+                className="ds-surface my-[5vh] w-full max-w-[40rem] rounded-xl border border-outline-variant bg-surface-container-lowest p-lg shadow-ambient"
+              >
             <div className="mb-md">
               <h2 id="new-directive-title" className="font-headline-md text-headline-md text-on-surface">
                 New Directive
@@ -284,9 +291,11 @@ export function WorkInitiationBar({ executives }: { executives: ExecutiveOption[
                 </ActionButton>
               </div>
             </form>
-          </div>
-        </div>
-      ) : null}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }
