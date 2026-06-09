@@ -7,6 +7,7 @@ import {
   rejectWork,
   setWorkExecutionStatus,
   assembleAttentionQueue,
+  mapWorkError,
   type WorkSpineStore,
   type ApprovableWork,
   type DecisionRequest,
@@ -158,6 +159,29 @@ test('setWorkExecutionStatus: always stamps status_changed_at and passes expectF
     expectFrom: 'open',
   });
   assert.equal(out.statusChangedAt, FIXED_NOW);
+});
+
+// ---- mapWorkError: the HTTP contract (EPIC-004 WCC manage routes) ----
+
+test('mapWorkError: NeedsCeoCompletionError → 422 NEEDS_CEO_COMPLETION', () => {
+  const m = mapWorkError(new NeedsCeoCompletionError('Needs CEO completion: set a date…'));
+  assert.equal(m.status, 422);
+  assert.equal(m.body.code, 'NEEDS_CEO_COMPLETION');
+});
+
+test('mapWorkError: "not awaiting approval" → 409 ALREADY_DECIDED', () => {
+  const m = mapWorkError(new Error("work is 'approved', not awaiting approval"));
+  assert.equal(m.status, 409);
+  assert.equal(m.body.code, 'ALREADY_DECIDED');
+});
+
+test('mapWorkError: "not found" → 404', () => {
+  assert.equal(mapWorkError(new Error('assigned_work not found')).status, 404);
+});
+
+test('mapWorkError: anything else → 500', () => {
+  assert.equal(mapWorkError(new Error('db exploded')).status, 500);
+  assert.equal(mapWorkError('weird').status, 500);
 });
 
 // ---- assembleAttentionQueue (AC12) ----

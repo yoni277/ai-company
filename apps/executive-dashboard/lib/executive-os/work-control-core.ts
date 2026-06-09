@@ -60,6 +60,29 @@ export function assertApprovable(row: {
   }
 }
 
+/**
+ * Map a work-control error to an HTTP status + body — PURE (no next/server, no
+ * server-only) so the gate→422 contract is unit-testable. work-http.ts wraps
+ * this into a NextResponse. The activation gate is the headline: dateless/
+ * ownerless approve ⇒ 422 NEEDS_CEO_COMPLETION.
+ */
+export interface WorkErrorMapping {
+  status: number;
+  body: { error: string; code?: string };
+}
+
+export function mapWorkError(e: unknown): WorkErrorMapping {
+  if (e instanceof NeedsCeoCompletionError) {
+    return { status: 422, body: { error: e.message, code: 'NEEDS_CEO_COMPLETION' } };
+  }
+  const msg = e instanceof Error ? e.message : 'Request failed';
+  if (/not found/i.test(msg)) return { status: 404, body: { error: msg } };
+  if (/not awaiting approval/i.test(msg)) {
+    return { status: 409, body: { error: msg, code: 'ALREADY_DECIDED' } };
+  }
+  return { status: 500, body: { error: msg } };
+}
+
 /* ----------------------------------------------------------------------------
  * The store port — the only surface the orchestration touches.
  * -------------------------------------------------------------------------- */
@@ -191,6 +214,9 @@ export interface AttentionSourceRow {
   reviewDate: string | null;
   createdAt: string;
   statusChangedAt: string;
+  detail?: string | null;
+  linkedTaskId?: string | null;
+  linkedDecisionId?: string | null;
 }
 
 export interface AttentionItem {
@@ -252,6 +278,88 @@ export function assembleAttentionQueue(
       daysInCurrentState: aging.daysInCurrentState,
       dueDate: r.dueDate,
       reviewDate: r.reviewDate,
+    });
+  }
+  items.sort(
+    (a, b) =>
+      priorityRank(a.priority) - priorityRank(b.priority) ||
+      b.daysInCurrentState - a.daysInCurrentState,
+  );
+  return items;
+}
+
+/* ----------------------------------------------------------------------------
+ * Master work list (AC7) — the full board, classified. Same pure classifier as
+ * the attention queue; superset columns for the master table + drill-ins.
+ * -------------------------------------------------------------------------- */
+
+export interface WorkListItem extends AttentionItem {
+  approvalStatus: string;
+  executionStatus: string;
+  detail: string | null;
+  linkedTaskId: string | null;
+  linkedDecisionId: string | null;
+  createdAt: string;
+  statusChangedAt: string;
+}
+
+/**
+ * Derived filters expressible only AFTER classification (the raw column filters
+ * are applied at the DB by the adapter). All optional; compose.
+ */
+export interface WorkListDerivedFilter {
+  /** Keep only rows whose derived state matches one of these. */
+  states?: readonly WorkState[];
+  /** Work the CEO must act on: needs-completion · awaiting-approval · awaiting-CEO-input. */
+  waitingOnCeo?: boolean;
+  /** Execution blocked (the row is stuck on a dependency). */
+  blocked?: boolean;
+}
+
+const WAITING_ON_CEO_STATES: readonly WorkState[] = [
+  'needs_ceo_completion',
+  'awaiting_approval',
+  'awaiting_ceo_input',
+];
+
+/**
+ * Build the master work list from already-fetched rows: classify every row
+ * (no attention filter), apply the derived filters, order by priority then
+ * days-in-state. Grouping by attention state is the UI's job — this returns the
+ * flat classified set with `state` on each row.
+ */
+export function assembleWorkList(
+  rows: AttentionSourceRow[],
+  awaitingWorkIds: ReadonlySet<string>,
+  now: string,
+  filter?: WorkListDerivedFilter,
+): WorkListItem[] {
+  const items: WorkListItem[] = [];
+  for (const r of rows) {
+    const { state, aging } = classifyWork(toStateRow(r, awaitingWorkIds.has(r.id)), now);
+    if (filter?.states && !filter.states.includes(state)) continue;
+    if (filter?.waitingOnCeo && !WAITING_ON_CEO_STATES.includes(state)) continue;
+    if (filter?.blocked && state !== 'blocked') continue;
+    items.push({
+      id: r.id,
+      projectSlug: r.projectSlug,
+      sourceType: r.sourceType,
+      sourceId: r.sourceId,
+      ownerExecutiveId: r.ownerExecutiveId,
+      title: r.title,
+      priority: r.priority,
+      state,
+      ageDays: aging.ageDays,
+      daysInCurrentState: aging.daysInCurrentState,
+      dueDate: r.dueDate,
+      reviewDate: r.reviewDate,
+      approvalStatus: r.approvalStatus,
+      executionStatus: r.executionStatus,
+      detail: r.detail ?? null,
+      linkedTaskId: r.linkedTaskId ?? null,
+      linkedDecisionId: r.linkedDecisionId ?? null,
+      createdAt: r.createdAt,
+      statusChangedAt: r.statusChangedAt,
     });
   }
   items.sort(
