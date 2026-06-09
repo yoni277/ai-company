@@ -60,6 +60,29 @@ export function assertApprovable(row: {
   }
 }
 
+/**
+ * Map a work-control error to an HTTP status + body — PURE (no next/server, no
+ * server-only) so the gate→422 contract is unit-testable. work-http.ts wraps
+ * this into a NextResponse. The activation gate is the headline: dateless/
+ * ownerless approve ⇒ 422 NEEDS_CEO_COMPLETION.
+ */
+export interface WorkErrorMapping {
+  status: number;
+  body: { error: string; code?: string };
+}
+
+export function mapWorkError(e: unknown): WorkErrorMapping {
+  if (e instanceof NeedsCeoCompletionError) {
+    return { status: 422, body: { error: e.message, code: 'NEEDS_CEO_COMPLETION' } };
+  }
+  const msg = e instanceof Error ? e.message : 'Request failed';
+  if (/not found/i.test(msg)) return { status: 404, body: { error: msg } };
+  if (/not awaiting approval/i.test(msg)) {
+    return { status: 409, body: { error: msg, code: 'ALREADY_DECIDED' } };
+  }
+  return { status: 500, body: { error: msg } };
+}
+
 /* ----------------------------------------------------------------------------
  * The store port — the only surface the orchestration touches.
  * -------------------------------------------------------------------------- */

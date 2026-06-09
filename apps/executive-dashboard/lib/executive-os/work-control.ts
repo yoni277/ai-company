@@ -166,6 +166,44 @@ export async function setExecutionStatus(
   await setWorkExecutionStatus(supabaseStore(), workId, to, opts);
 }
 
+export interface PatchWorkInput {
+  ownerExecutiveId?: string;
+  dueDate?: string | null;
+  reviewDate?: string | null;
+}
+
+/**
+ * Set owner / due_date / review_date on a work row. This is NOT a status
+ * transition (approval_status & execution_status are untouched), so it does NOT
+ * stamp status_changed_at — but it CAN clear the derived "Needs CEO Completion"
+ * state by supplying the missing owner/date. Returns the patched row.
+ */
+export async function patchWorkFields(
+  workId: string,
+  input: PatchWorkInput,
+): Promise<{ id: string; ownerExecutiveId: string | null; dueDate: string | null; reviewDate: string | null }> {
+  const supa = getSupabaseAdmin();
+  const patch: Record<string, unknown> = {};
+  if (input.ownerExecutiveId !== undefined) patch.owner_executive_id = input.ownerExecutiveId;
+  if (input.dueDate !== undefined) patch.due_date = input.dueDate;
+  if (input.reviewDate !== undefined) patch.review_date = input.reviewDate;
+  if (Object.keys(patch).length === 0) throw new Error('no fields to update');
+
+  const { data, error } = await supa
+    .from('assigned_work')
+    .update(patch)
+    .eq('id', workId)
+    .select('id, owner_executive_id, due_date, review_date')
+    .single();
+  if (error || !data) throw new Error(error?.message ?? 'assigned_work not found');
+  return {
+    id: data.id,
+    ownerExecutiveId: data.owner_executive_id ?? null,
+    dueDate: data.due_date ?? null,
+    reviewDate: data.review_date ?? null,
+  };
+}
+
 /* ----------------------------------------------------------------------------
  * Phase 4 — headless read selectors (AC9/AC11/AC12).
  * -------------------------------------------------------------------------- */
