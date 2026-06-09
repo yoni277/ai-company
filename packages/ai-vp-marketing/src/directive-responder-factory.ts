@@ -32,7 +32,15 @@ export function createVpMarketingDirectiveResponder(
           directive,
           sourceExecutiveId: VP_MARKETING_ID,
           proposals: result.output.proposedTasks,
+          synthesizeFallback: true,
         });
+        // EPIC-004A — surface the zero/skip case: never a silent "done".
+        if (outcome.kind !== 'persisted') {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[vp-marketing] directive ${directive.id} produced no spine work (${outcome.kind})`,
+          );
+        }
         if (outcome.warnings.length > 0) {
           // eslint-disable-next-line no-console
           console.warn(

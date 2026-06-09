@@ -27,6 +27,18 @@ export function buildDirectiveSection(ctx: CompanyContext): string {
     if (d.isOverride) lines.push('- Marked as a strategic OVERRIDE.');
     if (d.expiresAt) lines.push(`- Expires: ${d.expiresAt}`);
     lines.push('');
+    // EPIC-004A — structured fan-out is mandatory on the directive path. The
+    // platform reads ONLY the `proposedTasks` array; a task breakdown written
+    // in prose is invisible and the directive never reaches the work spine.
+    lines.push('### REQUIRED OUTPUT — proposedTasks');
+    lines.push(
+      'You MUST populate the structured `proposedTasks` array with 1–3 concrete tasks that break this directive into actionable work you own. ' +
+        'Put the breakdown in the structured field — NOT only in prose; prose is not read by the platform. ' +
+        'Each task needs a `title` (imperative, ≤80 chars) and a deterministic `capabilityRequired` slug. ' +
+        'Do NOT invent deadlines — omit `dueInDays` unless the CEO stated one. ' +
+        'Even if the directive needs no new build work, return exactly one proposedTask describing the review/confirmation step so the directive is tracked.',
+    );
+    lines.push('');
   }
 
   const others = (ctx.activeDirectives ?? []).filter(

@@ -14,6 +14,7 @@ import {
   DEFAULT_PROPOSAL_TYPE,
   fingerprintProposal,
   planProposals,
+  synthesizeDirectiveProposal,
   transformProposalsToProposals,
 } from '../src/task-generation.js';
 
@@ -286,6 +287,67 @@ test('transform: rerun with identical proposal bumps generation, does NOT duplic
   assert.equal(second.kind, 'persisted');
   assert.equal(rows.length, 1, 'no duplicate row');
   assert.equal(rows[0]!.generation, 2, 'generation bumped');
+});
+
+// ----- EPIC-004A synthesize fallback -----
+
+test('synthesizeDirectiveProposal: valid, no fabricated deadline', () => {
+  const p = synthesizeDirectiveProposal(directive({ title: 'Ship staging pipeline' }));
+  assert.equal(p.title, 'Ship staging pipeline');
+  assert.ok(p.capabilityRequired.length > 0);
+  assert.equal(p.dueInDays, undefined, 'no invented deadline');
+  assert.equal(p.priority, undefined, 'no invented priority');
+});
+
+test('transform: synthesizeFallback + empty proposals → persists 1 synthesized row', async () => {
+  const { repos, rows } = fakeRepos();
+  const out = await transformProposalsToProposals(repos, {
+    directive: directive(),
+    sourceExecutiveId: 'cto',
+    proposals: [],
+    synthesizeFallback: true,
+  });
+  assert.equal(out.kind, 'persisted');
+  assert.equal(out.kind === 'persisted' && out.synthesized, true);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]!.status, 'proposed');
+});
+
+test('transform: synthesizeFallback + all-malformed proposals → still lands 1 synthesized', async () => {
+  const { repos, rows } = fakeRepos();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const bad: any[] = [{ description: 'prose only, no title/capability' }];
+  const out = await transformProposalsToProposals(repos, {
+    directive: directive(),
+    sourceExecutiveId: 'cto',
+    proposals: bad,
+    synthesizeFallback: true,
+  });
+  assert.equal(out.kind, 'persisted');
+  assert.equal(rows.length, 1, 'a directive never silently vanishes');
+});
+
+test('transform: synthesizeFallback does NOT override the no-objective governance lock', async () => {
+  const { repos, rows } = fakeRepos();
+  const out = await transformProposalsToProposals(repos, {
+    directive: directive({ objectiveId: null }),
+    sourceExecutiveId: 'cto',
+    proposals: [],
+    synthesizeFallback: true,
+  });
+  assert.equal(out.kind, 'skipped-no-objective');
+  assert.equal(rows.length, 0);
+});
+
+test('transform: without the flag, empty proposals still skip (back-compat)', async () => {
+  const { repos, rows } = fakeRepos();
+  const out = await transformProposalsToProposals(repos, {
+    directive: directive(),
+    sourceExecutiveId: 'cto',
+    proposals: [],
+  });
+  assert.equal(out.kind, 'skipped-no-proposals');
+  assert.equal(rows.length, 0);
 });
 
 test('transform: different proposalType for same title → two distinct rows', async () => {

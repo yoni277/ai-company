@@ -23,7 +23,13 @@ export function createVpSalesDirectiveResponder(vp: VpSales): DirectiveResponder
           directive,
           sourceExecutiveId: VP_SALES_ID,
           proposals: result.output.proposedTasks,
+          synthesizeFallback: true,
         });
+        // EPIC-004A — surface the zero/skip case: never a silent "done".
+        if (outcome.kind !== 'persisted') {
+          // eslint-disable-next-line no-console
+          console.warn(`[vp-sales] directive ${directive.id} produced no spine work (${outcome.kind})`);
+        }
         if (outcome.warnings.length > 0) {
           // eslint-disable-next-line no-console
           console.warn(`[vp-sales] task fan-out warnings: ${outcome.warnings.join(' | ')}`);

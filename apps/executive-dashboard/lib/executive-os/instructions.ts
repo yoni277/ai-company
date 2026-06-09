@@ -127,9 +127,11 @@ export async function runInstruction(id: string): Promise<{ status: string; resp
   // Advance the work into execution (still gated/approved; instructions never
   // create tasks/evidence/outcomes — that stays in the normal spine, #6/#7).
   if (instr.linked_assigned_work_id) {
+    // EPIC-004A AC13: every execution_status transition stamps status_changed_at
+    // in the SAME write, or "days in current state" aging is wrong.
     await supa
       .from('assigned_work')
-      .update({ execution_status: 'in_progress' })
+      .update({ execution_status: 'in_progress', status_changed_at: new Date().toISOString() })
       .eq('id', instr.linked_assigned_work_id)
       .eq('execution_status', 'open');
   }

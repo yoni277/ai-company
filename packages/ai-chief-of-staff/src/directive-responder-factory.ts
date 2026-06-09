@@ -31,7 +31,15 @@ export function createChiefOfStaffDirectiveResponder(
           directive,
           sourceExecutiveId: CHIEF_OF_STAFF_ID,
           proposals: result.output.proposedTasks,
+          synthesizeFallback: true,
         });
+        // EPIC-004A — surface the zero/skip case: never a silent "done".
+        if (outcome.kind !== 'persisted') {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[chief-of-staff] directive ${directive.id} produced no spine work (${outcome.kind})`,
+          );
+        }
         if (outcome.warnings.length > 0) {
           // eslint-disable-next-line no-console
           console.warn(

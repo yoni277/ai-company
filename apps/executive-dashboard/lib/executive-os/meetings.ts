@@ -22,6 +22,7 @@ import {
 } from '../doos/meeting-orchestrator';
 import type { SynthesisDecision } from '../doos/meeting-personas';
 import { createDecision } from '../ceo-operating-system';
+import { assertApprovable, NeedsCeoCompletionError } from './work-control';
 
 export interface MeetingTypeConfig {
   type: string;
@@ -326,7 +327,7 @@ export interface ApproveVerdict {
 export async function approveMeeting(
   id: string,
   verdicts: ApproveVerdict[],
-): Promise<{ status: string; approved: number; rejected: number }> {
+): Promise<{ status: string; approved: number; rejected: number; needsCompletion: number }> {
   const supa = getSupabaseAdmin();
   const { data: m, error } = await supa.from('meetings').select('*').eq('id', id).single();
   if (error || !m) throw new Error('meeting not found');
@@ -347,6 +348,7 @@ export async function approveMeeting(
 
   let approved = 0;
   let rejected = 0;
+  let needsCompletion = 0;
   for (const [index, verdict] of byIndex) {
     const d = decisions[index];
     // Stable link: each decision carries the id of the assigned_work it created
@@ -358,12 +360,23 @@ export async function approveMeeting(
     // duplicate ceo_decisions audit on an already-decided item.
     const { data: current } = await supa
       .from('assigned_work')
-      .select('approval_status')
+      .select('approval_status, owner_executive_id, due_date, review_date')
       .eq('id', workId)
       .maybeSingle();
     if (current?.approval_status !== 'proposed') continue;
 
     if (verdict === 'approve') {
+      // EPIC-004A AC2 gate: never ACTIVATE ownerless/dateless work. Surface it
+      // as Needs-CEO-Completion and skip — never fail the whole batch.
+      try {
+        assertApprovable(current);
+      } catch (e) {
+        if (e instanceof NeedsCeoCompletionError) {
+          needsCompletion += 1;
+          continue;
+        }
+        throw e;
+      }
       approved += 1;
       const decision = await createDecision({
         sourceActionId: null,
@@ -378,14 +391,19 @@ export async function approveMeeting(
       });
       await supa
         .from('assigned_work')
-        .update({ approval_status: 'approved', linked_decision_id: decision.id })
+        // AC13: stamp status_changed_at on the approval transition.
+        .update({
+          approval_status: 'approved',
+          linked_decision_id: decision.id,
+          status_changed_at: new Date().toISOString(),
+        })
         .eq('id', workId)
         .eq('approval_status', 'proposed');
     } else {
       rejected += 1;
       await supa
         .from('assigned_work')
-        .update({ approval_status: 'rejected' })
+        .update({ approval_status: 'rejected', status_changed_at: new Date().toISOString() })
         .eq('id', workId)
         .eq('approval_status', 'proposed');
     }
@@ -393,12 +411,12 @@ export async function approveMeeting(
 
   // Skip the meeting write entirely when nothing changed state.
   if (approved === 0 && rejected === 0) {
-    return { status: m.status, approved, rejected };
+    return { status: m.status, approved, rejected, needsCompletion };
   }
   const status = approved > 0 ? 'approved' : 'cancelled';
   await supa
     .from('meetings')
     .update({ approved_by: 'ceo', approved_at: new Date().toISOString(), status })
     .eq('id', id);
-  return { status, approved, rejected };
+  return { status, approved, rejected, needsCompletion };
 }

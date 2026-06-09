@@ -23,7 +23,13 @@ export function createCfoDirectiveResponder(cfo: Cfo): DirectiveResponder {
           directive,
           sourceExecutiveId: CFO_ID,
           proposals: result.output.proposedTasks,
+          synthesizeFallback: true,
         });
+        // EPIC-004A — surface the zero/skip case: never a silent "done".
+        if (outcome.kind !== 'persisted') {
+          // eslint-disable-next-line no-console
+          console.warn(`[cfo] directive ${directive.id} produced no spine work (${outcome.kind})`);
+        }
         if (outcome.warnings.length > 0) {
           // eslint-disable-next-line no-console
           console.warn(`[cfo] task fan-out warnings: ${outcome.warnings.join(' | ')}`);
