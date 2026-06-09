@@ -915,3 +915,20 @@ export async function loadBriefings(limit = 50): Promise<BriefingView[]> {
     })
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
+
+/* ===========================================================================
+ * L29 (D069) — Work initiation: the participant roster for the New Directive
+ * wizard. Reads the platform's executive descriptors (id + display name) so the
+ * CEO can pick responders without any hardcoded list. Server-side; the Home
+ * server component passes the result to the client wizard.
+ * ======================================================================== */
+
+export interface ExecutiveOption {
+  id: string;
+  displayName: string;
+}
+
+export function loadExecutives(): ExecutiveOption[] {
+  const { executives } = getPlatform();
+  return executives.map((e) => ({ id: e.id, displayName: e.displayName }));
+}
