@@ -153,18 +153,7 @@ export function WorkInitiationBar({ executives }: { executives: ExecutiveOption[
         >
           New Directive
         </ActionButton>
-        {/* L30 — Phase B; disabled affordance only (no dead link) */}
-        <span
-          aria-disabled="true"
-          title="Coming soon (Phase B)"
-          className="inline-flex min-h-11 cursor-not-allowed items-center gap-xs rounded border border-outline-variant px-md py-sm font-label-md text-label-md text-on-surface-variant opacity-50"
-        >
-          <PlusIcon className="h-4 w-4" />
-          New Meeting
-          <span className="ms-xs rounded-sm bg-surface-container px-xs py-[1px] font-label-sm text-label-sm text-outline">
-            Soon
-          </span>
-        </span>
+        {/* "+ New Meeting" is now live (L30) — rendered alongside this bar on Home. */}
       </div>
 
       {open && mounted

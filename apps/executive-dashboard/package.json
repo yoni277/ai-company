@@ -36,6 +36,7 @@
     "@ai-company/project-registry": "workspace:*",
     "@ai-company/revenue-intelligence-engine": "workspace:*",
     "@ai-company/shared-types": "workspace:*",
+    "@anthropic-ai/sdk": "^0.39.0",
     "@supabase/supabase-js": "^2.45.4",
     "next": "^16.0.0",
     "react": "^19.0.0",

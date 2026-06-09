@@ -14,6 +14,9 @@ importers:
       prettier:
         specifier: ^3.3.3
         version: 3.8.3
+      tsx:
+        specifier: ^4.19.1
+        version: 4.22.4
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
@@ -89,6 +92,9 @@ importers:
       '@ai-company/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
+      '@anthropic-ai/sdk':
+        specifier: ^0.39.0
+        version: 0.39.0
       '@supabase/supabase-js':
         specifier: ^2.45.4
         version: 2.107.0
