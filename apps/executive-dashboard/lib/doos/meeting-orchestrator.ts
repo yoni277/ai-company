@@ -60,6 +60,8 @@ export interface MeetingInput {
 }
 
 export interface AssignedWorkProposal {
+  /** The index in final.decisions this work came from — the stable link key. */
+  decisionIndex: number;
   project_slug: string;
   source_type: 'meeting';
   source_id: string;
@@ -85,7 +87,8 @@ export interface MeetingStore {
   setStatus(meetingId: string, status: string): Promise<void>;
   appendDiscussion(meetingId: string, utterances: Utterance[]): Promise<void>;
   finalize(meetingId: string, final: MeetingFinal, status: string): Promise<void>;
-  insertAssignedWork(rows: AssignedWorkProposal[]): Promise<void>;
+  /** Insert proposed work; MUST return the new row ids in the SAME order as `rows`. */
+  insertAssignedWork(rows: AssignedWorkProposal[]): Promise<string[]>;
 }
 
 export interface RunResult {
@@ -253,25 +256,39 @@ export async function runMeeting(
   const status: 'summarized' | 'in_discussion' = check.ok ? 'summarized' : 'in_discussion';
   await push([{ round: 4, executive_id: moderator, kind: 'synthesis', text: final.summary }]);
 
-  // Emit proposed assigned_work for each actionable decision.
-  const proposedWork: AssignedWorkProposal[] = final.decisions
-    .filter((d) => d.actionable && d.owner_executive_id)
-    .map((d) => ({
-      project_slug: m.projectSlug,
-      source_type: 'meeting' as const,
-      source_id: m.id,
-      owner_executive_id: d.owner_executive_id as string,
-      title: d.work_title || d.decision,
-      detail: d.work_detail || d.rationale,
-      approval_status: 'proposed' as const,
-      execution_status: 'open' as const,
-      priority: 'P2',
-      due_date: dueDate(d.due_in_days),
-      created_by: 'chief-of-staff' as const,
-    }));
+  // Emit proposed assigned_work for each actionable decision, carrying the
+  // source decision index so it can be linked back unambiguously.
+  const proposedWork: AssignedWorkProposal[] = [];
+  final.decisions.forEach((d, di) => {
+    if (d.actionable && d.owner_executive_id) {
+      proposedWork.push({
+        decisionIndex: di,
+        project_slug: m.projectSlug,
+        source_type: 'meeting',
+        source_id: m.id,
+        owner_executive_id: d.owner_executive_id,
+        title: d.work_title || d.decision,
+        detail: d.work_detail || d.rationale,
+        approval_status: 'proposed',
+        execution_status: 'open',
+        priority: 'P2',
+        due_date: dueDate(d.due_in_days),
+        created_by: 'chief-of-staff',
+      });
+    }
+  });
 
+  // Insert first so we can stamp each decision with its assigned_work id — the
+  // approve route + detail page then map decision↔work by id, not by a fragile
+  // created_at ordering (fixes the "approved ✓" badge on the wrong card).
+  if (proposedWork.length > 0) {
+    const ids = await store.insertAssignedWork(proposedWork);
+    proposedWork.forEach((w, k) => {
+      const id = ids[k];
+      if (id) final.decisions[w.decisionIndex]!.assignedWorkId = id;
+    });
+  }
   await store.finalize(m.id, final, status);
-  if (proposedWork.length > 0) await store.insertAssignedWork(proposedWork);
 
   const challengeCount = discussion.filter((u) => u.kind === 'challenge' && u.target).length;
   return {

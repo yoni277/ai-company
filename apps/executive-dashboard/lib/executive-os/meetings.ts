@@ -291,9 +291,13 @@ export async function runMeetingById(id: string): Promise<{ status: string; prop
         .eq('id', mid);
       if (e) throw new Error(e.message);
     },
-    async insertAssignedWork(rows: AssignedWorkProposal[]) {
-      const { error: e } = await supa.from('assigned_work').insert(rows);
+    async insertAssignedWork(rows: AssignedWorkProposal[]): Promise<string[]> {
+      // Strip decisionIndex (orchestrator bookkeeping, not a column). A single
+      // INSERT … VALUES returns rows in input order, so ids[] lines up with rows[].
+      const payload = rows.map(({ decisionIndex: _drop, ...rest }) => rest);
+      const { data, error: e } = await supa.from('assigned_work').insert(payload).select('id');
       if (e) throw new Error(e.message);
+      return (data ?? []).map((r) => r.id as string);
     },
   };
 
@@ -341,40 +345,33 @@ export async function approveMeeting(
     }
   }
 
-  // Stable per-decision → assigned_work row mapping by id (NOT by title, which
-  // can collide). Actionable+owned decisions, in order, line up with their
-  // still-proposed work rows, in created order.
-  const { data: workRows } = await supa
-    .from('assigned_work')
-    .select('id, created_at')
-    .eq('source_id', id)
-    .eq('source_type', 'meeting')
-    .eq('approval_status', 'proposed')
-    .order('created_at', { ascending: true });
-  const actionableOrder = decisions
-    .map((d, i) => (d.actionable && d.owner_executive_id ? i : -1))
-    .filter((i) => i >= 0);
-
   let approved = 0;
   let rejected = 0;
   for (const [index, verdict] of byIndex) {
     const d = decisions[index];
-    if (!d) continue;
-    const k = actionableOrder.indexOf(index);
-    const workId = k >= 0 ? (workRows?.[k]?.id as string | undefined) : undefined;
-    // Only act when there is still a proposed work row to gate — keeps the
-    // operation idempotent (a re-click on an already-decided item is a no-op).
-    if (!workId) continue;
+    // Stable link: each decision carries the id of the assigned_work it created
+    // (stamped at synthesis). No fragile position/created_at mapping.
+    const workId = d?.assignedWorkId ?? null;
+    if (!workId) continue; // non-actionable / no work — nothing to gate.
+
+    // Act only if the work is still proposed — idempotent re-clicks, and no
+    // duplicate ceo_decisions audit on an already-decided item.
+    const { data: current } = await supa
+      .from('assigned_work')
+      .select('approval_status')
+      .eq('id', workId)
+      .maybeSingle();
+    if (current?.approval_status !== 'proposed') continue;
 
     if (verdict === 'approve') {
       approved += 1;
       const decision = await createDecision({
         sourceActionId: null,
         projectId: m.project_slug,
-        decisionTitle: d.decision,
-        decisionDescription: d.rationale,
+        decisionTitle: d!.decision,
+        decisionDescription: d!.rationale,
         decisionStatus: 'approved',
-        owner: d.owner_executive_id ?? null,
+        owner: d!.owner_executive_id ?? null,
         dueDate: null,
         priority: 'P2',
         notes: `Approved from meeting ${id}`,

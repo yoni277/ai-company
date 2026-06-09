@@ -47,15 +47,13 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
   if (!m) notFound();
 
   const rounds = Array.from(new Set(m.discussion.map((u) => u.round))).sort((a, b) => a - b);
-  // Per-decision work status — actionable+owned decisions line up (in order) with
-  // their proposed-work rows (created order), mirroring the approve route's
-  // stable mapping. Controls show only while a decision's work is still proposed.
-  const actionableIdxs = m.decisions
-    .map((d, i) => (d.actionable && d.owner_executive_id ? i : -1))
-    .filter((i) => i >= 0);
+  // Per-decision work status by the stamped assigned_work id (stable link) — no
+  // fragile position/created_at mapping, so the badge always lands on the right
+  // card. Controls show only while a decision's work is still proposed.
+  const workById = new Map(m.proposedWork.map((w) => [w.id, w]));
   const workStatusFor = (i: number): string | null => {
-    const k = actionableIdxs.indexOf(i);
-    return k >= 0 ? m.proposedWork[k]?.approvalStatus ?? null : null;
+    const wid = m.decisions[i]?.assignedWorkId;
+    return wid ? workById.get(wid)?.approvalStatus ?? null : null;
   };
   const canApprove = m.status === 'summarized' || m.status === 'approved';
 

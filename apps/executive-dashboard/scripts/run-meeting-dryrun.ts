@@ -68,6 +68,7 @@ async function main() {
     },
     async insertAssignedWork(rows) {
       captured.work = rows;
+      return rows.map(() => randomUUID()); // in-memory ids, in input order
     },
   };
 
