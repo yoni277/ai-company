@@ -85,6 +85,23 @@ export interface ContextPack {
   assumptions: string[]; // challengeable — from executive_memory.known_assumptions ONLY
 }
 
+/**
+ * Normalize a raw `known_assumptions` value to its challengeable TEXT ONLY.
+ * executive_memory.known_assumptions may be plain strings (back-compat) OR
+ * objects like `{ assumption, since }`. Returns just the assumption text and
+ * DROPS any provenance (e.g. `since: "L30 meeting"`) — so governance/provenance
+ * can never leak into executive context (D082 boundary #1). Never
+ * JSON.stringifies an object into context; unrecognised shapes → '' (dropped).
+ */
+export function normalizeAssumption(value: unknown): string {
+  if (typeof value === 'string') return value.trim();
+  if (value && typeof value === 'object') {
+    const a = (value as { assumption?: unknown }).assumption;
+    if (typeof a === 'string') return a.trim();
+  }
+  return '';
+}
+
 /* ---- rendering helpers ---------------------------------------------------- */
 
 /** Render a list with a hard cap and an explicit "(+N more)" tail. */

@@ -19,6 +19,7 @@ import type { WorkState } from './work-state';
 import {
   companyContextString,
   operationalContextString,
+  normalizeAssumption,
   type BusinessEvidence,
   type ContextAttentionItem,
   type ContextDecision,
@@ -151,10 +152,13 @@ export async function assembleExecutiveContext(
     attention: attentionRanked.slice(0, 5),
   };
 
-  // ASSUMPTIONS — from known_assumptions ONLY; coerced to strings, never into FACTS.
+  // ASSUMPTIONS — from known_assumptions ONLY; TEXT-only normalization so no
+  // object/provenance (e.g. `since: "L30 meeting"`) can ever be stringified into
+  // context (D082 boundary #1). Defensive: even if a non-string slips past the
+  // reader's normalization, only the assumption text survives.
   const assumptions = (memory.knownAssumptions ?? [])
-    .map((a) => (typeof a === 'string' ? a : JSON.stringify(a)))
-    .filter((a) => a.trim().length > 0);
+    .map((a) => normalizeAssumption(a))
+    .filter((a) => a.length > 0);
 
   // Pass FULL ranked lists to the formatters so they can show "(+N more)";
   // pack.facts holds the capped slices.

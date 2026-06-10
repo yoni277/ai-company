@@ -7,6 +7,7 @@ import {
 } from './context-pack';
 import {
   NO_BUSINESS_EVIDENCE,
+  normalizeAssumption,
   type ContextDecision,
   type ContextObjective,
   type ContextRisk,
@@ -24,7 +25,7 @@ function makeDeps(over: Partial<{
   risks: ContextRisk[];
   decisions: ContextDecision[];
   currentStrategy: string | null;
-  knownAssumptions: string[];
+  knownAssumptions: unknown[]; // string OR { assumption, since } — real-data-shaped
   businessName: string | null;
   evidence: BusinessEvidence | null;
 }> = {}): ContextPackDeps {
@@ -44,7 +45,9 @@ function makeDeps(over: Partial<{
     async readMemory() {
       return {
         currentStrategy: over.currentStrategy ?? null,
-        knownAssumptions: over.knownAssumptions ?? [],
+        // Cast: deps normalize to string[], but tests feed real-data object shapes
+        // to exercise the assembler's defensive text-only normalization.
+        knownAssumptions: (over.knownAssumptions ?? []) as unknown as string[],
       };
     },
     async readBusiness() {
@@ -171,6 +174,43 @@ test('separation: known_assumptions render only under ASSUMPTIONS, never FACTS (
     // …and it appears after the ASSUMPTIONS heading.
     assert.ok(ctx.indexOf(MARKER) > ctx.indexOf('ASSUMPTIONS'));
   }
+});
+
+// (d′) provenance must not leak from object-shaped assumptions
+test('boundary: object-shaped assumption renders text ONLY — provenance never leaks (D082)', async () => {
+  // Real shape: executive_memory.known_assumptions rows carry { assumption, since }.
+  const deps = makeDeps({
+    businessName: 'Acme',
+    objectives: [{ id: 'o1', title: 'Launch MVP', status: 'active' }],
+    knownAssumptions: [
+      { assumption: 'Owners may pay for premium visibility', since: 'L30 meeting' },
+      'Weekly cadence beats daily', // back-compat plain string
+    ],
+  });
+  const { companyContext, operationalContext, pack } = await assembleExecutiveContext(deps, {
+    executiveId: 'cto',
+    projectSlug: 'acme',
+    purpose: 'directive',
+  });
+
+  // (a) only the assumption TEXT survives — no `since`, no object JSON.
+  assert.deepEqual(pack.assumptions, ['Owners may pay for premium visibility', 'Weekly cadence beats daily']);
+
+  for (const ctx of [companyContext, operationalContext]) {
+    assert.ok(ctx.includes('Owners may pay for premium visibility'));
+    // (b) the provenance / governance tag appears in NEITHER layer.
+    assert.ok(!ctx.includes('L30'), 'no L-number leaks');
+    assert.ok(!ctx.includes('since'), 'no provenance key leaks');
+    assert.ok(!ctx.includes('"assumption"'), 'no object JSON stringified into context');
+  }
+});
+
+test('normalizeAssumption: object → text only; string passthrough; junk → dropped', () => {
+  assert.equal(normalizeAssumption({ assumption: 'A', since: 'L30 meeting' }), 'A');
+  assert.equal(normalizeAssumption('  plain  '), 'plain');
+  assert.equal(normalizeAssumption({ since: 'L30 meeting' }), '', 'no assumption field → dropped, not stringified');
+  assert.equal(normalizeAssumption(42), '');
+  assert.equal(normalizeAssumption(null), '');
 });
 
 // flag

@@ -14,7 +14,7 @@ import 'server-only';
 import { getSupabaseAdmin } from '../doos/supabase-admin';
 import { loadWorkMasterList } from './work-control';
 import type { ContextPackDeps } from './context-pack';
-import type { ContextPack } from './context-pack-shape';
+import { normalizeAssumption, type ContextPack } from './context-pack-shape';
 
 /** ContextPackDeps backed by the service-role client + the shared classifier. */
 export function buildContextPackDeps(): ContextPackDeps {
@@ -79,12 +79,14 @@ export function buildContextPackDeps(): ContextPackDeps {
         .eq('executive_id', executiveId)
         .eq('project_slug', projectSlug)
         .maybeSingle();
+      // known_assumptions rows may be plain strings OR { assumption, since }
+      // objects. Take the assumption TEXT only and DROP `since` (provenance/
+      // governance) so an "L30 meeting"-style tag can never reach executive
+      // context (D082 boundary #1).
       const rawAssumptions = (data?.known_assumptions ?? []) as unknown[];
       return {
         currentStrategy: data?.current_strategy ?? null,
-        knownAssumptions: rawAssumptions
-          .map((a) => (typeof a === 'string' ? a : JSON.stringify(a)))
-          .filter((a) => a.trim().length > 0),
+        knownAssumptions: rawAssumptions.map(normalizeAssumption).filter((a) => a.length > 0),
       };
     },
     async readBusiness(projectSlug) {
