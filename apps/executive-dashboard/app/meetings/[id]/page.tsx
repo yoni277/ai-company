@@ -11,6 +11,7 @@ import { notFound } from 'next/navigation';
 import { StatusBadge, DataTag } from '../../../components/ds';
 import { ChevronEndIcon } from '../../../components/ds/icons';
 import { MeetingApprovalControls } from '../../../components/executive-os/MeetingApprovalControls';
+import { MeetingLifecycleControls } from '../../../components/executive-os/MeetingLifecycleControls';
 import { getMeeting } from '../../../lib/executive-os/meetings';
 
 export const dynamic = 'force-dynamic';
@@ -75,6 +76,11 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
           </div>
           <StatusBadge state={statusState(m.status)} label={m.status} />
         </header>
+
+        {/* OF-008 — lifecycle control: run a fresh meeting / resume a stalled one. */}
+        <div className="mb-xl">
+          <MeetingLifecycleControls meetingId={m.id} status={m.status} />
+        </div>
 
         {/* Discussion thread */}
         <Section title="Discussion">
@@ -186,6 +192,16 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
                 </li>
               ))}
             </ul>
+          </Section>
+        ) : null}
+
+        {/* OF-008 — surface the zero-work case explicitly (never a silent stall). */}
+        {m.proposedWork.length === 0 && (m.status === 'summarized' || m.status === 'completed') ? (
+          <Section title="Proposed Work" count={0}>
+            <p className="rounded-lg border border-dashed border-outline-variant bg-surface-container-low p-md font-body-md text-body-md text-on-surface-variant">
+              No action needed — this meeting reached synthesis with no owned work item. The Chief of Staff
+              recorded the reason in the summary above (honest no-action, not a stall).
+            </p>
           </Section>
         ) : null}
 
