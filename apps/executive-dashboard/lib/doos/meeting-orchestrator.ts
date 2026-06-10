@@ -26,6 +26,7 @@ import {
   type ExecutiveId,
   type SynthesisDecision,
 } from './meeting-personas';
+import { ensureOwnedWorkOrNoAction, type ConversionOutcome } from './meeting-conversion';
 
 export type UtteranceKind = 'open' | 'position' | 'challenge' | 'concur' | 'rebuttal' | 'synthesis';
 
@@ -97,6 +98,8 @@ export interface RunResult {
   proposedWork: AssignedWorkProposal[];
   status: 'summarized' | 'in_discussion';
   validation: { challengeCount: number; passedGate: boolean; outputValid: boolean; notes: string[] };
+  /** OF-008 — what the conversion guarantee did (owned work / fallback / honest no-action). */
+  conversion: ConversionOutcome;
 }
 
 const DELIBERATIVE_TYPES = new Set(['strategic', 'go_no_go', 'architecture_review', 'product_review']);
@@ -218,7 +221,29 @@ export async function runMeeting(
     await push([{ round: 3, executive_id: id, kind: 'rebuttal', text }]);
   }
 
-  // R4 — CoS synthesis, validated vs required_outputs (retry once).
+  // R4 — CoS synthesis + the OF-008 conversion guarantee. Delegated so the
+  // resume/synthesize path runs the EXACT same close on a persisted discussion.
+  return synthesizeAndConvert(client, store, m, discussion, push);
+}
+
+/**
+ * OF-008 — R4 CoS synthesis + conversion guarantee + emission, factored out so
+ * BOTH a full run and a resume (re-synthesize a stalled meeting from its
+ * persisted discussion) drive the identical close. Always reaches `summarized`:
+ * the conversion net guarantees owned work OR an explicit honest no-action, so a
+ * meeting never stalls in agreement-without-work. (A genuine mid-run error is the
+ * only thing that leaves a meeting `in_discussion` — that is what resume fixes.)
+ */
+export async function synthesizeAndConvert(
+  client: Anthropic,
+  store: MeetingStore,
+  m: MeetingInput,
+  discussion: Utterance[],
+  push: (us: Utterance[]) => Promise<void>,
+): Promise<RunResult> {
+  const moderator: ExecutiveId = m.moderator ?? 'chief-of-staff';
+  const debaters = m.participants.filter((p) => p !== moderator);
+
   const synthPrompt = (insist: boolean) =>
     [
       header(m),
@@ -227,8 +252,8 @@ export async function runMeeting(
         .join('\n')}`,
       `Required outputs for a "${m.type}" meeting: ${JSON.stringify(m.requiredOutputs)}.`,
       `As Chief of Staff, close the meeting. Produce a faithful summary, the decision(s) with rationale and HONEST dissenting opinions (record unresolved disagreement — never fake consensus), risks, and open questions.`,
-      `CRITICAL: produce AT LEAST ONE actionable decision (actionable=true) with a NAMED owner_executive_id (one of: ${debaters.join(', ')}), a work_title, a work_detail, and due_in_days. The concrete next step IS a work item — even a "defer pending more evidence" or "gather the shortlist" outcome is owned by a specific executive who does that work. Do not leave next steps only as open questions.${
-        insist ? ' Your previous attempt produced no owned, actionable work item — that is invalid. Assign the next step to a specific executive now.' : ''
+      `CRITICAL — operationalize the outcome. Either: (a) produce AT LEAST ONE actionable decision (actionable=true) with a NAMED owner_executive_id (one of: ${debaters.join(', ')}), a work_title, a work_detail, and due_in_days — even a "defer pending more evidence" or "gather the shortlist" outcome is owned by a specific executive who does that work; OR (b) if the room genuinely concluded NO action is required, say so explicitly: a single decision with actionable=false whose rationale begins "No action needed:" and states the reason. Never leave the next step only as an open question, and never end in agreement without either owned work or an explicit no-action.${
+        insist ? ' Your previous attempt produced neither owned actionable work nor an explicit no-action — that is invalid. Decide now: assign the next step to a specific executive, or state no action is needed and why.' : ''
       }`,
     ].join('\n\n');
 
@@ -238,7 +263,7 @@ export async function runMeeting(
     if (final.decisions.length === 0) notes.push('no decisions');
     if (final.decisions.some((d) => !d.rationale.trim())) notes.push('a decision lacks rationale');
     if (!final.decisions.some((d) => d.actionable && d.owner_executive_id))
-      notes.push('no owned actionable decision → no proposed work');
+      notes.push('no owned actionable decision (conversion net will resolve)');
     if (m.type === 'go_no_go') {
       const hasVerdict = final.decisions.some((d) => /\b(GO|HOLD|NO-?GO)\b/i.test(d.decision));
       if (!hasVerdict) notes.push('go_no_go: no GO/HOLD/NO-GO verdict');
@@ -253,11 +278,18 @@ export async function runMeeting(
     check = validate(final);
   }
 
-  const status: 'summarized' | 'in_discussion' = check.ok ? 'summarized' : 'in_discussion';
+  // OF-008 conversion guarantee — owned work or explicit honest no-action; never
+  // a silent agreement-without-work. Mutates final.decisions when it synthesizes
+  // an owned next step. Honest dissent (D076) is preserved.
+  const conversion = ensureOwnedWorkOrNoAction(final.decisions, final.summary, moderator, m.topic);
+  if (conversion.noAction) {
+    final.summary = `No action needed — ${conversion.noAction.reason}\n\n${final.summary}`.trim();
+  }
+
   await push([{ round: 4, executive_id: moderator, kind: 'synthesis', text: final.summary }]);
 
-  // Emit proposed assigned_work for each actionable decision, carrying the
-  // source decision index so it can be linked back unambiguously.
+  // Emit proposed assigned_work for each owned actionable decision, carrying the
+  // source decision index so it links back unambiguously.
   const proposedWork: AssignedWorkProposal[] = [];
   final.decisions.forEach((d, di) => {
     if (d.actionable && d.owner_executive_id) {
@@ -288,6 +320,9 @@ export async function runMeeting(
       if (id) final.decisions[w.decisionIndex]!.assignedWorkId = id;
     });
   }
+
+  // The conversion guarantee means R4 always produces a terminal synthesis.
+  const status: 'summarized' = 'summarized';
   await store.finalize(m.id, final, status);
 
   const challengeCount = discussion.filter((u) => u.kind === 'challenge' && u.target).length;
@@ -302,6 +337,7 @@ export async function runMeeting(
       outputValid: check.ok,
       notes: check.notes,
     },
+    conversion,
   };
 }
 

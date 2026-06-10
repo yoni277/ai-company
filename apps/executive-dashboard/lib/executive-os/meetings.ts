@@ -13,12 +13,14 @@ import { getSupabaseAdmin } from '../doos/supabase-admin';
 import { getAnthropic, type ExecutiveId } from '../doos/meeting-personas';
 import {
   runMeeting,
+  synthesizeAndConvert,
   isDeliberative,
   type MeetingStore,
   type Utterance,
   type EvidenceItem,
   type AssignedWorkProposal,
   type MeetingFinal,
+  type MeetingInput,
 } from '../doos/meeting-orchestrator';
 import type { SynthesisDecision } from '../doos/meeting-personas';
 import { createDecision } from '../ceo-operating-system';
@@ -270,7 +272,17 @@ export async function runMeetingById(id: string): Promise<{ status: string; prop
   await supa.from('assigned_work').delete().eq('source_id', id).eq('source_type', 'meeting');
 
   const running: Utterance[] = [];
-  const store: MeetingStore = {
+  const store = buildMeetingStore(supa, running);
+  const result = await runMeeting(getAnthropic(), store, meetingInputFrom(id, m, cfg));
+  return { status: result.status, proposedWork: result.proposedWork.length };
+}
+
+/** Supabase-backed MeetingStore — shared by the full run and the resume/synthesize path. */
+function buildMeetingStore(
+  supa: ReturnType<typeof getSupabaseAdmin>,
+  running: Utterance[],
+): MeetingStore {
+  return {
     async setStatus(mid, status) {
       await supa.from('meetings').update({ status }).eq('id', mid);
     },
@@ -301,21 +313,84 @@ export async function runMeetingById(id: string): Promise<{ status: string; prop
       return (data ?? []).map((r) => r.id as string);
     },
   };
+}
 
-  const result = await runMeeting(getAnthropic(), store, {
+/** Build the orchestrator MeetingInput from a persisted meeting row + its type config. */
+function meetingInputFrom(id: string, m: Record<string, unknown>, cfg: { required_outputs?: unknown } | null): MeetingInput {
+  return {
     id,
-    projectSlug: m.project_slug,
-    type: m.type,
-    topic: m.topic,
-    participants: (m.participants ?? []) as ExecutiveId[],
-    agenda: m.agenda ?? [],
+    projectSlug: m.project_slug as string,
+    type: m.type as string,
+    topic: m.topic as string,
+    participants: ((m.participants as ExecutiveId[] | null) ?? []) as ExecutiveId[],
+    agenda: (m.agenda as string[] | null) ?? [],
     requiredOutputs: (cfg?.required_outputs ?? {}) as Record<string, unknown>,
-    evidencePack: (m.evidence_pack ?? []) as EvidenceItem[],
-    deliberative: isDeliberative(m.type),
+    evidencePack: (m.evidence_pack as EvidenceItem[] | null) ?? [],
+    deliberative: isDeliberative(m.type as string),
     moderator: 'chief-of-staff',
-  });
+  };
+}
 
-  return { status: result.status, proposedWork: result.proposedWork.length };
+/**
+ * OF-008 — Resume / Request synthesis / Complete a meeting. Drives a stalled
+ * `in_discussion` (or `open`) meeting to `summarized` by re-running ONLY R4 on
+ * the persisted discussion (resumable/auditable), with the conversion guarantee
+ * (owned work or honest no-action). If the meeting has no discussion yet, it
+ * falls back to the full R0–R4 run. Idempotent: terminal meetings are a no-op.
+ */
+export async function synthesizeMeetingById(
+  id: string,
+): Promise<{ status: string; proposedWork: number; synthesizedFallback: boolean; noActionReason: string | null }> {
+  const supa = getSupabaseAdmin();
+  const { data: m, error } = await supa.from('meetings').select('*').eq('id', id).single();
+  if (error || !m) throw new Error('meeting not found');
+  if (m.status === 'approved' || m.status === 'completed') {
+    const { data: existing } = await supa.from('assigned_work').select('id').eq('source_id', id);
+    return { status: m.status, proposedWork: existing?.length ?? 0, synthesizedFallback: false, noActionReason: null };
+  }
+
+  const persisted = ((m.discussion as Utterance[] | null) ?? []) as Utterance[];
+  // No discussion yet → nothing to synthesize from; run the full meeting.
+  if (persisted.length === 0) {
+    const r = await runMeetingById(id);
+    return { ...r, synthesizedFallback: false, noActionReason: null };
+  }
+
+  const { data: cfg } = await supa
+    .from('meeting_type_configs')
+    .select('required_outputs')
+    .eq('type', m.type)
+    .single();
+
+  // Clean any prior partial work so re-synthesis is idempotent.
+  await supa.from('assigned_work').delete().eq('source_id', id).eq('source_type', 'meeting');
+
+  const running: Utterance[] = [...persisted];
+  const store = buildMeetingStore(supa, running);
+  const push = async (us: Utterance[]) => {
+    running.push(...us);
+    const { error: e } = await supa.from('meetings').update({ discussion: running }).eq('id', id);
+    if (e) throw new Error(e.message);
+  };
+
+  const result = await synthesizeAndConvert(getAnthropic(), store, meetingInputFrom(id, m, cfg), persisted, push);
+
+  // Surface the zero-work / fallback / no-action cases (logged; visible in UI).
+  if (result.conversion.synthesizedFallback) {
+    // eslint-disable-next-line no-console
+    console.warn(`[meeting ${id}] synthesis produced no owned work — synthesized 1 fallback owned next step`);
+  }
+  if (result.conversion.noAction) {
+    // eslint-disable-next-line no-console
+    console.warn(`[meeting ${id}] no action needed — ${result.conversion.noAction.reason}`);
+  }
+
+  return {
+    status: result.status,
+    proposedWork: result.proposedWork.length,
+    synthesizedFallback: result.conversion.synthesizedFallback,
+    noActionReason: result.conversion.noAction?.reason ?? null,
+  };
 }
 
 /* ---- approve (the single side-effect gate) ---- */
@@ -413,7 +488,9 @@ export async function approveMeeting(
   if (approved === 0 && rejected === 0) {
     return { status: m.status, approved, rejected, needsCompletion };
   }
-  const status = approved > 0 ? 'approved' : 'cancelled';
+  // OF-008 — the CEO has acted on the proposed work → the meeting lifecycle is
+  // complete (scheduled → in_discussion → summarized → completed).
+  const status = 'completed';
   await supa
     .from('meetings')
     .update({ approved_by: 'ceo', approved_at: new Date().toISOString(), status })
