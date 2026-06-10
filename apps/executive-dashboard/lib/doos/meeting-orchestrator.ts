@@ -129,12 +129,25 @@ function header(m: MeetingInput): string {
   ].join('\n');
 }
 
+/**
+ * OF-007 — the shared meeting context pack (assembled ONCE per meeting, shared to
+ * all participants). companyContext → each persona's system; operationalContext →
+ * prepended to the round prompts. Absent ⇒ byte-identical to the pre-pack run.
+ */
+export interface MeetingContext {
+  companyContext: string;
+  operationalContext: string;
+}
+
 export async function runMeeting(
   client: Anthropic,
   store: MeetingStore,
   m: MeetingInput,
+  context?: MeetingContext,
 ): Promise<RunResult> {
   const moderator: ExecutiveId = m.moderator ?? 'chief-of-staff';
+  const sys = context?.companyContext;
+  const hdr = () => (context ? `${context.operationalContext}\n\n${header(m)}` : header(m));
   // Participants that actually debate (the moderator runs the room, no position).
   const debaters = m.participants.filter((p) => p !== moderator);
   const discussion: Utterance[] = [];
@@ -148,7 +161,8 @@ export async function runMeeting(
   const openText = await callPosition(
     client,
     moderator,
-    `${header(m)}\n\nYou are moderating. In 3-4 sentences, open this meeting: frame the precise decision the room must produce and the trade-off at its heart. Name the participants: ${debaters.map(name).join(', ')}.`,
+    `${hdr()}\n\nYou are moderating. In 3-4 sentences, open this meeting: frame the precise decision the room must produce and the trade-off at its heart. Name the participants: ${debaters.map(name).join(', ')}.`,
+    sys,
   );
   await push([{ round: 0, executive_id: moderator, kind: 'open', text: openText }]);
   await store.setStatus(m.id, 'in_discussion');
@@ -159,7 +173,8 @@ export async function runMeeting(
     const text = await callPosition(
       client,
       id,
-      `${header(m)}\n\nThe Chief of Staff opened: "${openText}"\n\nGive YOUR opening position on the decision. Take a clear, specific stance grounded in the evidence. 2-4 sentences.`,
+      `${hdr()}\n\nThe Chief of Staff opened: "${openText}"\n\nGive YOUR opening position on the decision. Take a clear, specific stance grounded in the evidence. 2-4 sentences.`,
+      sys,
     );
     const u: Utterance = { round: 1, executive_id: id, kind: 'position', text };
     positions.push(u);
@@ -172,7 +187,7 @@ export async function runMeeting(
     for (const id of debaters) {
       const peers = positions.filter((p) => p.executive_id !== id);
       const prompt = [
-        header(m),
+        hdr(),
         `All opening positions:\n${fmtPositions(positions)}`,
         `You are ${name(id)}. Address ONE specific peer's claim by name. ${
           insist
@@ -180,7 +195,7 @@ export async function runMeeting(
             : 'Either CHALLENGE their claim with counter-reasoning/evidence, or CONCUR with a specific reason. Default to challenge where you see real risk.'
         } Peers: ${peers.map((p) => `${name(p.executive_id as ExecutiveId)} (${p.executive_id})`).join(', ')}.`,
       ].join('\n\n');
-      const c = await callChallenge(client, id, prompt);
+      const c = await callChallenge(client, id, prompt, sys);
       const u: Utterance = {
         round: 2,
         executive_id: id,
@@ -210,20 +225,20 @@ export async function runMeeting(
   for (const id of challengedIds) {
     const against = challenges.filter((c) => c.target === id && c.kind === 'challenge');
     const prompt = [
-      header(m),
+      hdr(),
       `Your opening position was: "${positions.find((p) => p.executive_id === id)?.text ?? ''}"`,
       `Challenges raised against you:\n${against
         .map((c) => `  ${name(c.executive_id as ExecutiveId)}: ${c.text}`)
         .join('\n')}`,
       `Respond once. Concede what is fair, defend what holds, and sharpen the actual decision. 2-3 sentences.`,
     ].join('\n\n');
-    const text = await callRebuttal(client, id, prompt);
+    const text = await callRebuttal(client, id, prompt, sys);
     await push([{ round: 3, executive_id: id, kind: 'rebuttal', text }]);
   }
 
   // R4 — CoS synthesis + the OF-008 conversion guarantee. Delegated so the
   // resume/synthesize path runs the EXACT same close on a persisted discussion.
-  return synthesizeAndConvert(client, store, m, discussion, push);
+  return synthesizeAndConvert(client, store, m, discussion, push, context);
 }
 
 /**
@@ -240,13 +255,16 @@ export async function synthesizeAndConvert(
   m: MeetingInput,
   discussion: Utterance[],
   push: (us: Utterance[]) => Promise<void>,
+  context?: MeetingContext,
 ): Promise<RunResult> {
   const moderator: ExecutiveId = m.moderator ?? 'chief-of-staff';
   const debaters = m.participants.filter((p) => p !== moderator);
+  const sys = context?.companyContext;
+  const hdr = context ? `${context.operationalContext}\n\n${header(m)}` : header(m);
 
   const synthPrompt = (insist: boolean) =>
     [
-      header(m),
+      hdr,
       `FULL TRANSCRIPT:\n${discussion
         .map((u) => `  [R${u.round} ${u.kind}${u.target ? `→${u.target}` : ''}] ${name(u.executive_id as ExecutiveId)}: ${u.text}`)
         .join('\n')}`,
@@ -271,10 +289,10 @@ export async function synthesizeAndConvert(
     return { ok: notes.length === 0, notes };
   };
 
-  let final = toFinal(await callSynthesis(client, synthPrompt(false)));
+  let final = toFinal(await callSynthesis(client, synthPrompt(false), sys));
   let check = validate(final);
   if (!check.ok) {
-    final = toFinal(await callSynthesis(client, synthPrompt(true)));
+    final = toFinal(await callSynthesis(client, synthPrompt(true), sys));
     check = validate(final);
   }
 

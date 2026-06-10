@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { useTheme } from '../../theme-provider';
 import { StatusBadge } from '../../ds/StatusBadge';
 import { CeoReplyBox } from '../CeoReplyBox';
+import { ContextProvidedPanel } from './ContextProvidedPanel';
 import { STATE_META, STATE_ORDER, SOURCE_LABEL, tx } from '../work/labels';
 import type {
   WorkspacePayload,
@@ -22,6 +23,7 @@ import type {
   CommunicationBlock,
 } from '../../../lib/executive-os/executives';
 import type { WorkListItem } from '../../../lib/executive-os/work-control-core';
+import type { PersistedContextPack } from '../../../lib/executive-os/context-pack-deps';
 
 const L = {
   identity: { en: 'Identity', he: 'זהות' },
@@ -127,10 +129,12 @@ export function ExecutiveDesktop({
   ws,
   slug,
   memorySlot,
+  contextPacks,
 }: {
   ws: WorkspacePayload;
   slug: string;
   memorySlot: React.ReactNode;
+  contextPacks: PersistedContextPack[];
 }) {
   const { locale } = useTheme();
   const he = locale === 'he';
@@ -346,6 +350,9 @@ export function ExecutiveDesktop({
           </ul>
         )}
       </Section>
+
+      {/* OF-007 — Context provided to this executive (CEO-inspectable) */}
+      <ContextProvidedPanel packs={contextPacks} he={he} />
     </div>
   );
 }

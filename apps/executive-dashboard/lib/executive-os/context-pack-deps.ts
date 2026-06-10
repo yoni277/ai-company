@@ -108,6 +108,45 @@ export function buildContextPackDeps(): ContextPackDeps {
   };
 }
 
+export interface PersistedContextPack {
+  id: string;
+  purpose: string;
+  assembledAt: string;
+  sourceKind: string | null;
+  sourceId: string | null;
+  pack: ContextPack;
+}
+
+/**
+ * OF-007 Phase 3 — read recent persisted packs for the CEO "Context provided to
+ * this executive" render. project_slug + executive_id-scoped, newest first.
+ * Empty-state-valid: no packs → []. (Reads only; the feature flag governs writes.)
+ */
+export async function loadExecutiveContextPacks(
+  executiveId: string,
+  projectSlug: string,
+  limit = 5,
+): Promise<PersistedContextPack[]> {
+  const supa = getSupabaseAdmin();
+  const { data } = await supa
+    .from('executive_context_packs')
+    .select('id, purpose, assembled_at, source_kind, source_id, pack')
+    .eq('executive_id', executiveId)
+    .eq('project_slug', projectSlug)
+    .order('assembled_at', { ascending: false })
+    .limit(limit);
+  return (data ?? []).map(
+    (r: { id: string; purpose: string; assembled_at: string; source_kind: string | null; source_id: string | null; pack: ContextPack }) => ({
+      id: r.id,
+      purpose: r.purpose,
+      assembledAt: r.assembled_at,
+      sourceKind: r.source_kind,
+      sourceId: r.source_id,
+      pack: r.pack,
+    }),
+  );
+}
+
 /** Persist an assembled pack for CEO inspectability (additive table; soft source_id). */
 export async function persistContextPack(
   pack: ContextPack,

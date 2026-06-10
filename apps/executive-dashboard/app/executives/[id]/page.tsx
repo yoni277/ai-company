@@ -18,6 +18,7 @@ import { NewMeetingButton } from '../../../components/executive-os/NewMeetingBut
 import { ExecutiveMemoryPanel } from '../../../components/executive-os/ExecutiveMemoryPanel';
 import { ExecutiveDesktop } from '../../../components/executive-os/executive-desktop/ExecutiveDesktop';
 import { loadExecutiveWorkspace } from '../../../lib/executive-os/executives';
+import { loadExecutiveContextPacks } from '../../../lib/executive-os/context-pack-deps';
 import { loadExecutives } from '../../../lib/executive-os';
 import { listMeetingTypes, listBusinessSlugs } from '../../../lib/executive-os/meetings';
 
@@ -35,10 +36,11 @@ export default async function ExecutiveWorkspacePage({
   const { project_slug } = await searchParams;
   const slug = project_slug || businesses[0]?.slug || '';
 
-  const [ws, meetingTypes, executives] = await Promise.all([
+  const [ws, meetingTypes, executives, contextPacks] = await Promise.all([
     slug ? loadExecutiveWorkspace(id, slug) : Promise.resolve(null),
     listMeetingTypes(),
     Promise.resolve(loadExecutives()),
+    slug ? loadExecutiveContextPacks(id, slug) : Promise.resolve([]),
   ]);
   if (!ws) notFound();
 
@@ -89,6 +91,7 @@ export default async function ExecutiveWorkspacePage({
         <ExecutiveDesktop
           ws={ws}
           slug={slug}
+          contextPacks={contextPacks}
           memorySlot={
             <ExecutiveMemoryPanel
               executiveId={ws.executiveId}
