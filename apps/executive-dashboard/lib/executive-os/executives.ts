@@ -55,6 +55,8 @@ export interface InstructionItem {
   instruction: string;
   status: string;
   awaitingCeoInput: boolean;
+  /** OF-005 — the executive's latest output: its clarifying question when awaiting, else its answer. */
+  question: string;
   createdAt: string;
 }
 
@@ -169,7 +171,7 @@ export async function loadExecutiveWorkspace(
       : Promise.resolve({ data: [] as Array<{ id: string; description: string; severity: string; status: string }> }),
     supa
       .from('direct_instructions')
-      .select('id, instruction, status, awaiting_ceo_input, created_at')
+      .select('id, instruction, status, awaiting_ceo_input, response, created_at')
       .eq('to_executive_id', executiveId)
       .eq('project_slug', projectSlug)
       .order('created_at', { ascending: false })
@@ -257,6 +259,7 @@ export async function loadExecutiveWorkspace(
     instruction: (i.instruction as string).slice(0, 160),
     status: i.status,
     awaitingCeoInput: i.awaiting_ceo_input ?? false,
+    question: (i.response as string | null) ?? '',
     createdAt: i.created_at,
   }));
   const decisionItems: DecisionItem[] = (decisions.data ?? []).map((d) => ({

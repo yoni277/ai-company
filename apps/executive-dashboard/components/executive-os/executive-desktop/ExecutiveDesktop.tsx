@@ -14,6 +14,7 @@
 import Link from 'next/link';
 import { useTheme } from '../../theme-provider';
 import { StatusBadge } from '../../ds/StatusBadge';
+import { CeoReplyBox } from '../CeoReplyBox';
 import { STATE_META, STATE_ORDER, SOURCE_LABEL, tx } from '../work/labels';
 import type {
   WorkspacePayload,
@@ -256,9 +257,11 @@ export function ExecutiveDesktop({
             {comm.pendingQuestions.length === 0 ? (
               <Empty label={t(L.none, he)} />
             ) : (
-              <ul className="space-y-xs">
+              <ul className="space-y-sm">
                 {comm.pendingQuestions.map((q) => (
-                  <li key={q.id} className="font-body-sm text-body-sm text-on-surface">{q.instruction}</li>
+                  <li key={q.id}>
+                    <CeoReplyBox instructionId={q.id} instruction={q.instruction} question={q.question} he={he} />
+                  </li>
                 ))}
               </ul>
             )}

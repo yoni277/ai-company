@@ -59,7 +59,32 @@ export function instructionPrompt(
     `The CEO has given you a direct instruction:`,
     `"${instruction}"`,
     expectedOutput ? `Expected output: ${expectedOutput}` : '',
-    `Acknowledge it and respond with your plan / answer. Be specific and grounded; advisory only (you do not execute external systems). 3-6 sentences.`,
+    `Respond with your plan / answer. Be specific and grounded; advisory only (you do not execute external systems). 3-6 sentences. If — and only if — you genuinely cannot proceed without a specific CEO decision or clarification, set needs_ceo_input and ask ONE specific question instead of guessing.`,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+/**
+ * OF-005 — continuation prompt: the executive asked the CEO a question and the
+ * CEO replied. Re-invoke with the full thread so the executive continues (and may,
+ * if still blocked, ask one more question).
+ */
+export function instructionContinuePrompt(
+  instruction: string,
+  expectedOutput: string | null,
+  projectSlug: string,
+  question: string,
+  ceoResponse: string,
+): string {
+  return [
+    `BUSINESS: ${projectSlug}`,
+    `The CEO gave you this direct instruction:`,
+    `"${instruction}"`,
+    expectedOutput ? `Expected output: ${expectedOutput}` : '',
+    `You asked the CEO: "${question}"`,
+    `The CEO replied: "${ceoResponse}"`,
+    `Now continue: incorporate the CEO's answer and produce your response / plan. Advisory only. 3-6 sentences. Only ask another question (needs_ceo_input) if you are STILL genuinely blocked on a specific decision.`,
   ]
     .filter(Boolean)
     .join('\n\n');
