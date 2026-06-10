@@ -23,9 +23,20 @@ import 'server-only';
 
 import { getSupabaseAdmin } from '../doos/supabase-admin';
 import { createDecision } from '../ceo-operating-system';
-import { getAnthropic, callPosition, type ExecutiveId } from '../doos/meeting-personas';
+import {
+  getAnthropic,
+  callInstructionResponse,
+  type ExecutiveId,
+  type InstructionResponseResult,
+} from '../doos/meeting-personas';
 import { EXECUTIVE_IDS } from './executives';
-import { instructionRow, instructionWorkRow, instructionPrompt, type InstructionInput } from './instruction-shape';
+import {
+  instructionRow,
+  instructionWorkRow,
+  instructionPrompt,
+  instructionContinuePrompt,
+  type InstructionInput,
+} from './instruction-shape';
 
 export type CreateInstructionInput = InstructionInput;
 
@@ -88,52 +99,125 @@ export async function createInstruction(input: CreateInstructionInput): Promise<
   return { instructionId: instr.id as string, decisionId: decision.id, assignedWorkId: work.id as string };
 }
 
-/** Reusable single-executive response (L30 persona seam). */
+/** Reusable single-executive response (L30 persona seam) — structured (OF-005). */
 export async function respondToInstruction(
   executiveId: ExecutiveId,
-  instruction: string,
-  expectedOutput: string | null,
-  projectSlug: string,
-): Promise<string> {
+  prompt: string,
+): Promise<InstructionResponseResult> {
   const client = getAnthropic();
-  return callPosition(client, executiveId, instructionPrompt(instruction, expectedOutput, projectSlug));
+  return callInstructionResponse(client, executiveId, prompt);
 }
 
-export async function runInstruction(id: string): Promise<{ status: string; response: string }> {
+/**
+ * OF-005 — apply a structured instruction response to direct_instructions + the
+ * linked assigned_work, closing or holding the loop:
+ *   - needsCeoInput → store the QUESTION in `response`, set awaiting_ceo_input=true,
+ *     stamp the work's status_changed_at so the classifier reads `awaiting_ceo_input`
+ *     with correct aging. Execution is NOT advanced (the exec is blocked on the CEO).
+ *   - otherwise     → store the answer, clear awaiting, advance the work to
+ *     in_progress (stamping status_changed_at).
+ */
+async function applyInstructionResponse(
+  supa: ReturnType<typeof getSupabaseAdmin>,
+  instr: { id: string; linked_assigned_work_id: string | null },
+  result: InstructionResponseResult,
+  status: string,
+  extra: Record<string, unknown> = {},
+): Promise<{ status: string; response: string; awaitingCeoInput: boolean }> {
+  const awaiting = result.needsCeoInput;
+  const responseText = awaiting ? result.question : result.response;
+  const now = new Date().toISOString();
+
+  await supa
+    .from('direct_instructions')
+    .update({
+      status,
+      response: responseText || null,
+      awaiting_ceo_input: awaiting,
+      responded_at: now,
+      ...extra,
+    })
+    .eq('id', instr.id);
+
+  if (instr.linked_assigned_work_id) {
+    if (awaiting) {
+      // Entered awaiting-CEO-input — not an execution transition, but stamp so
+      // "days in current state" reflects when the question was asked (AC13).
+      await supa
+        .from('assigned_work')
+        .update({ status_changed_at: now })
+        .eq('id', instr.linked_assigned_work_id);
+    } else {
+      // Advance into execution (instructions never create tasks/evidence — #6/#7).
+      await supa
+        .from('assigned_work')
+        .update({ execution_status: 'in_progress', status_changed_at: now })
+        .eq('id', instr.linked_assigned_work_id)
+        .eq('execution_status', 'open');
+    }
+  }
+  return { status, response: responseText, awaitingCeoInput: awaiting };
+}
+
+export async function runInstruction(
+  id: string,
+): Promise<{ status: string; response: string; awaitingCeoInput: boolean }> {
   const supa = getSupabaseAdmin();
   const { data: instr, error } = await supa.from('direct_instructions').select('*').eq('id', id).single();
   if (error || !instr) throw new Error('instruction not found');
   if (!isExec(instr.to_executive_id)) throw new Error('invalid target executive');
 
-  let response: string;
+  let result: InstructionResponseResult;
   let status = 'responded';
   try {
-    response = await respondToInstruction(
+    result = await respondToInstruction(
       instr.to_executive_id,
-      instr.instruction,
-      instr.expected_output ?? null,
-      instr.project_slug,
+      instructionPrompt(instr.instruction, instr.expected_output ?? null, instr.project_slug),
     );
   } catch {
     // L23 lesson: degrade gracefully — acknowledged without a response, never crash.
-    response = '';
+    result = { needsCeoInput: false, question: '', response: '' };
     status = 'acknowledged';
   }
+  return applyInstructionResponse(supa, instr, result, status);
+}
 
-  await supa
-    .from('direct_instructions')
-    .update({ status, response: response || null, responded_at: new Date().toISOString() })
-    .eq('id', id);
-  // Advance the work into execution (still gated/approved; instructions never
-  // create tasks/evidence/outcomes — that stays in the normal spine, #6/#7).
-  if (instr.linked_assigned_work_id) {
-    // EPIC-004A AC13: every execution_status transition stamps status_changed_at
-    // in the SAME write, or "days in current state" aging is wrong.
-    await supa
-      .from('assigned_work')
-      .update({ execution_status: 'in_progress', status_changed_at: new Date().toISOString() })
-      .eq('id', instr.linked_assigned_work_id)
-      .eq('execution_status', 'open');
+/**
+ * OF-005 — the CEO answers an executive's clarifying question in-thread, closing
+ * the stall. Stores ceo_response, clears awaiting_ceo_input, re-invokes the
+ * executive with the full thread, and applies the continued response (which may,
+ * if still blocked, ask one more question — the loop holds, never stalls silently).
+ * project_slug-scoped (the instruction carries it); CEO-only (dashboard-gated).
+ */
+export async function respondToCeoInput(
+  id: string,
+  ceoResponse: string,
+): Promise<{ status: string; response: string; awaitingCeoInput: boolean }> {
+  if (!ceoResponse.trim()) throw new Error('ceoResponse is required');
+  const supa = getSupabaseAdmin();
+  const { data: instr, error } = await supa.from('direct_instructions').select('*').eq('id', id).single();
+  if (error || !instr) throw new Error('instruction not found');
+  if (!isExec(instr.to_executive_id)) throw new Error('invalid target executive');
+
+  const question = (instr.response as string | null) ?? '';
+
+  let result: InstructionResponseResult;
+  let status = 'responded';
+  try {
+    result = await respondToInstruction(
+      instr.to_executive_id,
+      instructionContinuePrompt(
+        instr.instruction,
+        instr.expected_output ?? null,
+        instr.project_slug,
+        question,
+        ceoResponse.trim(),
+      ),
+    );
+  } catch {
+    result = { needsCeoInput: false, question: '', response: '' };
+    status = 'acknowledged';
   }
-  return { status, response };
+  // Persist the CEO's reply alongside the continued response.
+  return applyInstructionResponse(supa, instr, result, status, { ceo_response: ceoResponse.trim() });
 }

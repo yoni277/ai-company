@@ -244,3 +244,69 @@ export async function callSynthesis(client: Anthropic, prompt: string): Promise<
       : [],
   };
 }
+
+/* ----------------------------------------------------------------------------
+ * OF-005 — Direct-instruction response with a structured CEO-input signal.
+ * The executive either answers, or (when it genuinely cannot proceed without a
+ * CEO decision) flags `needs_ceo_input` and asks ONE specific question. Reuses
+ * the SAME persona seam + tool-use pattern as callChallenge/callSynthesis — no
+ * new machinery.
+ * -------------------------------------------------------------------------- */
+
+export interface InstructionResponseResult {
+  needsCeoInput: boolean;
+  question: string;
+  response: string;
+}
+
+const INSTRUCTION_TOOL: Anthropic.Tool = {
+  name: 'respond_to_instruction',
+  description:
+    "Respond to the CEO's direct instruction. Either provide your answer/plan, OR — only if you genuinely cannot proceed without a specific CEO decision or clarification — set needs_ceo_input=true and ask ONE specific question. Do not invent facts to avoid asking; but do not ask when you can reasonably proceed.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      needs_ceo_input: {
+        type: 'boolean',
+        description: 'true ONLY when you cannot proceed without a specific CEO decision/clarification.',
+      },
+      question: {
+        type: 'string',
+        description: 'when needs_ceo_input=true: ONE specific question for the CEO. Otherwise empty.',
+      },
+      response: {
+        type: 'string',
+        description: 'your plan/answer (advisory). When blocked, state what you can pending the answer.',
+      },
+    },
+    required: ['needs_ceo_input', 'response'],
+  },
+};
+
+export async function callInstructionResponse(
+  client: Anthropic,
+  id: ExecutiveId,
+  prompt: string,
+): Promise<InstructionResponseResult> {
+  const res = await client.messages.create({
+    model: MODEL,
+    max_tokens: 800,
+    system: systemFor(id),
+    tools: [INSTRUCTION_TOOL],
+    tool_choice: { type: 'tool', name: INSTRUCTION_TOOL.name },
+    messages: [{ role: 'user', content: prompt }],
+  });
+  const tool = res.content.find(
+    (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use' && b.name === INSTRUCTION_TOOL.name,
+  );
+  const input = (tool?.input ?? {}) as Record<string, unknown>;
+  const needsCeoInput = input.needs_ceo_input === true;
+  const question = typeof input.question === 'string' ? input.question.trim() : '';
+  const response = typeof input.response === 'string' ? input.response.trim() : '';
+  // Guard: a "needs input" with no question is not actionable — treat as answered.
+  return {
+    needsCeoInput: needsCeoInput && question.length > 0,
+    question,
+    response,
+  };
+}
