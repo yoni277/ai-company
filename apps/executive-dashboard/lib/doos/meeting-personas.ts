@@ -287,11 +287,15 @@ export async function callInstructionResponse(
   client: Anthropic,
   id: ExecutiveId,
   prompt: string,
+  systemSuffix?: string,
 ): Promise<InstructionResponseResult> {
+  // OF-007 — Layer 1 (companyContext) appends to the persona system prompt when
+  // provided; absent ⇒ byte-identical to the pre-context-pack behaviour.
+  const system = systemSuffix ? `${systemFor(id)}\n\n${systemSuffix}` : systemFor(id);
   const res = await client.messages.create({
     model: MODEL,
     max_tokens: 800,
-    system: systemFor(id),
+    system,
     tools: [INSTRUCTION_TOOL],
     tool_choice: { type: 'tool', name: INSTRUCTION_TOOL.name },
     messages: [{ role: 'user', content: prompt }],
