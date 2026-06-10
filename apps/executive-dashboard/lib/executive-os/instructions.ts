@@ -37,6 +37,8 @@ import {
   instructionContinuePrompt,
   type InstructionInput,
 } from './instruction-shape';
+import { assembleExecutiveContext, isContextPackEnabled } from './context-pack';
+import { buildContextPackDeps, persistContextPack } from './context-pack-deps';
 
 export type CreateInstructionInput = InstructionInput;
 
@@ -103,9 +105,38 @@ export async function createInstruction(input: CreateInstructionInput): Promise<
 export async function respondToInstruction(
   executiveId: ExecutiveId,
   prompt: string,
+  systemSuffix?: string,
 ): Promise<InstructionResponseResult> {
   const client = getAnthropic();
-  return callInstructionResponse(client, executiveId, prompt);
+  return callInstructionResponse(client, executiveId, prompt, systemSuffix);
+}
+
+/**
+ * OF-007 Phase 2 — when CONTEXT_PACK_ENABLED('instruction') is on, assemble the
+ * target executive's context pack, persist it (CEO-inspectable), and return the
+ * Layer-1 system suffix + Layer-2 user-prompt prefix. Flag OFF → returns {} and
+ * the response path is byte-identical to today. Context is best-effort: an
+ * assemble/persist failure falls back to the cold prompt, never blocks the run.
+ */
+async function instructionContextInjection(instr: {
+  to_executive_id: string;
+  project_slug: string;
+  id: string;
+}): Promise<{ systemSuffix?: string; prefix?: string }> {
+  if (!isContextPackEnabled('instruction')) return {};
+  try {
+    const { companyContext, operationalContext, pack } = await assembleExecutiveContext(buildContextPackDeps(), {
+      executiveId: instr.to_executive_id,
+      projectSlug: instr.project_slug,
+      purpose: 'instruction',
+    });
+    await persistContextPack(pack, 'instruction', instr.id);
+    return { systemSuffix: companyContext, prefix: operationalContext };
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[context-pack] assemble/persist failed; falling back to cold prompt', e);
+    return {};
+  }
 }
 
 /**
@@ -167,13 +198,16 @@ export async function runInstruction(
   if (error || !instr) throw new Error('instruction not found');
   if (!isExec(instr.to_executive_id)) throw new Error('invalid target executive');
 
+  // OF-007 — inject the context pack (Layer 1 → system, Layer 2 → prompt) + persist
+  // it, when the flag is on. Flag off ⇒ ctx is {} ⇒ identical to today.
+  const ctx = await instructionContextInjection(instr);
+  const basePrompt = instructionPrompt(instr.instruction, instr.expected_output ?? null, instr.project_slug);
+  const prompt = ctx.prefix ? `${ctx.prefix}\n\n${basePrompt}` : basePrompt;
+
   let result: InstructionResponseResult;
   let status = 'responded';
   try {
-    result = await respondToInstruction(
-      instr.to_executive_id,
-      instructionPrompt(instr.instruction, instr.expected_output ?? null, instr.project_slug),
-    );
+    result = await respondToInstruction(instr.to_executive_id, prompt, ctx.systemSuffix);
   } catch {
     // L23 lesson: degrade gracefully — acknowledged without a response, never crash.
     result = { needsCeoInput: false, question: '', response: '' };
@@ -201,19 +235,21 @@ export async function respondToCeoInput(
 
   const question = (instr.response as string | null) ?? '';
 
+  // OF-007 — same flag-gated injection on the continuation turn.
+  const ctx = await instructionContextInjection(instr);
+  const baseContinue = instructionContinuePrompt(
+    instr.instruction,
+    instr.expected_output ?? null,
+    instr.project_slug,
+    question,
+    ceoResponse.trim(),
+  );
+  const continuePrompt = ctx.prefix ? `${ctx.prefix}\n\n${baseContinue}` : baseContinue;
+
   let result: InstructionResponseResult;
   let status = 'responded';
   try {
-    result = await respondToInstruction(
-      instr.to_executive_id,
-      instructionContinuePrompt(
-        instr.instruction,
-        instr.expected_output ?? null,
-        instr.project_slug,
-        question,
-        ceoResponse.trim(),
-      ),
-    );
+    result = await respondToInstruction(instr.to_executive_id, continuePrompt, ctx.systemSuffix);
   } catch {
     result = { needsCeoInput: false, question: '', response: '' };
     status = 'acknowledged';

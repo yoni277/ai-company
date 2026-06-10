@@ -21,7 +21,10 @@ import {
   type AssignedWorkProposal,
   type MeetingFinal,
   type MeetingInput,
+  type MeetingContext,
 } from '../doos/meeting-orchestrator';
+import { assembleExecutiveContext, isContextPackEnabled } from './context-pack';
+import { buildContextPackDeps, persistContextPack } from './context-pack-deps';
 import type { SynthesisDecision } from '../doos/meeting-personas';
 import { createDecision } from '../ceo-operating-system';
 import { assertApprovable, NeedsCeoCompletionError } from './work-control';
@@ -273,8 +276,36 @@ export async function runMeetingById(id: string): Promise<{ status: string; prop
 
   const running: Utterance[] = [];
   const store = buildMeetingStore(supa, running);
-  const result = await runMeeting(getAnthropic(), store, meetingInputFrom(id, m, cfg));
+  const context = await meetingContextInjection(id, m.project_slug);
+  const result = await runMeeting(getAnthropic(), store, meetingInputFrom(id, m, cfg), context);
   return { status: result.status, proposedWork: result.proposedWork.length };
+}
+
+/**
+ * OF-007 Phase 3 — assemble ONE context pack per meeting (purpose='meeting',
+ * scoped via the moderator so it reads as the shared company/operational snapshot)
+ * and persist it (source_kind='meeting'). Returned context is shared to ALL
+ * participants by the orchestrator. Flag OFF (or on failure) → undefined ⇒ the run
+ * is byte-identical to today.
+ */
+async function meetingContextInjection(
+  meetingId: string,
+  projectSlug: string,
+): Promise<MeetingContext | undefined> {
+  if (!isContextPackEnabled('meeting')) return undefined;
+  try {
+    const { companyContext, operationalContext, pack } = await assembleExecutiveContext(buildContextPackDeps(), {
+      executiveId: 'chief-of-staff',
+      projectSlug,
+      purpose: 'meeting',
+    });
+    await persistContextPack(pack, 'meeting', meetingId);
+    return { companyContext, operationalContext };
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[context-pack] meeting assemble/persist failed; running without context', e);
+    return undefined;
+  }
 }
 
 /** Supabase-backed MeetingStore — shared by the full run and the resume/synthesize path. */
@@ -373,7 +404,15 @@ export async function synthesizeMeetingById(
     if (e) throw new Error(e.message);
   };
 
-  const result = await synthesizeAndConvert(getAnthropic(), store, meetingInputFrom(id, m, cfg), persisted, push);
+  const context = await meetingContextInjection(id, m.project_slug);
+  const result = await synthesizeAndConvert(
+    getAnthropic(),
+    store,
+    meetingInputFrom(id, m, cfg),
+    persisted,
+    push,
+    context,
+  );
 
   // Surface the zero-work / fallback / no-action cases (logged; visible in UI).
   if (result.conversion.synthesizedFallback) {

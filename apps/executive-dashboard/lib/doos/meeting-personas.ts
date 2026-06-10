@@ -78,23 +78,44 @@ export function getAnthropic(): Anthropic {
 
 const MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
 
-async function text(client: Anthropic, id: ExecutiveId, user: string, maxTokens = 700): Promise<string> {
+/** OF-007 — append the Layer-1 companyContext to the persona system when present. */
+function systemWith(id: ExecutiveId, systemSuffix?: string): string {
+  return systemSuffix ? `${systemFor(id)}\n\n${systemSuffix}` : systemFor(id);
+}
+
+async function text(
+  client: Anthropic,
+  id: ExecutiveId,
+  user: string,
+  maxTokens = 700,
+  systemSuffix?: string,
+): Promise<string> {
   const res = await client.messages.create({
     model: MODEL,
     max_tokens: maxTokens,
-    system: systemFor(id),
+    system: systemWith(id, systemSuffix),
     messages: [{ role: 'user', content: user }],
   });
   const block = res.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
   return (block?.text ?? '').trim();
 }
 
-export function callPosition(client: Anthropic, id: ExecutiveId, prompt: string): Promise<string> {
-  return text(client, id, prompt);
+export function callPosition(
+  client: Anthropic,
+  id: ExecutiveId,
+  prompt: string,
+  systemSuffix?: string,
+): Promise<string> {
+  return text(client, id, prompt, 700, systemSuffix);
 }
 
-export function callRebuttal(client: Anthropic, id: ExecutiveId, prompt: string): Promise<string> {
-  return text(client, id, prompt);
+export function callRebuttal(
+  client: Anthropic,
+  id: ExecutiveId,
+  prompt: string,
+  systemSuffix?: string,
+): Promise<string> {
+  return text(client, id, prompt, 700, systemSuffix);
 }
 
 export interface ChallengeResult {
@@ -127,11 +148,12 @@ export async function callChallenge(
   client: Anthropic,
   id: ExecutiveId,
   prompt: string,
+  systemSuffix?: string,
 ): Promise<ChallengeResult> {
   const res = await client.messages.create({
     model: MODEL,
     max_tokens: 600,
-    system: systemFor(id),
+    system: systemWith(id, systemSuffix),
     tools: [CHALLENGE_TOOL],
     tool_choice: { type: 'tool', name: CHALLENGE_TOOL.name },
     messages: [{ role: 'user', content: prompt }],
@@ -203,11 +225,15 @@ const SYNTHESIS_TOOL: Anthropic.Tool = {
   },
 };
 
-export async function callSynthesis(client: Anthropic, prompt: string): Promise<SynthesisResult> {
+export async function callSynthesis(
+  client: Anthropic,
+  prompt: string,
+  systemSuffix?: string,
+): Promise<SynthesisResult> {
   const res = await client.messages.create({
     model: MODEL,
     max_tokens: 1800,
-    system: systemFor('chief-of-staff'),
+    system: systemWith('chief-of-staff', systemSuffix),
     tools: [SYNTHESIS_TOOL],
     tool_choice: { type: 'tool', name: SYNTHESIS_TOOL.name },
     messages: [{ role: 'user', content: prompt }],
@@ -287,11 +313,15 @@ export async function callInstructionResponse(
   client: Anthropic,
   id: ExecutiveId,
   prompt: string,
+  systemSuffix?: string,
 ): Promise<InstructionResponseResult> {
+  // OF-007 — Layer 1 (companyContext) appends to the persona system prompt when
+  // provided; absent ⇒ byte-identical to the pre-context-pack behaviour.
+  const system = systemSuffix ? `${systemFor(id)}\n\n${systemSuffix}` : systemFor(id);
   const res = await client.messages.create({
     model: MODEL,
     max_tokens: 800,
-    system: systemFor(id),
+    system,
     tools: [INSTRUCTION_TOOL],
     tool_choice: { type: 'tool', name: INSTRUCTION_TOOL.name },
     messages: [{ role: 'user', content: prompt }],
