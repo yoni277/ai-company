@@ -16,6 +16,7 @@ import { loadPortfolioIntelligenceForDashboard } from './portfolio-intelligence'
 import { listActiveDirectives, listDecisions } from './ceo-operating-system';
 import { loadWorkMasterList } from './executive-os/work-control';
 import { derivePendingApprovals } from './pending-approvals-core';
+import { partitionRiskProvenance } from './risk-provenance-core';
 import type { Repositories } from '@ai-company/database';
 
 export type { Phase2Snapshot, PendingApproval };
@@ -24,14 +25,33 @@ export async function loadPhase2Snapshot(repos: Repositories): Promise<Phase2Sna
   const githubConn = githubConnectorFromEnv();
   const supabaseConn = supabasePlatformConnectorFromEnv();
 
-  const [github, supabase, openRisks, projects] = await Promise.all([
+  const [github, supabase, openRisks, projects, decisions] = await Promise.all([
     githubConn.fetchMetrics(),
     supabaseConn.fetchMetrics(),
     repos.risks.listOpen(),
     repos.projects.list(),
+    listDecisions(),
   ]);
 
-  const criticalRisks = openRisks.filter((r) => r.severity === 'critical').length;
+  // D6 — provenance boundary. Only connector:*/system:* risks (and executive
+  // risks the CEO has explicitly CONFIRMED via a ceo_decisions record) feed the
+  // deterministic health score. Executive/unknown risks stay CEO-visible
+  // (advisory) but do NOT move the number. No free-text, no schema change.
+  const confirmedRiskIds = confirmedRiskIdsFromDecisions(decisions);
+  const provenance = partitionRiskProvenance(openRisks, confirmedRiskIds);
+
+  if (provenance.unknownSources.length > 0) {
+    // P1-3 spirit: an unrecognized provenance is failed-safe to advisory, never
+    // silently scored. Surface it so the source taxonomy can be corrected.
+    // eslint-disable-next-line no-console
+    console.warn(
+      `D6: ${provenance.unknownSources.length} risk(s) with unrecognized source band (advisory, not scored): ${[
+        ...new Set(provenance.unknownSources),
+      ].join(', ')}`,
+    );
+  }
+
+  const criticalRisks = provenance.deterministicCriticalCount;
   const health = calculateHealthScore(
     healthScoreInputsFromMetrics({
       githubOpenIssues: github.openIssues,
@@ -41,7 +61,11 @@ export async function loadPhase2Snapshot(repos: Repositories): Promise<Phase2Sna
 
   const pendingApprovals = await collectPendingApprovals(repos, projects);
 
-  const topRisks = [...openRisks].sort((a, b) => sevRank(a.severity) - sevRank(b.severity)).slice(0, 8);
+  // topRisks keeps every risk (advisory ones included, flagged) so the CEO sees
+  // executive insights even though they did not move the score.
+  const topRisks = [...provenance.marked]
+    .sort((a, b) => sevRank(a.severity) - sevRank(b.severity))
+    .slice(0, 8);
 
   return {
     github,
@@ -143,4 +167,24 @@ async function collectPendingApprovals(
 
 function sevRank(s: 'low' | 'medium' | 'high' | 'critical') {
   return { critical: 0, high: 1, medium: 2, low: 3 }[s];
+}
+
+/**
+ * D6 confirmation signal — risk ids the CEO has explicitly accepted into
+ * deterministic scoring via an existing ceo_decisions record. The link is the
+ * decision's source_action_id (the action the decision was made on); an
+ * APPROVED decision is the explicit acceptance. Reuses the decision record — no
+ * new table, no write-time change, no schema change. Until a CEO confirms a
+ * risk this way the set is empty and every executive risk stays advisory.
+ */
+function confirmedRiskIdsFromDecisions(
+  decisions: Awaited<ReturnType<typeof listDecisions>>,
+): Set<string> {
+  const ids = new Set<string>();
+  for (const d of decisions) {
+    if (d.decisionStatus === 'approved' && d.sourceActionId) {
+      ids.add(d.sourceActionId);
+    }
+  }
+  return ids;
 }
