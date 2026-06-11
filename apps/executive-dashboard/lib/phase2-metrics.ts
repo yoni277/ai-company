@@ -11,10 +11,11 @@ import type {
   PendingApproval,
   Phase2Snapshot,
 } from '@ai-company/shared-types';
-import type { Risk } from '@ai-company/shared-types';
 import { generateDailyBrief } from '@ai-company/ai-chief-of-staff';
 import { loadPortfolioIntelligenceForDashboard } from './portfolio-intelligence';
 import { listActiveDirectives, listDecisions } from './ceo-operating-system';
+import { loadWorkMasterList } from './executive-os/work-control';
+import { derivePendingApprovals } from './pending-approvals-core';
 import type { Repositories } from '@ai-company/database';
 
 export type { Phase2Snapshot, PendingApproval };
@@ -38,7 +39,7 @@ export async function loadPhase2Snapshot(repos: Repositories): Promise<Phase2Sna
     }),
   );
 
-  const pendingApprovals = await collectPendingApprovals(repos, openRisks, projects);
+  const pendingApprovals = await collectPendingApprovals(repos, projects);
 
   const topRisks = [...openRisks].sort((a, b) => sevRank(a.severity) - sevRank(b.severity)).slice(0, 8);
 
@@ -87,45 +88,57 @@ export async function loadDailyCeoBrief(repos: Repositories): Promise<DailyBrief
   return generateDailyBrief(input);
 }
 
+/**
+ * D8 / P0-1 — pending approvals from STRUCTURED records only. The previous
+ * implementation regex-matched LLM-authored risk/opportunity descriptions
+ * (/approval|approve|pending review|awaiting/i) to synthesize approvals —
+ * non-auditable, and a risk that merely mentioned "approval" was counted. That
+ * path is deleted. An approval is now a record with an explicit pending status:
+ *   - ceo_decisions   open (decision_status = 'proposed')
+ *   - task_proposals  status = 'proposed'
+ *   - assigned_work   approval_status = 'proposed'
+ * Filtering lives in the pure deriver (pending-approvals-core.ts); this reader
+ * only fetches the rows. No free-text parsing. No schema change.
+ */
 async function collectPendingApprovals(
   repos: Repositories,
-  openRisks: Risk[],
   projects: Awaited<ReturnType<Repositories['projects']['list']>>,
 ): Promise<PendingApproval[]> {
-  const items: PendingApproval[] = [];
-  const approvalPattern = /approval|approve|pending review|awaiting/i;
+  const [decisions, proposals, proposedWork] = await Promise.all([
+    listDecisions(),
+    repos.taskProposals.listByStatus('proposed'),
+    loadWorkMasterList({ approvalStatus: 'proposed' }),
+  ]);
 
-  for (const r of openRisks) {
-    if (approvalPattern.test(r.description)) {
-      const project = projects.find((p) => p.id === r.projectId);
-      items.push({
-        id: r.id,
-        label: r.description,
-        source: r.source,
-        ...(project?.name !== undefined ? { projectName: project.name } : {}),
-      });
-    }
+  // Display-only project name resolver (matches by id OR slug). Never gates the
+  // count — that is decided purely by the structured status above.
+  const nameByKey = new Map<string, string>();
+  for (const p of projects) {
+    nameByKey.set(p.id, p.name);
+    nameByKey.set(p.slug, p.name);
   }
 
-  const opps = await repos.opportunities.listAll();
-  for (const o of opps) {
-    if (approvalPattern.test(o.description)) {
-      const project = projects.find((p) => p.id === o.projectId);
-      items.push({
-        id: o.id,
-        label: o.description,
-        source: o.source,
-        ...(project?.name !== undefined ? { projectName: project.name } : {}),
-      });
-    }
-  }
-
-  // Project-scoped pending-approval signals are derived generically from the
-  // risk/opportunity description patterns above. Any instance-specific metric
-  // (e.g. a "pending_<entity>" count) must be surfaced through an
-  // instance-declared pending-approval provider, not hardcoded here.
-
-  return items;
+  return derivePendingApprovals({
+    decisions: decisions.map((d) => ({
+      id: d.id,
+      title: d.decisionTitle,
+      status: d.decisionStatus,
+      projectKey: d.projectId,
+    })),
+    proposals: proposals.map((p) => ({
+      id: p.id,
+      title: p.payload.title,
+      status: p.status,
+    })),
+    work: proposedWork.map((w) => ({
+      id: w.id,
+      title: w.title,
+      approvalStatus: w.approvalStatus,
+      sourceType: w.sourceType,
+      projectKey: w.projectSlug,
+    })),
+    projectName: (key) => (key ? nameByKey.get(key) : undefined),
+  });
 }
 
 function sevRank(s: 'low' | 'medium' | 'high' | 'critical') {
