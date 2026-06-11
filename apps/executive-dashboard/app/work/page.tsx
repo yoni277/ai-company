@@ -9,8 +9,10 @@
 
 import { loadCeoAttentionQueue, loadWorkMasterList, type WorkListFilters } from '../../lib/executive-os/work-control';
 import { listBusinessSlugs } from '../../lib/executive-os/meetings';
+import { loadDirectiveFanoutFailures } from '../../lib/executive-os/directive-failures';
 import { WorkBoard } from '../../components/executive-os/work/WorkBoard';
 import { WorkFilters } from '../../components/executive-os/work/WorkFilters';
+import { DirectiveFanoutFailuresBanner } from '../../components/executive-os/work/DirectiveFanoutFailuresBanner';
 import type { WorkState } from '../../lib/executive-os/work-state';
 
 export const dynamic = 'force-dynamic';
@@ -41,15 +43,19 @@ export default async function WorkControlCenterPage({
     ...(one(sp.blocked) === '1' ? { blocked: true } : {}),
   };
 
-  const [attention, work, businesses] = await Promise.all([
+  const [attention, work, businesses, fanoutFailures] = await Promise.all([
     loadCeoAttentionQueue(projectSlug),
     loadWorkMasterList(filters),
     listBusinessSlugs(),
+    // D085 item 6 — never let an errored responder be silent. Company-wide (a
+    // responder failure is an operational signal); read failure → no banner.
+    loadDirectiveFanoutFailures().catch(() => []),
   ]);
 
   return (
     <div className="ds-surface min-h-screen rounded-lg px-md py-lg sm:px-lg">
       <div className="mx-auto max-w-7xl">
+        <DirectiveFanoutFailuresBanner failures={fanoutFailures} />
         <WorkBoard attention={attention} work={work} filters={<WorkFilters businesses={businesses} />} />
       </div>
     </div>

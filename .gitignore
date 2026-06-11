@@ -41,5 +41,9 @@ supabase/.temp/
 AI-Company_Master_Status_Tracker*.xlsx
 ~$*.xlsx
 
+# Obsidian vault (Cowork-owned knowledge base — never tracked by the code repo)
+AI-COMPANY-BRAIN/
+
 # Local Cowork/Claude agent settings (machine-local, never committed)
 .claude/
+.vercel

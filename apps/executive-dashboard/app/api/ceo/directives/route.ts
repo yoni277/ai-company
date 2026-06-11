@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { CreateCEODirectiveInput } from '@ai-company/shared-types';
 import { createDirective, listActiveDirectives } from '../../../../lib/ceo-operating-system';
 import { enqueueResponses } from '../../../../lib/directive-queue';
+import { listBusinessSlugs } from '../../../../lib/executive-os/meetings';
 import { getPlatform } from '../../../../lib/platform';
 
 export const dynamic = 'force-dynamic';
@@ -35,6 +36,17 @@ export async function POST(request: Request) {
         );
       }
     }
+    // OF-011 / D085 item 4 — business scoping is mandatory: directive work cannot
+    // enter the spine without a project_slug. Default to the active business (the
+    // sole/first enabled project) when the caller did not scope the directive. NOT
+    // a fabricated default — it is the genuine active business; when zero (or the
+    // lookup fails) we leave it null and surface the directive as unscoped for the
+    // CEO to assign, never inventing one.
+    let targetProjectId = body.targetProjectId ?? null;
+    if (!targetProjectId) {
+      targetProjectId = await resolveActiveBusinessSlug();
+    }
+
     const directive = await createDirective({
       title: body.title.trim(),
       directive: body.directive.trim(),
@@ -43,7 +55,7 @@ export async function POST(request: Request) {
       active: body.active ?? true,
       expiresAt: body.expiresAt ?? null,
       isOverride: body.isOverride ?? false,
-      targetProjectId: body.targetProjectId ?? null,
+      targetProjectId,
       ...(body.respondingExecutives !== undefined
         ? { respondingExecutives: body.respondingExecutives }
         : {}),
@@ -68,5 +80,22 @@ export async function POST(request: Request) {
       { error: e instanceof Error ? e.message : 'Failed to create directive' },
       { status: 500 },
     );
+  }
+}
+
+/**
+ * The active business a freshly-created directive is scoped to: the first
+ * enabled project_definition (same "active business" convention the Situation
+ * Room and /work use, businesses[0]). Returns null when no business is enabled
+ * or the lookup is unavailable (dev/no-supabase) — the directive then stays
+ * unscoped and the CEO assigns a business via the directive detail affordance.
+ * Never fabricates a slug.
+ */
+async function resolveActiveBusinessSlug(): Promise<string | null> {
+  try {
+    const businesses = await listBusinessSlugs();
+    return businesses[0]?.slug ?? null;
+  } catch {
+    return null;
   }
 }
