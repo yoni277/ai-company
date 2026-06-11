@@ -15,6 +15,8 @@ import type { ReactNode } from 'react';
 import { StatusBadge, Surface } from '../../components/ds';
 import { DecisionQueueItem } from '../../components/executive-os/DecisionQueueItem';
 import { ExpandableDetail } from '../../components/executive-os/ExpandableDetail';
+import { InspectorLayout } from '../../components/executive-os/lineage/Inspector';
+import { LineageControls } from '../../components/executive-os/lineage/LineageControls';
 import { loadInboxData } from '../../lib/executive-os';
 
 export const dynamic = 'force-dynamic';
@@ -41,11 +43,26 @@ export default async function InboxPage() {
           {queue.length === 0 ? (
             <Empty>Inbox zero — no decisions or proposals are pending.</Empty>
           ) : (
-            <div className="space-y-lg">
-              {queue.map((item) => (
-                <DecisionQueueItem key={`${item.kind}-${item.id}`} item={item} />
-              ))}
-            </div>
+            <InspectorLayout>
+              <div className="space-y-lg">
+                {queue.map((item) => (
+                  <div key={`${item.kind}-${item.id}`}>
+                    <DecisionQueueItem item={item} />
+                    {/* A decision anchors on its own id; a proposal's lineage IS
+                        its source directive's chain (D086 acceptance note 2). */}
+                    {item.kind === 'decision' ? (
+                      <div className="mt-xs ps-md">
+                        <LineageControls type="decision" id={item.id} />
+                      </div>
+                    ) : item.directiveId ? (
+                      <div className="mt-xs ps-md">
+                        <LineageControls type="directive" id={item.directiveId} />
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </InspectorLayout>
           )}
         </section>
 

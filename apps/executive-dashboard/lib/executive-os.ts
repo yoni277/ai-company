@@ -62,6 +62,12 @@ export interface QueueItem {
   dueDate: string | null;
   /** Executive that proposed it (proposals only). */
   source: string | null;
+  /**
+   * D086 — the directive a proposal belongs to, so the inbox can show the
+   * lineage affordance on proposal-kind rows (a proposal's chain IS its
+   * directive's). null for decisions (anchored by their own id).
+   */
+  directiveId: string | null;
 }
 
 export interface RiskRow {
@@ -110,6 +116,7 @@ function decisionToItem(d: CEODecision): QueueItem {
     status: d.decisionStatus,
     dueDate: d.dueDate,
     source: d.owner,
+    directiveId: null,
   };
 }
 
@@ -124,6 +131,7 @@ function proposalToItem(p: TaskProposalRecord): QueueItem {
     status: p.status,
     dueDate: null,
     source: p.sourceExecutiveId,
+    directiveId: p.directiveId ?? null,
   };
 }
 
@@ -677,6 +685,8 @@ export interface BriefingView {
   createdAt: string;
   /** Raw report body (jsonb) — rendered defensively on expand. */
   body: unknown;
+  /** D086 — directive this report answered, for lineage drill-in (null for standalone). */
+  sourceDirectiveId: string | null;
 }
 
 /* ===========================================================================
@@ -911,6 +921,7 @@ export async function loadBriefings(limit = 50): Promise<BriefingView[]> {
         headline,
         createdAt: r.createdAt,
         body: r.body,
+        sourceDirectiveId: r.sourceDirectiveId ?? null,
       };
     })
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));

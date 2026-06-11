@@ -13,6 +13,7 @@ import { loadDirectiveFanoutFailures } from '../../lib/executive-os/directive-fa
 import { WorkBoard } from '../../components/executive-os/work/WorkBoard';
 import { WorkFilters } from '../../components/executive-os/work/WorkFilters';
 import { DirectiveFanoutFailuresBanner } from '../../components/executive-os/work/DirectiveFanoutFailuresBanner';
+import { InspectorLayout } from '../../components/executive-os/lineage/Inspector';
 import type { WorkState } from '../../lib/executive-os/work-state';
 
 export const dynamic = 'force-dynamic';
@@ -56,7 +57,9 @@ export default async function WorkControlCenterPage({
     <div className="ds-surface min-h-screen rounded-lg px-md py-lg sm:px-lg">
       <div className="mx-auto max-w-7xl">
         <DirectiveFanoutFailuresBanner failures={fanoutFailures} />
-        <WorkBoard attention={attention} work={work} filters={<WorkFilters businesses={businesses} />} />
+        <InspectorLayout>
+          <WorkBoard attention={attention} work={work} filters={<WorkFilters businesses={businesses} />} />
+        </InspectorLayout>
       </div>
     </div>
   );

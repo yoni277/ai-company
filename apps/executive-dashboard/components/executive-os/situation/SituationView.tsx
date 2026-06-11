@@ -18,6 +18,8 @@ import { useRouter } from 'next/navigation';
 import { useTheme } from '../../theme-provider';
 import { StatusBadge } from '../../ds/StatusBadge';
 import { STATE_META, SOURCE_LABEL, execLabel, tx, type Locale } from '../work/labels';
+import { InspectorLayout } from '../lineage/Inspector';
+import { LineageControls } from '../lineage/LineageControls';
 import type { SituationRoom, WorkByExecutive } from '../../../lib/executive-os/situation-room';
 import type { AttentionItem, WorkListItem } from '../../../lib/executive-os/work-control-core';
 
@@ -105,34 +107,40 @@ function Empty({ label }: { label: string }) {
 function AttentionRow({ item, slug, he }: { item: AttentionItem; slug: string | null; he: boolean }) {
   const meta = STATE_META[item.state];
   return (
-    <li className="flex items-center justify-between gap-sm border-t border-outline-variant py-xs first:border-t-0">
-      <div className="min-w-0">
-        <div className="truncate font-body-sm text-body-sm text-on-surface">{item.title}</div>
-        <div className="mt-[1px] font-label-sm text-label-sm text-on-surface-variant">
-          {execLabel(item.ownerExecutiveId, he)} · {item.daysInCurrentState}
-          {t(SR.days, he)}
+    <li className="border-t border-outline-variant py-xs first:border-t-0">
+      <div className="flex items-center justify-between gap-sm">
+        <div className="min-w-0">
+          <div className="truncate font-body-sm text-body-sm text-on-surface">{item.title}</div>
+          <div className="mt-[1px] font-label-sm text-label-sm text-on-surface-variant">
+            {execLabel(item.ownerExecutiveId, he)} · {item.daysInCurrentState}
+            {t(SR.days, he)}
+          </div>
         </div>
+        <Link href={workHref({ project_slug: slug ?? undefined }) as never} prefetch={false} className="shrink-0">
+          <StatusBadge state={meta.health} label={tx(meta, he)} size="sm" />
+        </Link>
       </div>
-      <Link href={workHref({ project_slug: slug ?? undefined }) as never} prefetch={false} className="shrink-0">
-        <StatusBadge state={meta.health} label={tx(meta, he)} size="sm" />
-      </Link>
+      <LineageControls type="work" id={item.id} className="mt-xs" />
     </li>
   );
 }
 
 function BlockedRow({ item, he }: { item: WorkListItem; he: boolean }) {
   return (
-    <li className="flex items-center justify-between gap-sm border-t border-outline-variant py-xs first:border-t-0">
-      <div className="min-w-0">
-        <div className="truncate font-body-sm text-body-sm text-on-surface">{item.title}</div>
-        <div className="mt-[1px] font-label-sm text-label-sm text-on-surface-variant">
-          {execLabel(item.ownerExecutiveId, he)}
+    <li className="border-t border-outline-variant py-xs first:border-t-0">
+      <div className="flex items-center justify-between gap-sm">
+        <div className="min-w-0">
+          <div className="truncate font-body-sm text-body-sm text-on-surface">{item.title}</div>
+          <div className="mt-[1px] font-label-sm text-label-sm text-on-surface-variant">
+            {execLabel(item.ownerExecutiveId, he)}
+          </div>
         </div>
+        <span className="shrink-0 font-label-sm text-label-sm font-medium text-action">
+          {item.daysInCurrentState}
+          {t(SR.days, he)}
+        </span>
       </div>
-      <span className="shrink-0 font-label-sm text-label-sm font-medium text-action">
-        {item.daysInCurrentState}
-        {t(SR.days, he)}
-      </span>
+      <LineageControls type="work" id={item.id} className="mt-xs" />
     </li>
   );
 }
@@ -174,6 +182,7 @@ export function SituationView({
   const w = situation.winning.spineOutcomes;
 
   return (
+    <InspectorLayout>
     <div className="flex flex-col gap-lg">
       <header className="flex flex-wrap items-end justify-between gap-md">
         <div>
@@ -310,5 +319,6 @@ export function SituationView({
         </Panel>
       </div>
     </div>
+    </InspectorLayout>
   );
 }
