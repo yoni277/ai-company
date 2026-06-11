@@ -1,13 +1,15 @@
-import type {
-  PortfolioActionQueue,
-  PortfolioFinancialSnapshot,
-  PortfolioHealthSnapshot,
-  PortfolioIntelligenceSnapshot,
-  PortfolioPriority,
-  PortfolioRevenueSnapshot,
-  ProjectHealthSnapshot,
-  ProjectIntelligenceBundle,
-  RecommendedAction,
+import {
+  auditPriorities,
+  priorityRank,
+  type PortfolioActionQueue,
+  type PortfolioFinancialSnapshot,
+  type PortfolioHealthSnapshot,
+  type PortfolioIntelligenceSnapshot,
+  type PortfolioPriority,
+  type PortfolioRevenueSnapshot,
+  type ProjectHealthSnapshot,
+  type ProjectIntelligenceBundle,
+  type RecommendedAction,
 } from '@ai-company/shared-types';
 
 const STATUS_RANK: Record<'healthy' | 'warning' | 'critical', number> = {
@@ -16,11 +18,9 @@ const STATUS_RANK: Record<'healthy' | 'warning' | 'critical', number> = {
   healthy: 2,
 };
 
-const PRIORITY_ACTION_RANK: Record<RecommendedAction['priority'], number> = {
-  P1: 0,
-  P2: 1,
-  P3: 2,
-};
+// P1-3 — priority ranking goes through the shared validator (priorityRank),
+// which is deterministic for every input (unknown → INVALID_PRIORITY_RANK, never
+// the silent NaN a bare Record<Priority,number> lookup produced).
 
 /**
  * Aggregate funnel and decision support across projects. No AI. No LLM.
@@ -165,10 +165,17 @@ function buildActionQueue(bundles: ProjectIntelligenceBundle[]): PortfolioAction
     .flatMap((b) => b.decisionActions)
     .sort(
       (a, b) =>
-        PRIORITY_ACTION_RANK[a.priority] - PRIORITY_ACTION_RANK[b.priority] ||
+        priorityRank(a.priority) - priorityRank(b.priority) ||
         b.projectName.localeCompare(a.projectName) ||
         a.title.localeCompare(b.title),
     );
+
+  // P1-3 — explicit validation + visible warning + audit trail for any invalid
+  // priority encountered while ranking. No silent coercion; ranking above is
+  // deterministic regardless (invalid sorts last via INVALID_PRIORITY_RANK).
+  const priorityWarnings = auditPriorities(
+    actions.map((a) => ({ priority: a.priority, label: `${a.projectName}:${a.title}` })),
+  );
 
   const openCountByProject: Record<string, number> = {};
   for (const b of bundles) {
@@ -179,6 +186,7 @@ function buildActionQueue(bundles: ProjectIntelligenceBundle[]): PortfolioAction
     actions,
     openCountByProject,
     generatedAt: new Date().toISOString(),
+    priorityWarnings,
   };
 }
 

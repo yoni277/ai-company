@@ -2,12 +2,40 @@ import {
   generateDecisionSupport,
   sortActions,
 } from '@ai-company/decision-support-engine';
-import type {
-  DecisionSupportResult,
-  FunnelSnapshot,
-  RecommendedAction,
+import {
+  isKnownPriority,
+  type DecisionSupportResult,
+  type FunnelSnapshot,
+  type Priority,
+  type RecommendedAction,
 } from '@ai-company/shared-types';
 import type { FoodTruckBusinessMetrics } from './types';
+
+/**
+ * P1-3 — instance-policy default priority. EXPLICIT + named (replaces the
+ * scattered bare `'P2'` literals). The connector never emits an unknown
+ * priority; this default is a deliberate instance choice, not a silent fallback.
+ * (The thresholds that elevate to P1 move to instance policy in P1-2; the
+ * default value itself stays in the instance layer.)
+ */
+export const DEFAULT_PRIORITY: Priority = 'P2';
+
+/**
+ * Resolve an action priority explicitly: a measured signal elevates to P1,
+ * otherwise the named instance default. Validated — the connector guarantees a
+ * known priority leaves here (defense-in-depth; logs if ever violated).
+ */
+export function instancePriority(elevated: boolean): Priority {
+  const resolved: Priority = elevated ? 'P1' : DEFAULT_PRIORITY;
+  if (!isKnownPriority(resolved)) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `priority-integrity: foodtruck connector produced invalid priority '${String(resolved)}'; using ${DEFAULT_PRIORITY}`,
+    );
+    return DEFAULT_PRIORITY;
+  }
+  return resolved;
+}
 
 /** FoodTruck-specific counts for adapter wording (not used by generic engine). */
 export interface FoodTruckDecisionContext {
@@ -62,7 +90,7 @@ export function buildFoodTruckDecisionSupport(
       id: `${snapshot.projectId}-inactive-approved`,
       projectId: snapshot.projectId,
       projectName: snapshot.projectName,
-      priority: inactive > 5 ? 'P1' : 'P2',
+      priority: instancePriority(inactive > 5),
       category: 'sales',
       title: 'Contact approved trucks that are not active',
       reason: `${inactive} approved truck(s) have not recorded activity in the last 7 days.`,
@@ -77,7 +105,7 @@ export function buildFoodTruckDecisionSupport(
       id: `${snapshot.projectId}-approval-backlog`,
       projectId: snapshot.projectId,
       projectName: snapshot.projectName,
-      priority: context.pendingCount > 3 ? 'P1' : 'P2',
+      priority: instancePriority(context.pendingCount > 3),
       category: 'operations',
       title: 'Review approval backlog',
       reason: `${context.pendingCount} truck registration(s) pending approval.`,
@@ -92,7 +120,7 @@ export function buildFoodTruckDecisionSupport(
       id: `${snapshot.projectId}-investigate-inactive`,
       projectId: snapshot.projectId,
       projectName: snapshot.projectName,
-      priority: 'P2',
+      priority: instancePriority(false),
       category: 'product',
       title: 'Investigate inactive approved trucks',
       reason: `${inactive} approved truck(s) are registered but not active.`,
