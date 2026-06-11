@@ -8,6 +8,7 @@ import { loadPortfolioIntelligenceForDashboard } from './portfolio-intelligence'
 import { loadProjectRegistryView } from './project-registry';
 import {
   buildScorecard,
+  SCORECARD_SCORING_META,
   type ExecutiveScoreStatus,
   type ExecutiveScorecardRow,
 } from './command-center-scorecard-core';
@@ -43,6 +44,10 @@ export interface CommandCenterPayload {
   portfolio: PortfolioIntelligenceSnapshot;
   topP1Action: RecommendedAction | null;
   generatedAt: string;
+  /** P1-1 — the scorecard engine's algorithm identity@version. */
+  scoringVersion?: string;
+  /** P1-1 — digest of the scorecard's rule identity; bumps if the rules change. */
+  policyVersion?: string;
 }
 
 function firstP1Action(portfolio: PortfolioIntelligenceSnapshot): RecommendedAction | null {
@@ -156,5 +161,6 @@ export async function loadCommandCenterData(
     portfolio,
     topP1Action: topP1,
     generatedAt: new Date().toISOString(),
+    ...SCORECARD_SCORING_META,
   };
 }

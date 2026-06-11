@@ -1,5 +1,6 @@
 import {
   auditPriorities,
+  buildScoringMeta,
   priorityRank,
   type DecisionSupportResult,
   type FunnelDropOff,
@@ -10,6 +11,25 @@ import {
 // P1-3 — priority ranking goes through the shared validator (priorityRank):
 // deterministic for every input (unknown → INVALID_PRIORITY_RANK, never a silent
 // NaN), with an explicit warning + audit for any invalid priority.
+
+/**
+ * P1-1 — named decision thresholds. The recommendation rules read these (not
+ * inline literals), and `policyVersion` derives from them, so a threshold change
+ * bumps the version AND the rule together. (Config extraction is P1-2.)
+ */
+const POLICY = {
+  bottleneckRateThreshold: 50,
+  dropOffMinThreshold: 5,
+  dropOffHighThreshold: 10,
+  topOfFunnelMinThreshold: 5,
+} as const;
+
+const ALGORITHM_VERSION = 1;
+export const DECISION_SUPPORT_SCORING_META = buildScoringMeta(
+  'decision-support',
+  ALGORITHM_VERSION,
+  POLICY,
+);
 
 /**
  * Deterministic decision support from funnel intelligence. No AI. No LLM.
@@ -34,7 +54,7 @@ export function generateDecisionSupport(snapshot: FunnelSnapshot): DecisionSuppo
   }
 
   const bn = health.mainBottleneck;
-  if (bn && bn.rate < 50) {
+  if (bn && bn.rate < POLICY.bottleneckRateThreshold) {
     actions.push(
       baseAction(snapshot, {
         id: `bottleneck-${bn.fromStageId}-${bn.toStageId}`,
@@ -48,9 +68,9 @@ export function generateDecisionSupport(snapshot: FunnelSnapshot): DecisionSuppo
   }
 
   const worstDropOff = largestDropOff(health.dropOffs);
-  if (worstDropOff && worstDropOff.lostCount > 5) {
+  if (worstDropOff && worstDropOff.lostCount > POLICY.dropOffMinThreshold) {
     const priority: RecommendedAction['priority'] =
-      worstDropOff.lostCount > 10 ? 'P1' : 'P2';
+      worstDropOff.lostCount > POLICY.dropOffHighThreshold ? 'P1' : 'P2';
     actions.push(
       baseAction(snapshot, {
         id: `dropoff-${worstDropOff.fromStageId}-${worstDropOff.toStageId}`,
@@ -63,7 +83,7 @@ export function generateDecisionSupport(snapshot: FunnelSnapshot): DecisionSuppo
     );
   }
 
-  if (first && first.count < 5) {
+  if (first && first.count < POLICY.topOfFunnelMinThreshold) {
     actions.push(
       baseAction(snapshot, {
         id: 'top-of-funnel-low',
@@ -81,6 +101,7 @@ export function generateDecisionSupport(snapshot: FunnelSnapshot): DecisionSuppo
     projectName: snapshot.projectName,
     actions: sortActions(dedupeById(actions)),
     generatedAt: new Date().toISOString(),
+    ...DECISION_SUPPORT_SCORING_META,
   };
 }
 

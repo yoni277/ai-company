@@ -41,4 +41,8 @@ export interface PortfolioRevenueSnapshot {
   totals: RevenueMetrics;
   trend: RevenueTrend | null;
   capturedAt: string;
+  /** P1-1 — algorithm identity@version. Always set by aggregatePortfolioRevenue. */
+  scoringVersion?: string;
+  /** P1-1 — digest of the revenue-trend thresholds; auto-bumps when one changes. */
+  policyVersion?: string;
 }

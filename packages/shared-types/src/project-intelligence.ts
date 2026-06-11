@@ -60,6 +60,10 @@ export interface PortfolioIntelligenceSnapshot {
   revenue: PortfolioRevenueSnapshot | null;
   /** Phase 5B — normalized financial intelligence (does not affect priority ranking). */
   financial: PortfolioFinancialSnapshot | null;
+  /** P1-1 — algorithm identity@version. Always set by aggregatePortfolioIntelligence. */
+  scoringVersion?: string;
+  /** P1-1 — digest of the ranking weights; auto-bumps when a weight changes. */
+  policyVersion?: string;
 }
 
 /** Input bundle per project before aggregation. */

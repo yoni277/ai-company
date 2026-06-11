@@ -11,7 +11,22 @@
  * unit-tested; the server loader (command-center.ts) supplies the evidence.
  */
 
+import { buildScoringMeta, type ScoringMeta } from '@ai-company/shared-types';
+
 export type ExecutiveScoreStatus = 'PASS' | 'FAIL' | 'AT_RISK' | 'NOT_MEASURED';
+
+/**
+ * P1-1 — the scorecard is evidence-based (no numeric weights), so its policy is
+ * its RULE identity: the set of states + roles it grades. Bump ALGORITHM_VERSION
+ * when the grading logic changes; POLICY changes if the state/role set changes.
+ */
+const POLICY = { stateCount: 4, roleCount: 5 } as const;
+const ALGORITHM_VERSION = 1;
+export const SCORECARD_SCORING_META: ScoringMeta = buildScoringMeta(
+  'command-center-scorecard',
+  ALGORITHM_VERSION,
+  POLICY,
+);
 
 export interface ExecutiveScorecardRow {
   role: string;
