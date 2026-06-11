@@ -14,10 +14,13 @@ let cached: SupabaseClient | null = null;
 export function getSupabaseAdmin(): SupabaseClient {
   if (cached) return cached;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // SEC-1 (S5): prefer the scoped-role key (RLS applies) over the god-mode
+  // service-role key. Service-role is the transition fallback until the scoped
+  // JWT is provisioned.
+  const key = process.env.SUPABASE_SCOPED_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
     throw new Error(
-      'Meetings require Supabase: set NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY.',
+      'Meetings require Supabase: set NEXT_PUBLIC_SUPABASE_URL + a key (SUPABASE_SCOPED_KEY or SUPABASE_SERVICE_ROLE_KEY).',
     );
   }
   cached = createClient(url, key, {

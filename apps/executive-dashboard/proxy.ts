@@ -17,9 +17,14 @@ import { NextResponse, type NextRequest } from 'next/server';
  * navigation works while the dashboard stays gated.
  *
  * Single shared credential pair, designed for private single-operator daily
- * use on Vercel during Production Validation. NOT multi-tenant, NOT SSO. If
- * `DASHBOARD_BASIC_AUTH_USER` and `DASHBOARD_BASIC_AUTH_PASSWORD` are both
- * set the gate is enforced; if either is unset (local dev) it is bypassed.
+ * use on Vercel during Production Validation. NOT multi-tenant, NOT SSO.
+ *
+ * SEC-1 (S2) — FAIL CLOSED. If `DASHBOARD_BASIC_AUTH_USER` and
+ * `DASHBOARD_BASIC_AUTH_PASSWORD` are both set the gate is enforced. If either
+ * is unset/misconfigured the gate DENIES (401) by default — it no longer opens.
+ * Local dev must opt out EXPLICITLY with `DASHBOARD_AUTH_DISABLED=1`; that flag
+ * is asserted *off* in production by instrumentation.ts (boot assertion), so a
+ * forgotten Preview env or a typo can never silently expose the dashboard.
  */
 
 const PUBLIC_PREFIXES = ['/_next', '/favicon', '/robots.txt'];
@@ -62,10 +67,16 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const expectedUser = process.env.DASHBOARD_BASIC_AUTH_USER ?? '';
   const expectedPass = process.env.DASHBOARD_BASIC_AUTH_PASSWORD ?? '';
 
-  // Local dev / preview without creds — open access. Production deployments
-  // MUST set both env vars (see docs/deployment/VERCEL_DEPLOYMENT.md).
+  // S2 (SEC-1) — FAIL CLOSED. A missing/misconfigured credential pair denies by
+  // default. Only an EXPLICIT opt-out unblocks it (local dev), and that opt-out
+  // is rejected in production at boot (instrumentation.ts). Previously this
+  // returned NextResponse.next() on unset creds — fail-open — which exposed the
+  // entire dashboard + every /api route the moment an env var was missing.
   if (!expectedUser || !expectedPass) {
-    return NextResponse.next();
+    if (process.env.DASHBOARD_AUTH_DISABLED === '1') {
+      return NextResponse.next();
+    }
+    return unauthorized();
   }
 
   const token = await sessionToken(expectedUser, expectedPass);
@@ -109,6 +120,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   // 3) Unauthenticated — challenge. RSC fetches receive this too; once the
   //    cookie is set on the initial page load they no longer reach here.
+  return unauthorized();
+}
+
+/** 401 challenge — the single fail-closed response for every denied path. */
+function unauthorized(): NextResponse {
   return new NextResponse('Authentication required', {
     status: 401,
     headers: {
