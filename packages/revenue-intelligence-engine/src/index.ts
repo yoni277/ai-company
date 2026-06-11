@@ -1,9 +1,10 @@
-import type {
-  PortfolioRevenueSnapshot,
-  ProjectRevenueRollup,
-  RevenueMetrics,
-  RevenueSnapshot,
-  RevenueTrend,
+import {
+  buildScoringMeta,
+  type PortfolioRevenueSnapshot,
+  type ProjectRevenueRollup,
+  type RevenueMetrics,
+  type RevenueSnapshot,
+  type RevenueTrend,
 } from '@ai-company/shared-types';
 
 const FX_TO_ILS: Record<string, number> = {
@@ -11,6 +12,20 @@ const FX_TO_ILS: Record<string, number> = {
   USD: 3.7,
   EUR: 4.0,
 };
+
+/**
+ * P1-1 — named revenue-trend thresholds. computeRevenueTrend reads these (not
+ * inline literals), and `policyVersion` derives from them, so a threshold change
+ * bumps the version AND the classification together. (Config extraction is P1-2;
+ * FX rates are conversion constants, not scoring weights.)
+ */
+const POLICY = {
+  trendUpThresholdPercent: 2,
+  trendDownThresholdPercent: -2,
+} as const;
+
+const ALGORITHM_VERSION = 1;
+export const REVENUE_SCORING_META = buildScoringMeta('revenue', ALGORITHM_VERSION, POLICY);
 
 /** Normalize amount to target currency (deterministic fixed rates). */
 export function normalizeAmount(
@@ -74,6 +89,7 @@ export function aggregatePortfolioRevenue(
     totals,
     trend,
     capturedAt: new Date().toISOString(),
+    ...REVENUE_SCORING_META,
   };
 }
 
@@ -90,9 +106,9 @@ export function computeRevenueTrend(
     cur.transactionCount,
   );
   const direction: RevenueTrend['direction'] =
-    totalRevenueChangePercent > 2
+    totalRevenueChangePercent > POLICY.trendUpThresholdPercent
       ? 'up'
-      : totalRevenueChangePercent < -2
+      : totalRevenueChangePercent < POLICY.trendDownThresholdPercent
         ? 'down'
         : 'flat';
   return { totalRevenueChangePercent, transactionCountChangePercent, direction };

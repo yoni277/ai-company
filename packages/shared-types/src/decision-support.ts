@@ -18,4 +18,8 @@ export interface DecisionSupportResult {
   projectName: string;
   actions: RecommendedAction[];
   generatedAt: string;
+  /** P1-1 — algorithm identity@version. Always set by generateDecisionSupport. */
+  scoringVersion?: string;
+  /** P1-1 — digest of the decision thresholds; auto-bumps when one changes. */
+  policyVersion?: string;
 }

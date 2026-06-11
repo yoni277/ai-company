@@ -1,5 +1,6 @@
 import {
   auditPriorities,
+  buildScoringMeta,
   priorityRank,
   type PortfolioActionQueue,
   type PortfolioFinancialSnapshot,
@@ -23,6 +24,34 @@ const STATUS_RANK: Record<'healthy' | 'warning' | 'critical', number> = {
 // the silent NaN a bare Record<Priority,number> lookup produced).
 
 /**
+ * P1-1 — named ranking weights. The project-priority and project-health scores
+ * read these (not inline literals), and `policyVersion` derives from them, so a
+ * weight change bumps the version AND the math together. (Config extraction is
+ * P1-2; here they are only named.)
+ */
+const POLICY = {
+  priorityCriticalPoints: 100,
+  priorityWarningPoints: 50,
+  p1ActionWeight: 30,
+  p2ActionWeight: 10,
+  bottleneckBase: 100,
+  largestDropOffWeight: 2,
+  healthHealthyPoints: 100,
+  healthWarningPoints: 60,
+  healthCriticalPoints: 25,
+  recPenaltyOpenWeight: 5,
+  recPenaltyP1Weight: 10,
+  recPenaltyCap: 40,
+} as const;
+
+const ALGORITHM_VERSION = 1;
+export const PORTFOLIO_INTELLIGENCE_SCORING_META = buildScoringMeta(
+  'portfolio-intelligence',
+  ALGORITHM_VERSION,
+  POLICY,
+);
+
+/**
  * Aggregate funnel and decision support across projects. No AI. No LLM.
  */
 export function aggregatePortfolioIntelligence(
@@ -42,6 +71,7 @@ export function aggregatePortfolioIntelligence(
     actionQueue,
     revenue: revenue ?? null,
     financial: financial ?? null,
+    ...PORTFOLIO_INTELLIGENCE_SCORING_META,
   };
 }
 
@@ -82,12 +112,13 @@ function buildProjectHealthSnapshot(bundle: ProjectIntelligenceBundle): ProjectH
 
 function projectPriorityScore(bundle: ProjectIntelligenceBundle, p1Count: number): number {
   let score = 0;
-  if (bundle.funnelStatus === 'critical') score += 100;
-  else if (bundle.funnelStatus === 'warning') score += 50;
-  score += p1Count * 30;
-  score += bundle.decisionActions.filter((a) => a.priority === 'P2').length * 10;
-  if (bundle.bottleneckRate !== null) score += Math.max(0, 100 - bundle.bottleneckRate);
-  score += bundle.largestDropOffCount * 2;
+  if (bundle.funnelStatus === 'critical') score += POLICY.priorityCriticalPoints;
+  else if (bundle.funnelStatus === 'warning') score += POLICY.priorityWarningPoints;
+  score += p1Count * POLICY.p1ActionWeight;
+  score += bundle.decisionActions.filter((a) => a.priority === 'P2').length * POLICY.p2ActionWeight;
+  if (bundle.bottleneckRate !== null)
+    score += Math.max(0, POLICY.bottleneckBase - bundle.bottleneckRate);
+  score += bundle.largestDropOffCount * POLICY.largestDropOffWeight;
   return Math.round(score);
 }
 
@@ -155,8 +186,16 @@ function buildPortfolioHealth(projects: ProjectHealthSnapshot[]): PortfolioHealt
 }
 
 function projectHealthScore(p: ProjectHealthSnapshot): number {
-  const statusPoints = { healthy: 100, warning: 60, critical: 25 }[p.funnelStatus];
-  const recPenalty = Math.min(40, p.openRecommendations * 5 + p.p1RecommendationCount * 10);
+  const statusPoints = {
+    healthy: POLICY.healthHealthyPoints,
+    warning: POLICY.healthWarningPoints,
+    critical: POLICY.healthCriticalPoints,
+  }[p.funnelStatus];
+  const recPenalty = Math.min(
+    POLICY.recPenaltyCap,
+    p.openRecommendations * POLICY.recPenaltyOpenWeight +
+      p.p1RecommendationCount * POLICY.recPenaltyP1Weight,
+  );
   return Math.max(0, statusPoints - recPenalty);
 }
 

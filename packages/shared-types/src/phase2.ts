@@ -27,6 +27,10 @@ export interface SupabaseMetrics {
 export interface HealthScore {
   score: number;
   level: 'green' | 'yellow' | 'red';
+  /** P1-1 — algorithm identity@version. Always set by calculateHealthScore. */
+  scoringVersion?: string;
+  /** P1-1 — digest of the scoring weights; auto-bumps when a weight changes. */
+  policyVersion?: string;
 }
 
 /**
