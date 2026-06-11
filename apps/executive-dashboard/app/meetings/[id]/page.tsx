@@ -1,8 +1,9 @@
 /**
- * L30 — Meeting Detail (spec §6/§7). Header → discussion thread (positions,
- * challenges→targets, rebuttals — visibly a debate) → CoS summary → proposed
- * decisions (rationale + dissent) with per-decision CEO Approve/Reject →
- * proposed work (owner/due, proposed badge) → risks + open questions.
+ * L30 — Meeting Detail. Outcome-first layout (CEO readability, OF-010):
+ * header → closure summary → outcome-at-a-glance stats → Decided (decisions +
+ * per-decision Approve/Reject) → Owner assignments (proposed work) → Risks +
+ * Open questions → Full discussion (the debate) as a collapsed drill-down at the
+ * bottom. The debate is reasoning detail, not the headline.
  */
 
 import type { ReactNode } from 'react';
@@ -48,15 +49,15 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
   if (!m) notFound();
 
   const rounds = Array.from(new Set(m.discussion.map((u) => u.round))).sort((a, b) => a - b);
-  // Per-decision work status by the stamped assigned_work id (stable link) — no
-  // fragile position/created_at mapping, so the badge always lands on the right
-  // card. Controls show only while a decision's work is still proposed.
+  // Per-decision work status by the stamped assigned_work id (stable link).
   const workById = new Map(m.proposedWork.map((w) => [w.id, w]));
   const workStatusFor = (i: number): string | null => {
     const wid = m.decisions[i]?.assignedWorkId;
     return wid ? workById.get(wid)?.approvalStatus ?? null : null;
   };
   const canApprove = m.status === 'summarized' || m.status === 'approved';
+  const concluded = m.status === 'summarized' || m.status === 'completed' || m.status === 'approved';
+  const hasOutcome = Boolean(m.summary) || m.decisions.length > 0 || m.proposedWork.length > 0;
 
   return (
     <div className="ds-surface min-h-screen px-md py-lg sm:px-lg">
@@ -66,7 +67,7 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
           Meetings
         </Link>
 
-        <header className="mt-sm mb-xl flex flex-wrap items-start justify-between gap-md">
+        <header className="mt-sm mb-lg flex flex-wrap items-start justify-between gap-md">
           <div className="min-w-0">
             <p className="font-label-sm text-label-sm uppercase text-outline">{m.type} · {m.projectSlug}</p>
             <h1 className="font-display text-display text-on-surface">{m.topic}</h1>
@@ -82,59 +83,34 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
           <MeetingLifecycleControls meetingId={m.id} status={m.status} />
         </div>
 
-        {/* Discussion thread */}
-        <Section title="Discussion">
-          {m.discussion.length === 0 ? (
-            <Empty>Not convened yet.</Empty>
-          ) : (
-            <div className="space-y-lg">
-              {rounds.map((r) => (
-                <div key={r}>
-                  <p className="mb-sm font-label-sm text-label-sm uppercase tracking-wider text-outline">
-                    {roundLabel(r)}
-                  </p>
-                  <div className="space-y-sm">
-                    {m.discussion
-                      .filter((u) => u.round === r)
-                      .map((u, i) => (
-                        <div
-                          key={`${r}-${i}`}
-                          className={`rounded-lg border border-outline-variant bg-surface-container-lowest p-md border-s-4 ${KIND_STYLE[u.kind] ?? 'border-s-outline-variant'}`}
-                        >
-                          <div className="mb-xs flex flex-wrap items-center gap-sm">
-                            <span className="font-body-md font-medium text-on-surface">{nm(u.executive_id)}</span>
-                            <span className="font-label-sm text-label-sm uppercase text-outline">{u.kind}</span>
-                            {u.target ? (
-                              <span className="inline-flex items-center gap-xs rounded-sm bg-action/10 px-sm py-[1px] font-label-sm text-label-sm text-action">
-                                challenges {nm(u.target)}
-                              </span>
-                            ) : null}
-                          </div>
-                          {u.claim ? (
-                            <p className="mb-xs font-label-sm text-label-sm italic text-on-surface-variant">re: “{u.claim}”</p>
-                          ) : null}
-                          <p className="whitespace-pre-wrap font-body-md text-body-md text-on-surface-variant">{u.text}</p>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Section>
-
-        {/* CoS summary */}
-        {m.summary ? (
-          <Section title="Chief of Staff — Summary">
-            <div className="rounded-lg border border-outline-variant bg-surface-container-low p-lg">
-              <p className="whitespace-pre-wrap font-body-md text-body-md text-on-surface">{m.summary}</p>
-            </div>
-          </Section>
+        {/* Not convened yet — nothing to summarize. */}
+        {!hasOutcome && m.discussion.length === 0 ? (
+          <p className="mb-xl rounded-lg border border-dashed border-outline-variant bg-surface-container-low p-lg font-body-md text-body-md italic text-on-surface-variant">
+            Not convened yet.
+          </p>
         ) : null}
 
-        {/* Decisions + approval */}
+        {/* 1) Closure summary — the outcome, first. */}
+        {m.summary ? (
+          <div className="mb-lg rounded-lg border border-outline-variant bg-surface-container-low p-lg">
+            <p className="mb-xs font-label-sm text-label-sm uppercase tracking-wider text-outline">Closure summary</p>
+            <p className="whitespace-pre-wrap font-body-lg text-body-lg text-on-surface">{m.summary}</p>
+          </div>
+        ) : null}
+
+        {/* 2) Outcome at a glance. */}
+        {hasOutcome ? (
+          <div className="mb-xl grid grid-cols-2 gap-sm sm:grid-cols-4">
+            <Stat label="Decisions" value={m.decisions.length} />
+            <Stat label="Owners assigned" value={m.proposedWork.length} />
+            <Stat label="Risks" value={m.risks.length} />
+            <Stat label="Open questions" value={m.openQuestions.length} />
+          </div>
+        ) : null}
+
+        {/* 3) Decided + per-decision approval. */}
         {m.decisions.length > 0 ? (
-          <Section title="Proposed Decisions" count={m.decisions.length}>
+          <Section title="Decided" count={m.decisions.length}>
             <div className="space-y-lg">
               {m.decisions.map((d, i) => (
                 <article key={i} className="rounded-lg border border-outline-variant bg-surface-container-lowest p-lg">
@@ -152,7 +128,7 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
                   ) : null}
                   {d.actionable && d.owner_executive_id ? (
                     <p className="mt-sm font-label-sm text-label-sm text-outline">
-                      → work for {nm(d.owner_executive_id)}: {d.work_title || d.decision}
+                      → owner {nm(d.owner_executive_id)}: {d.work_title || d.decision}
                     </p>
                   ) : null}
                   {(() => {
@@ -175,9 +151,9 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
           </Section>
         ) : null}
 
-        {/* Proposed work */}
+        {/* 4) Owner assignments (proposed work). */}
         {m.proposedWork.length > 0 ? (
-          <Section title="Proposed Work" count={m.proposedWork.length}>
+          <Section title="Owner assignments" count={m.proposedWork.length}>
             <ul className="space-y-sm">
               {m.proposedWork.map((w) => (
                 <li key={w.id} className="rounded-lg border border-outline-variant bg-surface-container-lowest p-md">
@@ -185,7 +161,7 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
                     <span className="font-body-md font-medium text-on-surface">{w.title}</span>
                     <WorkStatus status={w.approvalStatus} />
                   </div>
-                  <p className="mt-xs font-body-md text-body-md text-on-surface-variant">{w.detail}</p>
+                  {w.detail ? <p className="mt-xs font-body-md text-body-md text-on-surface-variant">{w.detail}</p> : null}
                   <p className="mt-xs font-label-sm text-label-sm text-outline">
                     {nm(w.ownerExecutiveId)} · {w.priority}{w.dueDate ? ` · due ${w.dueDate}` : ''}
                   </p>
@@ -195,25 +171,82 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
           </Section>
         ) : null}
 
-        {/* OF-008 — surface the zero-work case explicitly (never a silent stall). */}
-        {m.proposedWork.length === 0 && (m.status === 'summarized' || m.status === 'completed') ? (
-          <Section title="Proposed Work" count={0}>
+        {/* OF-008 — honest zero-work case (never a silent stall). */}
+        {m.proposedWork.length === 0 && concluded ? (
+          <Section title="Owner assignments" count={0}>
             <p className="rounded-lg border border-dashed border-outline-variant bg-surface-container-low p-md font-body-md text-body-md text-on-surface-variant">
-              No action needed — this meeting reached synthesis with no owned work item. The Chief of Staff
-              recorded the reason in the summary above (honest no-action, not a stall).
+              No action needed — this meeting reached synthesis with no owned work item. The reason is in the
+              closure summary above (honest no-action, not a stall).
             </p>
           </Section>
         ) : null}
 
-        {m.risks.length > 0 ? (
-          <Section title="Risks">
-            <ul className="space-y-xs">{m.risks.map((r, i) => <li key={i} className="font-body-md text-body-md text-on-surface-variant">• {r}</li>)}</ul>
-          </Section>
+        {/* 5) Risks + Open questions, side by side. */}
+        {m.risks.length > 0 || m.openQuestions.length > 0 ? (
+          <div className="mb-xl grid grid-cols-1 gap-lg sm:grid-cols-2">
+            {m.risks.length > 0 ? (
+              <div>
+                <h2 className="mb-md font-headline-md text-headline-md text-on-surface">Risks</h2>
+                <ul className="space-y-xs">
+                  {m.risks.map((r, i) => (
+                    <li key={i} className="rounded-md border-s-4 border-action bg-action/5 ps-md py-sm font-body-md text-body-md text-on-surface-variant">{r}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {m.openQuestions.length > 0 ? (
+              <div>
+                <h2 className="mb-md font-headline-md text-headline-md text-on-surface">Open questions</h2>
+                <ul className="space-y-xs">
+                  {m.openQuestions.map((q, i) => (
+                    <li key={i} className="rounded-md bg-surface-container px-md py-sm font-body-md text-body-md text-on-surface-variant">{q}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
         ) : null}
-        {m.openQuestions.length > 0 ? (
-          <Section title="Open Questions">
-            <ul className="space-y-xs">{m.openQuestions.map((q, i) => <li key={i} className="font-body-md text-body-md text-on-surface-variant">• {q}</li>)}</ul>
-          </Section>
+
+        {/* 6) Full discussion — the debate, as a collapsed drill-down. */}
+        {m.discussion.length > 0 ? (
+          <details className="mb-xl rounded-lg border border-outline-variant bg-surface-container-lowest">
+            <summary className="flex cursor-pointer list-none items-center gap-sm p-md font-headline-md text-headline-md text-on-surface">
+              <ChevronEndIcon className="h-4 w-4 text-outline" />
+              Full discussion
+              <span className="font-label-sm text-label-sm text-outline">{m.discussion.length} turns · {rounds.length} rounds</span>
+            </summary>
+            <div className="space-y-lg border-t border-outline-variant p-md">
+              {rounds.map((r) => (
+                <div key={r}>
+                  <p className="mb-sm font-label-sm text-label-sm uppercase tracking-wider text-outline">{roundLabel(r)}</p>
+                  <div className="space-y-sm">
+                    {m.discussion
+                      .filter((u) => u.round === r)
+                      .map((u, i) => (
+                        <div
+                          key={`${r}-${i}`}
+                          className={`rounded-lg border border-outline-variant bg-surface-container-low p-md border-s-4 ${KIND_STYLE[u.kind] ?? 'border-s-outline-variant'}`}
+                        >
+                          <div className="mb-xs flex flex-wrap items-center gap-sm">
+                            <span className="font-body-md font-medium text-on-surface">{nm(u.executive_id)}</span>
+                            <span className="font-label-sm text-label-sm uppercase text-outline">{u.kind}</span>
+                            {u.target ? (
+                              <span className="inline-flex items-center gap-xs rounded-sm bg-action/10 px-sm py-[1px] font-label-sm text-label-sm text-action">
+                                challenges {nm(u.target)}
+                              </span>
+                            ) : null}
+                          </div>
+                          {u.claim ? (
+                            <p className="mb-xs font-label-sm text-label-sm italic text-on-surface-variant">re: “{u.claim}”</p>
+                          ) : null}
+                          <p className="whitespace-pre-wrap font-body-md text-body-md text-on-surface-variant">{u.text}</p>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </details>
         ) : null}
 
         <p className="mt-xl border-t border-outline-variant pt-lg text-center font-label-sm text-label-sm uppercase tracking-widest text-outline">
@@ -226,6 +259,15 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
 
 function roundLabel(r: number): string {
   return ['R0 · Open', 'R1 · Positions', 'R2 · Challenge', 'R3 · Rebuttal', 'R4 · Synthesis'][r] ?? `Round ${r}`;
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-md bg-surface-container px-md py-sm">
+      <p className="font-label-sm text-label-sm text-outline">{label}</p>
+      <p className="font-headline-md text-headline-md text-on-surface">{value}</p>
+    </div>
+  );
 }
 
 function WorkStatus({ status }: { status: string }) {
@@ -248,8 +290,4 @@ function Section({ title, count, children }: { title: string; count?: number; ch
       {children}
     </section>
   );
-}
-
-function Empty({ children }: { children: ReactNode }) {
-  return <p className="font-body-md text-body-md italic text-on-surface-variant">{children}</p>;
 }
