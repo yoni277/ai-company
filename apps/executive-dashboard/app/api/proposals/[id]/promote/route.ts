@@ -53,8 +53,15 @@ export async function POST(
     void directive; // keep the import warm; objective is on the directive proper
     const directiveRow = await getDirectiveObjectiveId(repos, proposal.directiveId);
     if (!directiveRow?.objectiveId) {
+      // Machine-readable so the approve surface can offer inline recovery
+      // (assign an objective → retry) instead of dead-ending on a raw error.
+      // `directiveId` points the UI at the directive whose objective is missing.
       return NextResponse.json(
-        { error: 'Directive has no objective; cannot promote proposal to task.' },
+        {
+          error: 'Directive has no objective; cannot promote proposal to task.',
+          code: 'NO_OBJECTIVE',
+          directiveId: proposal.directiveId,
+        },
         { status: 422 },
       );
     }
