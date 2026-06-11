@@ -1,4 +1,5 @@
 import type { Risk } from './risks';
+import type { ProvenanceBand } from './provenance';
 import type { FunnelSnapshot } from './funnel';
 import type { DecisionSupportResult } from './decision-support';
 import type { PortfolioIntelligenceSnapshot } from './project-intelligence';
@@ -110,11 +111,23 @@ export interface PendingApproval {
   projectName?: string;
 }
 
+/**
+ * D6 — a risk decorated with its provenance band. `advisory: true` means the
+ * risk is CEO-visible but did NOT move the deterministic health score
+ * (executive/unknown provenance, not confirmed). `confirmed: true` means an
+ * advisory risk was promoted into scoring via a ceo_decisions record.
+ */
+export interface ProvenanceRisk extends Risk {
+  band: ProvenanceBand;
+  advisory: boolean;
+  confirmed: boolean;
+}
+
 export interface Phase2Snapshot {
   github: GithubMetrics;
   supabase: SupabaseMetrics;
   health: HealthScore;
-  topRisks: Risk[];
+  topRisks: ProvenanceRisk[];
   pendingApprovals: PendingApproval[];
   githubLive: boolean;
   supabaseLive: boolean;
