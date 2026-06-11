@@ -1,15 +1,15 @@
-import type {
-  DecisionSupportResult,
-  FunnelDropOff,
-  FunnelSnapshot,
-  RecommendedAction,
+import {
+  auditPriorities,
+  priorityRank,
+  type DecisionSupportResult,
+  type FunnelDropOff,
+  type FunnelSnapshot,
+  type RecommendedAction,
 } from '@ai-company/shared-types';
 
-const PRIORITY_RANK: Record<RecommendedAction['priority'], number> = {
-  P1: 0,
-  P2: 1,
-  P3: 2,
-};
+// P1-3 — priority ranking goes through the shared validator (priorityRank):
+// deterministic for every input (unknown → INVALID_PRIORITY_RANK, never a silent
+// NaN), with an explicit warning + audit for any invalid priority.
 
 /**
  * Deterministic decision support from funnel intelligence. No AI. No LLM.
@@ -100,9 +100,12 @@ export function formatRecommendedActionsBrief(
 }
 
 export function sortActions(actions: RecommendedAction[]): RecommendedAction[] {
+  // P1-3 — surface any invalid priority explicitly (visible warning + audit)
+  // before ranking. The sort below is deterministic for all inputs (no NaN).
+  auditPriorities(actions.map((a) => ({ priority: a.priority, label: a.title })));
   return [...actions].sort(
     (a, b) =>
-      PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] ||
+      priorityRank(a.priority) - priorityRank(b.priority) ||
       a.projectName.localeCompare(b.projectName) ||
       a.title.localeCompare(b.title),
   );

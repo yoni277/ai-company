@@ -42,6 +42,12 @@ export interface PortfolioActionQueue {
   actions: RecommendedAction[];
   openCountByProject: Record<string, number>;
   generatedAt: string;
+  /**
+   * P1-3 — audit trail of invalid priorities encountered at the ranking
+   * boundary (each also emits a visible warning). Empty when every action
+   * carried a known priority. Never silently dropped.
+   */
+  priorityWarnings: string[];
 }
 
 /** Full portfolio intelligence output. */

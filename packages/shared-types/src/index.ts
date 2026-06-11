@@ -25,3 +25,4 @@ export * from './research';
 export * from './outcomes';
 export * from './p006a-fingerprints';
 export * from './provenance';
+export * from './priority';
