@@ -16,7 +16,14 @@ const ALL_EXECUTIVES: { id: ExecutiveId; label: string }[] = [
   { id: 'vp-sales', label: 'VP Sales' },
 ];
 
-export function DirectiveEditForm({ directive }: { directive: CEODirective }) {
+export function DirectiveEditForm({
+  directive,
+  businesses = [],
+}: {
+  directive: CEODirective;
+  /** Enabled businesses for the "assign business" affordance (D085 item 4). */
+  businesses?: { slug: string; name: string }[];
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
@@ -27,6 +34,7 @@ export function DirectiveEditForm({ directive }: { directive: CEODirective }) {
   const [category, setCategory] = useState(directive.category);
   const [priority, setPriority] = useState(directive.priority);
   const [expiresAt, setExpiresAt] = useState(directive.expiresAt ?? '');
+  const [targetProjectId, setTargetProjectId] = useState(directive.targetProjectId ?? '');
   const [responders, setResponders] = useState<ExecutiveId[]>(
     directive.respondingExecutives,
   );
@@ -46,6 +54,9 @@ export function DirectiveEditForm({ directive }: { directive: CEODirective }) {
     if (priority !== directive.priority) patch.priority = priority;
     if ((expiresAt || null) !== directive.expiresAt) {
       patch.expiresAt = expiresAt ? expiresAt : null;
+    }
+    if ((targetProjectId || null) !== directive.targetProjectId) {
+      patch.targetProjectId = targetProjectId ? targetProjectId : null;
     }
     const sameResponders =
       responders.length === directive.respondingExecutives.length &&
@@ -172,6 +183,24 @@ export function DirectiveEditForm({ directive }: { directive: CEODirective }) {
           />
         </label>
       </div>
+      <label className="block text-xs text-slate-400">
+        Business (spine scope)
+        <select
+          value={targetProjectId}
+          onChange={(e) => setTargetProjectId(e.target.value)}
+          className="mt-1 w-full px-2 py-1.5 rounded bg-slate-950 border border-slate-700 text-sm text-slate-100"
+        >
+          <option value="">— Unscoped (no work enters the spine) —</option>
+          {businesses.map((b) => (
+            <option key={b.slug} value={b.slug}>
+              {b.name} ({b.slug})
+            </option>
+          ))}
+          {targetProjectId && !businesses.some((b) => b.slug === targetProjectId) && (
+            <option value={targetProjectId}>{targetProjectId} (current)</option>
+          )}
+        </select>
+      </label>
       <fieldset className="text-xs text-slate-400">
         Responding executives
         <div className="mt-1 flex flex-wrap gap-2">

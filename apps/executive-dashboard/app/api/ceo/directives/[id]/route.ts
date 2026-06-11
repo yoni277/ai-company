@@ -5,6 +5,7 @@ import {
   updateDirective,
 } from '../../../../../lib/ceo-operating-system';
 import { enqueueResponses } from '../../../../../lib/directive-queue';
+import { emitDirectiveSpine } from '../../../../../lib/executive-os/directive-spine';
 import { getPlatform } from '../../../../../lib/platform';
 
 export const dynamic = 'force-dynamic';
@@ -86,6 +87,19 @@ export async function PATCH(
         directive.id,
         directive.respondingExecutives,
       );
+    }
+
+    // OF-011 / D085 item 4 — the "assign business" affordance. When the CEO scopes
+    // a previously-unscoped directive (target_project_id newly set), its proposals
+    // already persisted on the first drain but never reached the spine (unscoped).
+    // Converge them now without forcing a full responder re-run. Idempotent; a
+    // spine hiccup must not fail the PATCH, so it is best-effort.
+    if (body.targetProjectId !== undefined && directive.targetProjectId && !contentChanged && !reactivated) {
+      try {
+        await emitDirectiveSpine(directive.id);
+      } catch {
+        // best-effort: surfaced elsewhere; never block the business assignment.
+      }
     }
 
     return NextResponse.json({ directive });

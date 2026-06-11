@@ -221,15 +221,23 @@ test('fingerprint: different proposal_type yields different hash', () => {
 
 // ----- transformProposalsToProposals -----
 
-test('transform: missing objective → skipped, no writes', async () => {
+// OF-011 / D085 / D084 (2026-06-10) SUPERSEDE the CA-2026-06-04 no-objective lock
+// for the SPINE path: the assigned_work spine requires project_slug, NOT an
+// objective. A directive with structured proposals but no objective now PERSISTS
+// them (so they converge to the spine) and flags needsObjective=true. Execution
+// stays objective-gated downstream — the promote-to-task path keeps its 422 guard
+// (see apps/.../api/proposals/[id]/promote/route.ts), which is asserted separately.
+test('transform: missing objective → persists for the spine, flags needsObjective', async () => {
   const { repos, rows } = fakeRepos();
   const out = await transformProposalsToProposals(repos, {
     directive: directive({ objectiveId: null }),
     sourceExecutiveId: 'vp-marketing',
     proposals: [proposal()],
   });
-  assert.equal(out.kind, 'skipped-no-objective');
-  assert.equal(rows.length, 0);
+  assert.equal(out.kind, 'persisted');
+  assert.equal(out.kind === 'persisted' && out.needsObjective, true);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]!.status, 'proposed');
 });
 
 test('transform: empty proposals → skipped, no writes', async () => {
@@ -327,7 +335,12 @@ test('transform: synthesizeFallback + all-malformed proposals → still lands 1 
   assert.equal(rows.length, 1, 'a directive never silently vanishes');
 });
 
-test('transform: synthesizeFallback does NOT override the no-objective governance lock', async () => {
+// OF-011 / D085 / D084 (2026-06-10): the no-objective lock is SUPERSEDED for the
+// spine path (this test previously asserted synthesizeFallback could not override
+// it). A directive with no objective AND no structured proposals now still reaches
+// the spine via the synthesized fallback, flagged needsObjective=true. Persistence
+// is never blocked by a missing objective; promotion-to-task still is (422 guard).
+test('transform: no objective + synthesizeFallback → persists 1 synthesized, flags needsObjective', async () => {
   const { repos, rows } = fakeRepos();
   const out = await transformProposalsToProposals(repos, {
     directive: directive({ objectiveId: null }),
@@ -335,8 +348,10 @@ test('transform: synthesizeFallback does NOT override the no-objective governanc
     proposals: [],
     synthesizeFallback: true,
   });
-  assert.equal(out.kind, 'skipped-no-objective');
-  assert.equal(rows.length, 0);
+  assert.equal(out.kind, 'persisted');
+  assert.equal(out.kind === 'persisted' && out.synthesized, true);
+  assert.equal(out.kind === 'persisted' && out.needsObjective, true);
+  assert.equal(rows.length, 1);
 });
 
 test('transform: without the flag, empty proposals still skip (back-compat)', async () => {

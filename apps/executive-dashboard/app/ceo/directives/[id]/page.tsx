@@ -7,6 +7,7 @@ import { RunPendingButton } from '../../../../components/RunPendingButton';
 import { ProposalDecisionButtons } from '../../../../components/ProposalDecisionButtons';
 import { getPlatform } from '../../../../lib/platform';
 import { getDirectiveById } from '../../../../lib/ceo-operating-system';
+import { listBusinessSlugs } from '../../../../lib/executive-os/meetings';
 import { relativeTime } from '../../../../lib/format';
 import type {
   DirectiveResponseRecord,
@@ -45,7 +46,7 @@ export default async function DirectiveDetailPage({
   if (!directive) notFound();
 
   const { repos } = getPlatform();
-  const [responses, allReports, fanoutTasks, proposals] = await Promise.all([
+  const [responses, allReports, fanoutTasks, proposals, businesses] = await Promise.all([
     repos.directiveResponses.listByDirective(directive.id),
     repos.reports.listByDirective(directive.id),
     // P005A — tasks live in ai_company.tasks once the CEO promotes a proposal.
@@ -53,6 +54,8 @@ export default async function DirectiveDetailPage({
     repos.tasks.list({ directiveId: directive.id }),
     // P005A — every proposal landed for this directive, regardless of status.
     repos.taskProposals.listByDirective(directive.id),
+    // D085 item 4 — enabled businesses for the "assign business" affordance.
+    listBusinessSlugs().catch(() => []),
   ]);
 
   // P007 — pre-compute the completion gate per task so the Tasks card can show
@@ -141,7 +144,27 @@ export default async function DirectiveDetailPage({
 
       <RunPendingButton directiveId={directive.id} pendingCount={pendingCount} />
 
-      <DirectiveEditForm directive={directive} />
+      {/* D085 item 4 — mandatory business scope. Unscoped directives never enter
+          the work spine; surface it as an actionable signal, not a silent stall. */}
+      {!directive.targetProjectId && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
+          <span className="font-medium">Unscoped directive.</span> No work can enter
+          the spine until you assign a business. Use <span className="italic">Edit → Business</span> below.
+        </div>
+      )}
+
+      {/* D085 item 3 — soft objective reminder. Proposals persist & converge to the
+          spine without an objective; an objective is only required before a proposal
+          is promoted to an executable task. Never a block. */}
+      {!directive.objectiveId && (
+        <div className="rounded-md border border-sky-500/30 bg-sky-500/10 p-3 text-sm text-sky-200">
+          <span className="font-medium">Needs objective assignment.</span> Proposed
+          work is visible and governable, but assign an objective before promoting any
+          proposal to an executable task.
+        </div>
+      )}
+
+      <DirectiveEditForm directive={directive} businesses={businesses} />
 
       <Card
         title="Executive responses"

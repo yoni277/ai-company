@@ -25,6 +25,15 @@ import type { Repositories } from '@ai-company/database';
  *      proposals are dropped with a warning. Beyond-3 is a Phase 4+ feature
  *      and would split across multiple directives, not relax this cap.
  *   B. Missing objective → skip entire fan-out (write warning).
+ *      SUPERSEDED for the SPINE path by OF-011 / D085 / D084 (2026-06-10): the
+ *      assigned_work spine requires project_slug, NOT an objective (the OF-008
+ *      meeting path already converges with no objective). So directive
+ *      responders now PERSIST proposals even when objectiveId is null — they
+ *      converge to the spine for governance + visibility. The lock survives only
+ *      where it belongs: the promote-to-task path keeps its 422 objective-guard,
+ *      so an objective is still required before work becomes an executable task.
+ *      `requireObjective` (default true) preserves decision B for any legacy
+ *      caller that has not opted in.
  *   C. Idempotency = fingerprint dedup. Rerun of the same directive emits
  *      identical proposals; upsert bumps `generation` instead of inserting
  *      a duplicate row. Fingerprint = hash(directive_id, source_executive_id,
@@ -51,7 +60,20 @@ export const DEFAULT_EVIDENCE_REQUIRED: EvidenceRequirementSchema = {
 export const DEFAULT_PROPOSAL_TYPE: ProposalType = 'action';
 
 export type TransformOutcome =
-  | { kind: 'persisted'; proposals: TaskProposalRecord[]; warnings: string[]; synthesized: boolean }
+  | {
+      kind: 'persisted';
+      proposals: TaskProposalRecord[];
+      warnings: string[];
+      synthesized: boolean;
+      /**
+       * OF-011 / D085 — true when the directive carried no objective. Proposals
+       * still persist and converge to the spine (governance + visibility), but
+       * cannot be promoted to an executable task until the CEO assigns an
+       * objective (the promote-to-task path keeps its 422 guard). A soft signal,
+       * never a block on persistence.
+       */
+      needsObjective: boolean;
+    }
   | { kind: 'skipped-no-objective'; warnings: string[] }
   | { kind: 'skipped-no-proposals'; warnings: string[] };
 
@@ -99,12 +121,20 @@ export function synthesizeDirectiveProposal(directive: CEODirective): TaskPropos
 export function planProposals(input: {
   proposals: readonly TaskProposal[] | undefined;
   objectiveId: string | null;
+  /**
+   * OF-011 / D085 — when false, a null objective no longer skips the fan-out;
+   * proposals are planned and persisted so they converge to the spine (which
+   * needs project_slug, not an objective). Defaults to true to preserve the
+   * CA-2026-06-04 lock (decision B) for the legacy promote-to-task path.
+   */
+  requireObjective?: boolean;
 }): {
   accepted: TaskProposal[];
   rejected: Array<{ proposal: unknown; reason: string }>;
   skipReason: 'no-objective' | 'no-proposals' | null;
 } {
-  if (!input.objectiveId) {
+  const requireObjective = input.requireObjective ?? true;
+  if (requireObjective && !input.objectiveId) {
     return { accepted: [], rejected: [], skipReason: 'no-objective' };
   }
   const list = Array.isArray(input.proposals) ? input.proposals : [];
@@ -224,47 +254,53 @@ export function fingerprintProposal(input: {
     input.proposalType,
     norm(input.title),
     norm(input.capabilityRequired),
-  ].join(' ');
+  ].join(' ');
   return createHash('sha256').update(payload).digest('hex');
 }
 
 /**
  * Persist proposals into ai_company.task_proposals. Returns a `persisted`
  * outcome listing the actual TaskProposalRecord rows (whether newly
- * inserted or generation-bumped). Never throws when the gate trips —
- * returns a `skipped-*` outcome instead so the responder can still
- * return its report id.
+ * inserted or generation-bumped). Never throws when there is nothing to
+ * persist — returns a `skipped-no-proposals` outcome instead so the responder
+ * can still return its report id.
+ *
+ * OF-011 / D085: a null objective no longer skips persistence — proposals
+ * converge to the spine regardless, with `needsObjective: true` on the outcome
+ * as a soft governance signal. (The legacy `skipped-no-objective` outcome is
+ * retained in the union for the objective-required path but is not produced
+ * here.)
  */
 export async function transformProposalsToProposals(
   repos: Repositories,
   input: TransformInput,
 ): Promise<TransformOutcome> {
+  // OF-011 / D085 — the spine path is objective-OPTIONAL. Plan (and below,
+  // persist) proposals even when the directive has no objective; they converge
+  // to assigned_work for governance + visibility. Execution stays objective-
+  // gated downstream (the promote-to-task path keeps its 422 guard).
+  const needsObjective = !input.directive.objectiveId;
   const plan = planProposals({
     proposals: input.proposals,
     objectiveId: input.directive.objectiveId ?? null,
+    requireObjective: false,
   });
-
-  if (plan.skipReason === 'no-objective') {
-    // Governance lock (decision B): without an objective a directive cannot
-    // produce promotable tasks. NOT silent — surfaced as a warning the
-    // responder logs, so a missing objective is visible, not a quiet "done".
-    return {
-      kind: 'skipped-no-objective',
-      warnings: [
-        `directive ${input.directive.id} has no objective_id; skipping ${
-          (input.proposals ?? []).length
-        } proposal(s) from ${input.sourceExecutiveId} — assign an objective so it can converge to the spine`,
-      ],
-    };
-  }
 
   const warnings = plan.rejected.map(
     (r) => `dropped proposal from ${input.sourceExecutiveId}: ${r.reason}`,
   );
 
-  // Objective present, but the executive produced no usable structured
-  // proposals (empty, absent, or all-malformed). Either synthesize a fallback
-  // (EPIC-004A: a directive must reach the spine) or surface the zero case.
+  if (needsObjective) {
+    // Soft signal (D085 item 3): visible, never a block. The CEO assigns an
+    // objective before this proposed work can be promoted to an executable task.
+    warnings.push(
+      `directive ${input.directive.id} has no objective_id; proposals from ${input.sourceExecutiveId} persist to the spine for review but need an objective before promotion to a task`,
+    );
+  }
+
+  // The executive produced no usable structured proposals (empty, absent, or
+  // all-malformed). Either synthesize a fallback (EPIC-004A: a directive must
+  // reach the spine) or surface the zero case.
   let accepted = plan.accepted;
   let synthesized = false;
   if (accepted.length === 0) {
@@ -299,5 +335,5 @@ export async function transformProposalsToProposals(
     persisted.push(record);
   }
 
-  return { kind: 'persisted', proposals: persisted, warnings, synthesized };
+  return { kind: 'persisted', proposals: persisted, warnings, synthesized, needsObjective };
 }
