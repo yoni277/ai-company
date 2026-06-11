@@ -7,10 +7,20 @@ import type {
 } from '../../lib/command-center';
 import { Badge, Card, Stat } from '../Card';
 
+// D7 — four evidence-based states. NOT_MEASURED is neutral/grey (never green):
+// an unmeasured row is honest exposure, not success.
 const STATUS_STYLE: Record<ExecutiveScoreStatus, string> = {
   PASS: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  'PASS WITH RISKS': 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+  AT_RISK: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
   FAIL: 'bg-red-500/15 text-red-300 border-red-500/30',
+  NOT_MEASURED: 'bg-slate-500/15 text-slate-400 border-slate-500/30',
+};
+
+const STATUS_LABEL: Record<ExecutiveScoreStatus, string> = {
+  PASS: 'PASS',
+  AT_RISK: 'AT RISK',
+  FAIL: 'FAIL',
+  NOT_MEASURED: 'NOT MEASURED',
 };
 
 function money(amount: number, currency: string): string {
@@ -114,7 +124,7 @@ export function ScorecardTable({ rows }: { rows: ExecutiveScorecardRow[] }) {
               <tr key={row.role} className="text-slate-200">
                 <td className="py-3 pe-4 font-medium text-slate-100">{row.role}</td>
                 <td className="py-3 pe-4">
-                  <Badge className={STATUS_STYLE[row.status]}>{row.status}</Badge>
+                  <Badge className={STATUS_STYLE[row.status]}>{STATUS_LABEL[row.status]}</Badge>
                 </td>
                 <td className="py-3 text-slate-400">{row.detail}</td>
               </tr>
