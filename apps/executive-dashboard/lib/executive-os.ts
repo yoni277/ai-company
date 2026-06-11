@@ -677,6 +677,8 @@ export interface BriefingView {
   createdAt: string;
   /** Raw report body (jsonb) — rendered defensively on expand. */
   body: unknown;
+  /** D086 — directive this report answered, for lineage drill-in (null for standalone). */
+  sourceDirectiveId: string | null;
 }
 
 /* ===========================================================================
@@ -911,6 +913,7 @@ export async function loadBriefings(limit = 50): Promise<BriefingView[]> {
         headline,
         createdAt: r.createdAt,
         body: r.body,
+        sourceDirectiveId: r.sourceDirectiveId ?? null,
       };
     })
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));

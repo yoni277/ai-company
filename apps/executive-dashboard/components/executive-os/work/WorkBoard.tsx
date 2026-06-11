@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useTheme } from '../../theme-provider';
 import { StatusBadge } from '../../ds/StatusBadge';
 import { WorkRowActions } from './WorkRowActions';
+import { LineageControls } from '../lineage/LineageControls';
 import { STATE_META, STATE_ORDER, SOURCE_LABEL, T, tx, execLabel, type Locale } from './labels';
 import type { WorkListItem, AttentionItem } from '../../../lib/executive-os/work-control-core';
 
@@ -115,6 +116,9 @@ function MasterRow({ item, locale }: { item: WorkListItem; locale: Locale }) {
           }}
           locale={locale}
         />
+        <div className="mt-xs">
+          <LineageControls type="work" id={item.id} />
+        </div>
       </td>
     </tr>
   );
@@ -150,6 +154,9 @@ function AttentionCard({ item, locale }: { item: AttentionItem; locale: Locale }
             }}
             locale={locale}
           />
+          <div className="mt-xs">
+            <LineageControls type="work" id={item.id} />
+          </div>
         </div>
       </div>
     </li>

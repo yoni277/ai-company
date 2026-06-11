@@ -15,6 +15,8 @@
 import type { ReactNode } from 'react';
 import { DataTag, StatusBadge, type HealthState } from '../../components/ds';
 import { ExpandableDetail } from '../../components/executive-os/ExpandableDetail';
+import { InspectorLayout } from '../../components/executive-os/lineage/Inspector';
+import { LineageControls } from '../../components/executive-os/lineage/LineageControls';
 import { loadBriefings, type BriefingView } from '../../lib/executive-os';
 
 export const dynamic = 'force-dynamic';
@@ -52,6 +54,7 @@ export default async function BriefingsPage() {
             </p>
           </div>
         ) : (
+          <InspectorLayout>
           <div className="grid grid-cols-1 gap-lg lg:grid-cols-2">
             {briefings.map((b) => (
               <article
@@ -88,9 +91,15 @@ export default async function BriefingsPage() {
                   </ExpandableDetail>
                   <DataTag kind="HAVE" />
                 </div>
+                {b.sourceDirectiveId ? (
+                  <div className="mt-sm border-t border-outline-variant pt-sm">
+                    <LineageControls type="directive" id={b.sourceDirectiveId} />
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>
+          </InspectorLayout>
         )}
       </div>
     </div>

@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { StatusBadge } from '../../components/ds';
 import { ChevronEndIcon } from '../../components/ds/icons';
 import { listMeetings } from '../../lib/executive-os/meetings';
+import { InspectorLayout } from '../../components/executive-os/lineage/Inspector';
+import { LineageControls } from '../../components/executive-os/lineage/LineageControls';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,27 +49,35 @@ export default async function MeetingsPage({
             </p>
           </div>
         ) : (
-          <ul className="space-y-sm">
-            {meetings.map((m) => (
-              <li key={m.id}>
-                <Link
-                  href={`/meetings/${m.id}` as never}
-                  prefetch={false}
-                  className="flex items-center justify-between gap-md rounded-lg border border-outline-variant bg-surface-container-lowest p-lg transition hover:shadow-ambient"
+          <InspectorLayout>
+            <ul className="space-y-sm">
+              {meetings.map((m) => (
+                <li
+                  key={m.id}
+                  className="rounded-lg border border-outline-variant bg-surface-container-lowest transition hover:shadow-ambient"
                 >
-                  <div className="min-w-0">
-                    <p className="font-label-sm text-label-sm uppercase text-outline">{m.type} · {m.projectSlug}</p>
-                    <p className="truncate font-title-lg text-title-lg text-on-surface">{m.topic}</p>
-                    <p className="font-label-sm text-label-sm text-outline">{m.participants.map((p) => NAME[p] ?? p).join(' · ')}</p>
+                  <Link
+                    href={`/meetings/${m.id}` as never}
+                    prefetch={false}
+                    className="flex items-center justify-between gap-md p-lg"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-label-sm text-label-sm uppercase text-outline">{m.type} · {m.projectSlug}</p>
+                      <p className="truncate font-title-lg text-title-lg text-on-surface">{m.topic}</p>
+                      <p className="font-label-sm text-label-sm text-outline">{m.participants.map((p) => NAME[p] ?? p).join(' · ')}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-sm">
+                      <StatusBadge state={statusState(m.status)} label={m.status} size="sm" />
+                      <ChevronEndIcon className="h-4 w-4 text-outline rtl:-scale-x-100" />
+                    </div>
+                  </Link>
+                  <div className="border-t border-outline-variant px-lg py-sm">
+                    <LineageControls type="meeting" id={m.id} />
                   </div>
-                  <div className="flex shrink-0 items-center gap-sm">
-                    <StatusBadge state={statusState(m.status)} label={m.status} size="sm" />
-                    <ChevronEndIcon className="h-4 w-4 text-outline rtl:-scale-x-100" />
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          </InspectorLayout>
         )}
       </div>
     </div>
