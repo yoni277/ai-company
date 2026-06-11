@@ -48,9 +48,15 @@ export default async function InboxPage() {
                 {queue.map((item) => (
                   <div key={`${item.kind}-${item.id}`}>
                     <DecisionQueueItem item={item} />
+                    {/* A decision anchors on its own id; a proposal's lineage IS
+                        its source directive's chain (D086 acceptance note 2). */}
                     {item.kind === 'decision' ? (
                       <div className="mt-xs ps-md">
                         <LineageControls type="decision" id={item.id} />
+                      </div>
+                    ) : item.directiveId ? (
+                      <div className="mt-xs ps-md">
+                        <LineageControls type="directive" id={item.directiveId} />
                       </div>
                     ) : null}
                   </div>

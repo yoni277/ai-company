@@ -313,7 +313,7 @@ export function buildTimeline(raw: TimelineRaw, nowISO: string): CommunicationTi
     const up = countFragment(counts[upstreamKey], upstreamKey);
     const zero = countFragment(0, gapStageKey);
     const daysEn = stalledDays !== null ? ` — stalled ${stalledDays}d` : '';
-    const daysHe = stalledDays !== null ? ` — תקוע ${stalledDays} ימ׳` : '';
+    const daysHe = stalledDays !== null ? ` — תקוע ${stalledDays} ימים` : '';
     bottleneck = {
       en: `${up.en} · ${zero.en}${daysEn}`,
       he: `${up.he} · ${zero.he}${daysHe}`,

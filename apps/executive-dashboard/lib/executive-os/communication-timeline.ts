@@ -38,6 +38,8 @@ export interface InspectorQueueItem {
   status: string;
   dueDate: string | null;
   source: string | null;
+  /** Matches QueueItem; always null here — inspector items are already in-thread. */
+  directiveId: string | null;
 }
 
 /** Reused-action targets — the Inspector maps each to an existing component. */
@@ -361,6 +363,7 @@ function buildActions(args: {
       status: p.status,
       dueDate: null,
       source: p.sourceExecutiveId,
+      directiveId: null,
     });
   }
   for (const d of args.decisions) {
@@ -374,6 +377,7 @@ function buildActions(args: {
       status: d.status ?? 'proposed',
       dueDate: null,
       source: d.who ?? null,
+      directiveId: null,
     });
   }
   return { workRows, ceoReply: null, decisionQueue };
